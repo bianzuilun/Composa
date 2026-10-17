@@ -1,0 +1,92 @@
+{
+  "source": "robbietilton/Compositor",
+  "baseline_tag": "v1.4",
+  "target_tag": "v1.5.3",
+  "reviewed_date": "2026-10-18",
+  "releases": [
+    {
+      "tag": "v1.4.1",
+      "published_at_utc": "2026-09-29T05:21:06Z",
+      "url": "https://github.com/robbietilton/Compositor/releases/tag/v1.4.1",
+      "body": "- Resize handles snap to the canvas, other layers and guides, as moving does.\n- Values typed or dragged in the Move bar's X, Y, W, H, Scale and rotation fields apply straight away, with no Apply, as one undo step.\n- Clone Stamp and Blur keep a scaled-down layer's full detail, so it stays sharp when scaled back up.\n- Layer masks work like Photoshop's: with a selection, Add Layer Mask reveals it (Option-click for the opposite), and Option-clicking a mask thumbnail shows the mask on its own.\n- Ungroup Layers (⇧⌘G), also in a folder's right-click menu.\n- Tabs can be dragged to reorder, and ones that don't fit gather under a menu.\n- Holding Command flips Auto Select either way while it's held.\n- A brush that can't paint now says why, and Select All then Inverse deselects.\n- Scaled layers show their scale in the Layers panel, and Cancel and Apply only appear when an edit is waiting for them.\n\nThanks to @cheyras for several of these."
+    },
+    {
+      "tag": "v1.4.2",
+      "published_at_utc": "2026-09-29T13:50:51Z",
+      "url": "https://github.com/robbietilton/Compositor/releases/tag/v1.4.2",
+      "body": "Liquify keeps pixels sharp and Smudge no longer leaves ghost copies, both working as they do in Photoshop. The Blur brush has its own Radius slider next to Strength."
+    },
+    {
+      "tag": "v1.4.3",
+      "published_at_utc": "2026-09-29T15:59:54Z",
+      "url": "https://github.com/robbietilton/Compositor/releases/tag/v1.4.3",
+      "body": "Blur, Smudge and Liquify work at the largest brush on big canvases: Smudge and Liquify no longer fail when you let go, and Blur stays quick however large the image."
+    },
+    {
+      "tag": "v1.4.4",
+      "published_at_utc": "2026-09-29T19:46:00Z",
+      "url": "https://github.com/robbietilton/Compositor/releases/tag/v1.4.4",
+      "body": "New Dither style, Scanlines (CRT): lines of light on a dark screen, with Glow, Dots and Wobble for neon and old-TV looks. Quit and the close button now work mid-gradient or with a dialog open."
+    },
+    {
+      "tag": "v1.4.5",
+      "published_at_utc": "2026-09-29T21:42:56Z",
+      "url": "https://github.com/robbietilton/Compositor/releases/tag/v1.4.5",
+      "body": "Camera Raw's curves behave as Photoshop's: the curve graph can be dragged again, the Parametric curve matches Photoshop's shape, and contrast deepens color as it does there."
+    },
+    {
+      "tag": "v1.4.6",
+      "published_at_utc": "2026-10-08T04:16:12Z",
+      "url": "https://github.com/robbietilton/Compositor/releases/tag/v1.4.6",
+      "body": "Command palette (⌘F) to find any command or tool by name, and Canvas Only (F) to see just the canvas on black. New Canvas takes inches, cm or mm at 72 or 300 DPI, with a white or black background. Image › Rotate Canvas 90°. Smoother, faster RAW imports. Color Overlay, Inner Glow and Inner Shadow cover translucent pixels fully, and Camera Raw's Color noise reduction now works properly."
+    },
+    {
+      "tag": "v1.4.7",
+      "published_at_utc": "2026-10-08T10:23:57Z",
+      "url": "https://github.com/robbietilton/Compositor/releases/tag/v1.4.7",
+      "body": "Filter › Last Filter (⌃⌘F) runs the last filter again with the same settings. F toggles fullscreen and Esc now leaves it too, and Search Commands moves to ⌘F. UI refinements: clearer Layers panel buttons, renaming a layer without the row jumping, tool bars that scroll in narrow windows, a clearer Don't Save, and a hand that stays closed while panning."
+    },
+    {
+      "tag": "v1.4.8",
+      "published_at_utc": "2026-10-09T05:44:40Z",
+      "url": "https://github.com/robbietilton/Compositor/releases/tag/v1.4.8",
+      "body": "File › Export As… (⇧⌥⌘W) exports PNG, JPEG or a one-page PDF, sized and previewed. Scanlines is now its own filter, with lines that swell into the picture's shapes (Displace and Smoothness), dots by tone, Threshold, Color Split and Black Level. A Navigator minimap (View › Navigator) shows where you are from 300% zoom. The Layers panel reveals layers selected on the canvas, and Camera Raw's Shadows and Highlights keep tones in order."
+    },
+    {
+      "tag": "v1.4.9",
+      "published_at_utc": "2026-10-10T06:11:25Z",
+      "url": "https://github.com/robbietilton/Compositor/releases/tag/v1.4.9",
+      "body": "- Camera Raw Filter now matches Photoshop's: white balance, light, color, mixer, curves, grading and vignettes\n- Camera Raw previews update up to 20× faster\n- Layer effects and live text survive Canvas Size, Image Size, Crop, Trim and adjustments\n- Import WebP images\n- ⌘ or ⌃ with a middle-button drag zooms\n- Closing the last tab no longer counts up Untitled numbers\n- Future updates list what's new right in the update window"
+    },
+    {
+      "tag": "v1.4.10",
+      "published_at_utc": "2026-10-11T18:20:35Z",
+      "url": "https://github.com/robbietilton/Compositor/releases/tag/v1.4.10",
+      "body": "- Spot Healing and Content-Aware Fill rebuilt: edges and texture carry on through what's removed\n- Import a folder of images as layers, from Import Image or by dropping it on the canvas, a tab or the Dock\n- Gaussian Blur: Preserve Transparency, and solid edges for a picture filling the canvas\n- RAW develop adds Noise Reduction, Lens Correction and Highlight Recovery\n- Opens HEIF photos from Canon, Sony and Fuji cameras (.hif, .heif)\n- The Layers panel keeps everything inside it at its narrowest\n- A new app icon"
+    },
+    {
+      "tag": "v1.5",
+      "published_at_utc": "2026-10-12T16:29:25Z",
+      "url": "https://github.com/robbietilton/Compositor/releases/tag/v1.5",
+      "body": "- 16-bit layers: 16-bit PNG, TIFF, HEIF and RAW keep full precision\n- Convert layers between 8-bit and 16-bit from the right-click menu\n- HDR: open EXR and .hdr images and keep their highlights\n- Export EXR, and 16-bit PNG\n- CMYK: proof colors and gamut warning in View › CMYK\n- Export JPEG, TIFF and PDF in CMYK\n- Open CMYK Photoshop, JPEG and TIFF files\n- New TIFF export\n- Paste an image on the New canvas screen to make a canvas\n- Drop images anywhere on the tab bar to open a new project\n- Dragged layers size a new project's canvas to fit\n- Refreshed app icon"
+    },
+    {
+      "tag": "v1.5.1",
+      "published_at_utc": "2026-10-12T23:16:19Z",
+      "url": "https://github.com/robbietilton/Compositor/releases/tag/v1.5.1",
+      "body": "- New Filter › Progressive Blur: drag two points on the canvas\n- Adjustment layers over 16-bit layers now preview at full precision\n- Smoother display of 16-bit and HDR layers"
+    },
+    {
+      "tag": "v1.5.2",
+      "published_at_utc": "2026-10-13T21:00:58Z",
+      "url": "https://github.com/robbietilton/Compositor/releases/tag/v1.5.2",
+      "body": "- Camera Raw Shadows now matches Photoshop: dark areas lift the way they do there\n- Open a RAW file straight into the Camera Raw Filter from the import dialog\n- Reset any Camera Raw section from its header\n- Clear any keyboard shortcut, or give one to CMYK Proof Colors and Gamut Warning\n- Shortcuts on the Delete key can now be changed\n- Custom keyboard shortcuts are kept when the app updates\n- Update notices always show at full width"
+    },
+    {
+      "tag": "v1.5.3",
+      "published_at_utc": "2026-10-15T01:43:32Z",
+      "url": "https://github.com/robbietilton/Compositor/releases/tag/v1.5.3",
+      "body": "- Faster Camera Raw previews on large images with GPU acceleration, preserving existing adjustment results.\n- Camera Raw previews stay at full resolution while dragging sliders.\n- Faster histogram and scope updates.\n- New Smooth Corners option for rectangles, with iOS-style rounded corners.\n- Cleaner shape controls, with the fill swatch first in all three shape modes.\n- Scroll the Layers panel by dragging with the middle mouse button.\n- Zoom cursors update immediately when changing drag direction."
+    }
+  ]
+}
