@@ -666,4 +666,229 @@
   <data name="Blend.GrainMerge" xml:space="preserve">
     <value>Grain Merge</value>
   </data>
+  <data name="Tool.RectangleMarquee" xml:space="preserve">
+    <value>Rectangle Marquee</value>
+  </data>
+  <data name="Tool.EllipseMarquee" xml:space="preserve">
+    <value>Ellipse Marquee</value>
+  </data>
+  <data name="Tool.FreehandLasso" xml:space="preserve">
+    <value>Freehand Lasso</value>
+  </data>
+  <data name="Tool.PolygonalLasso" xml:space="preserve">
+    <value>Polygonal Lasso</value>
+  </data>
+  <data name="Tool.MagicWand" xml:space="preserve">
+    <value>Magic Wand</value>
+  </data>
+  <data name="Tool.ObjectSelection" xml:space="preserve">
+    <value>Object Selection</value>
+  </data>
+  <data name="Tool.Liquify" xml:space="preserve">
+    <value>Liquify</value>
+  </data>
+  <data name="Tool.Blur" xml:space="preserve">
+    <value>Blur</value>
+  </data>
+  <data name="Tool.Smudge" xml:space="preserve">
+    <value>Smudge</value>
+  </data>
+  <data name="Tool.Dodge" xml:space="preserve">
+    <value>Dodge</value>
+  </data>
+  <data name="Tool.Burn" xml:space="preserve">
+    <value>Burn</value>
+  </data>
+  <data name="Tool.Rectangle" xml:space="preserve">
+    <value>Rectangle</value>
+  </data>
+  <data name="Tool.RoundedRectangle" xml:space="preserve">
+    <value>Rounded Rectangle</value>
+  </data>
+  <data name="Tool.Ellipse" xml:space="preserve">
+    <value>Ellipse</value>
+  </data>
+  <data name="Tool.Line" xml:space="preserve">
+    <value>Line</value>
+  </data>
+  <data name="Tool.Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Tool.SpotHealingShort" xml:space="preserve">
+    <value>Spot Healing</value>
+  </data>
+  <data name="Tool.GroupHint" xml:space="preserve">
+    <value>{0}{1} · click and hold for {2}</value>
+  </data>
+  <data name="Tool.ListSeparator" xml:space="preserve">
+    <value>, </value>
+  </data>
+  <data name="Tool.ListLastSeparator" xml:space="preserve">
+    <value> and </value>
+  </data>
+  <data name="ToolTip.Move" xml:space="preserve">
+    <value>Move / Transform (V)</value>
+  </data>
+  <data name="ToolTip.Marquee" xml:space="preserve">
+    <value>Marquee (M)</value>
+  </data>
+  <data name="ToolTip.Lasso" xml:space="preserve">
+    <value>Lasso (L)</value>
+  </data>
+  <data name="ToolTip.Magic" xml:space="preserve">
+    <value>Magic (W)</value>
+  </data>
+  <data name="ToolTip.Crop" xml:space="preserve">
+    <value>Crop (C)</value>
+  </data>
+  <data name="ToolTip.Brush" xml:space="preserve">
+    <value>Brush (B) · Eraser (E)</value>
+  </data>
+  <data name="ToolTip.Heal" xml:space="preserve">
+    <value>Spot Healing Brush (J)</value>
+  </data>
+  <data name="ToolTip.Clone" xml:space="preserve">
+    <value>Clone Stamp (S) · Alt-click sets the source</value>
+  </data>
+  <data name="ToolTip.Smear" xml:space="preserve">
+    <value>Smear (R)</value>
+  </data>
+  <data name="ToolTip.Gradient" xml:space="preserve">
+    <value>Gradient (G)</value>
+  </data>
+  <data name="ToolTip.Shape" xml:space="preserve">
+    <value>Shape (U)</value>
+  </data>
+  <data name="ToolTip.Type" xml:space="preserve">
+    <value>Type (T) · click for point text, drag a paragraph box, click text to edit it</value>
+  </data>
+  <data name="ToolTip.Eyedropper" xml:space="preserve">
+    <value>Eyedropper (I)</value>
+  </data>
+  <data name="ToolTip.Hand" xml:space="preserve">
+    <value>Hand (H) · hold Space with any tool</value>
+  </data>
+  <data name="ToolTip.Zoom" xml:space="preserve">
+    <value>Zoom (Z)</value>
+  </data>
+  <data name="Option.Strength" xml:space="preserve">
+    <value>Strength</value>
+  </data>
+  <data name="Option.Aligned" xml:space="preserve">
+    <value>Aligned</value>
+  </data>
+  <data name="Option.SampleAll" xml:space="preserve">
+    <value>Sample all layers</value>
+  </data>
+  <data name="Option.Contiguous" xml:space="preserve">
+    <value>Contiguous</value>
+  </data>
+  <data name="Option.Edge" xml:space="preserve">
+    <value>Edge</value>
+  </data>
+  <data name="Option.Detect" xml:space="preserve">
+    <value>Detect</value>
+  </data>
+  <data name="Option.AnySubject" xml:space="preserve">
+    <value>Any subject</value>
+  </data>
+  <data name="Option.Person" xml:space="preserve">
+    <value>Person</value>
+  </data>
+  <data name="Option.Backdrop" xml:space="preserve">
+    <value>Plain backdrop</value>
+  </data>
+  <data name="Option.Linear" xml:space="preserve">
+    <value>Linear</value>
+  </data>
+  <data name="Option.Radial" xml:space="preserve">
+    <value>Radial</value>
+  </data>
+  <data name="Option.ToTransparent" xml:space="preserve">
+    <value>Foreground to transparent</value>
+  </data>
+  <data name="Option.CornerRadius" xml:space="preserve">
+    <value>Corner radius</value>
+  </data>
+  <data name="Option.Ratio" xml:space="preserve">
+    <value>Ratio</value>
+  </data>
+  <data name="Option.Original" xml:space="preserve">
+    <value>Original</value>
+  </data>
+  <data name="Option.SelectAll" xml:space="preserve">
+    <value>Select All</value>
+  </data>
+  <data name="Option.Trim" xml:space="preserve">
+    <value>Trim transparent edges</value>
+  </data>
+  <data name="Option.Fit" xml:space="preserve">
+    <value>Fit</value>
+  </data>
+  <data name="Option.Bold" xml:space="preserve">
+    <value>Bold</value>
+  </data>
+  <data name="Option.Italic" xml:space="preserve">
+    <value>Italic</value>
+  </data>
+  <data name="Option.TextColor" xml:space="preserve">
+    <value>Text color</value>
+  </data>
+  <data name="Option.Tracking" xml:space="preserve">
+    <value>Tracking</value>
+  </data>
+  <data name="Option.Leading" xml:space="preserve">
+    <value>Leading</value>
+  </data>
+  <data name="Option.Transform" xml:space="preserve">
+    <value>Transform controls</value>
+  </data>
+  <data name="Option.NoLayer" xml:space="preserve">
+    <value>No layer selected</value>
+  </data>
+  <data name="Option.GroupMove" xml:space="preserve">
+    <value>Moves every layer in the folder</value>
+  </data>
+  <data name="Option.NoPixels" xml:space="preserve">
+    <value>This layer has no pixels</value>
+  </data>
+  <data name="Option.DrawLine" xml:space="preserve">
+    <value>Draws in the foreground color · Shift snaps to 45°</value>
+  </data>
+  <data name="Option.FillShape" xml:space="preserve">
+    <value>Fills with the foreground color</value>
+  </data>
+  <data name="Option.CropArea" xml:space="preserve">
+    <value>Drag on the canvas to choose the area to keep</value>
+  </data>
+  <data name="Option.MergedSample" xml:space="preserve">
+    <value>Samples the merged image</value>
+  </data>
+  <data name="Option.EdgeTip" xml:space="preserve">
+    <value>Positive values tighten the detected outline inward; negative values loosen it outward</value>
+  </data>
+  <data name="Option.DetectTip" xml:space="preserve">
+    <value>How the subject is found: a model for any subject or for a person, run on this machine, or the plain backdrop that touches the picture's edges. The same choice drives Select &gt; Subject and Remove Background.</value>
+  </data>
+  <data name="Option.CropRatioTip" xml:space="preserve">
+    <value>The shape the crop box keeps while you drag it</value>
+  </data>
+  <data name="Option.TrackingTip" xml:space="preserve">
+    <value>Tracking: extra space after every character, in pixels</value>
+  </data>
+  <data name="Option.LeadingTip" xml:space="preserve">
+    <value>Leading: line height baseline to baseline, in pixels. 0 is Auto: 120% of the size</value>
+  </data>
+  <data name="Option.AutoSelectTip" xml:space="preserve">
+    <value>Click a layer's pixels to select it. Off, a drag moves the current layer from anywhere; Ctrl-click still picks.</value>
+  </data>
+  <data name="Option.AlignLeft" xml:space="preserve">
+    <value>Align left</value>
+  </data>
+  <data name="Option.AlignCenter" xml:space="preserve">
+    <value>Align center</value>
+  </data>
+  <data name="Option.AlignRight" xml:space="preserve">
+    <value>Align right</value>
+  </data>
 </root>

@@ -666,4 +666,229 @@
   <data name="Blend.GrainMerge" xml:space="preserve">
     <value>微粒結合</value>
   </data>
+  <data name="Tool.RectangleMarquee" xml:space="preserve">
+    <value>長方形選択</value>
+  </data>
+  <data name="Tool.EllipseMarquee" xml:space="preserve">
+    <value>楕円形選択</value>
+  </data>
+  <data name="Tool.FreehandLasso" xml:space="preserve">
+    <value>自由なげなわ</value>
+  </data>
+  <data name="Tool.PolygonalLasso" xml:space="preserve">
+    <value>多角形なげなわ</value>
+  </data>
+  <data name="Tool.MagicWand" xml:space="preserve">
+    <value>マジックワンド</value>
+  </data>
+  <data name="Tool.ObjectSelection" xml:space="preserve">
+    <value>オブジェクト選択</value>
+  </data>
+  <data name="Tool.Liquify" xml:space="preserve">
+    <value>ゆがみ</value>
+  </data>
+  <data name="Tool.Blur" xml:space="preserve">
+    <value>ぼかし</value>
+  </data>
+  <data name="Tool.Smudge" xml:space="preserve">
+    <value>指先</value>
+  </data>
+  <data name="Tool.Dodge" xml:space="preserve">
+    <value>覆い焼き</value>
+  </data>
+  <data name="Tool.Burn" xml:space="preserve">
+    <value>焼き込み</value>
+  </data>
+  <data name="Tool.Rectangle" xml:space="preserve">
+    <value>長方形</value>
+  </data>
+  <data name="Tool.RoundedRectangle" xml:space="preserve">
+    <value>角丸長方形</value>
+  </data>
+  <data name="Tool.Ellipse" xml:space="preserve">
+    <value>楕円</value>
+  </data>
+  <data name="Tool.Line" xml:space="preserve">
+    <value>直線</value>
+  </data>
+  <data name="Tool.Type" xml:space="preserve">
+    <value>文字ツール</value>
+  </data>
+  <data name="Tool.SpotHealingShort" xml:space="preserve">
+    <value>スポット修復</value>
+  </data>
+  <data name="Tool.GroupHint" xml:space="preserve">
+    <value>{0}{1} · 長押しで切り替え：{2}</value>
+  </data>
+  <data name="Tool.ListSeparator" xml:space="preserve">
+    <value>、</value>
+  </data>
+  <data name="Tool.ListLastSeparator" xml:space="preserve">
+    <value>と</value>
+  </data>
+  <data name="ToolTip.Move" xml:space="preserve">
+    <value>移動 / 変形（V）</value>
+  </data>
+  <data name="ToolTip.Marquee" xml:space="preserve">
+    <value>選択枠（M）</value>
+  </data>
+  <data name="ToolTip.Lasso" xml:space="preserve">
+    <value>なげなわ（L）</value>
+  </data>
+  <data name="ToolTip.Magic" xml:space="preserve">
+    <value>マジック / オブジェクト選択（W）</value>
+  </data>
+  <data name="ToolTip.Crop" xml:space="preserve">
+    <value>切り抜き（C）</value>
+  </data>
+  <data name="ToolTip.Brush" xml:space="preserve">
+    <value>ブラシ（B）· 消しゴム（E）</value>
+  </data>
+  <data name="ToolTip.Heal" xml:space="preserve">
+    <value>スポット修復ブラシ（J）</value>
+  </data>
+  <data name="ToolTip.Clone" xml:space="preserve">
+    <value>コピースタンプ（S）· Alt クリックでコピー元を設定</value>
+  </data>
+  <data name="ToolTip.Smear" xml:space="preserve">
+    <value>レタッチツール群（R）</value>
+  </data>
+  <data name="ToolTip.Gradient" xml:space="preserve">
+    <value>グラデーション（G）</value>
+  </data>
+  <data name="ToolTip.Shape" xml:space="preserve">
+    <value>シェイプ（U）</value>
+  </data>
+  <data name="ToolTip.Type" xml:space="preserve">
+    <value>文字（T）· クリックでポイント文字、ドラッグで段落枠、文字をクリックして編集</value>
+  </data>
+  <data name="ToolTip.Eyedropper" xml:space="preserve">
+    <value>スポイト（I）</value>
+  </data>
+  <data name="ToolTip.Hand" xml:space="preserve">
+    <value>手のひら（H）· どのツールでも Space 長押しで移動</value>
+  </data>
+  <data name="ToolTip.Zoom" xml:space="preserve">
+    <value>ズーム（Z）</value>
+  </data>
+  <data name="Option.Strength" xml:space="preserve">
+    <value>強さ</value>
+  </data>
+  <data name="Option.Aligned" xml:space="preserve">
+    <value>位置合わせ</value>
+  </data>
+  <data name="Option.SampleAll" xml:space="preserve">
+    <value>全レイヤーをサンプル</value>
+  </data>
+  <data name="Option.Contiguous" xml:space="preserve">
+    <value>隣接</value>
+  </data>
+  <data name="Option.Edge" xml:space="preserve">
+    <value>境界</value>
+  </data>
+  <data name="Option.Detect" xml:space="preserve">
+    <value>検出方法</value>
+  </data>
+  <data name="Option.AnySubject" xml:space="preserve">
+    <value>任意の被写体</value>
+  </data>
+  <data name="Option.Person" xml:space="preserve">
+    <value>人物</value>
+  </data>
+  <data name="Option.Backdrop" xml:space="preserve">
+    <value>単色背景</value>
+  </data>
+  <data name="Option.Linear" xml:space="preserve">
+    <value>線形</value>
+  </data>
+  <data name="Option.Radial" xml:space="preserve">
+    <value>円形</value>
+  </data>
+  <data name="Option.ToTransparent" xml:space="preserve">
+    <value>描画色から透明へ</value>
+  </data>
+  <data name="Option.CornerRadius" xml:space="preserve">
+    <value>角丸の半径</value>
+  </data>
+  <data name="Option.Ratio" xml:space="preserve">
+    <value>比率</value>
+  </data>
+  <data name="Option.Original" xml:space="preserve">
+    <value>元の比率</value>
+  </data>
+  <data name="Option.SelectAll" xml:space="preserve">
+    <value>すべて選択</value>
+  </data>
+  <data name="Option.Trim" xml:space="preserve">
+    <value>透明な余白をトリミング</value>
+  </data>
+  <data name="Option.Fit" xml:space="preserve">
+    <value>画面に合わせる</value>
+  </data>
+  <data name="Option.Bold" xml:space="preserve">
+    <value>太字</value>
+  </data>
+  <data name="Option.Italic" xml:space="preserve">
+    <value>斜体</value>
+  </data>
+  <data name="Option.TextColor" xml:space="preserve">
+    <value>文字色</value>
+  </data>
+  <data name="Option.Tracking" xml:space="preserve">
+    <value>字間</value>
+  </data>
+  <data name="Option.Leading" xml:space="preserve">
+    <value>行送り</value>
+  </data>
+  <data name="Option.Transform" xml:space="preserve">
+    <value>変形コントロール</value>
+  </data>
+  <data name="Option.NoLayer" xml:space="preserve">
+    <value>レイヤーが選択されていません</value>
+  </data>
+  <data name="Option.GroupMove" xml:space="preserve">
+    <value>フォルダー内の全レイヤーを移動</value>
+  </data>
+  <data name="Option.NoPixels" xml:space="preserve">
+    <value>このレイヤーにはピクセルがありません</value>
+  </data>
+  <data name="Option.DrawLine" xml:space="preserve">
+    <value>描画色で描画 · Shift で 45° 刻みにスナップ</value>
+  </data>
+  <data name="Option.FillShape" xml:space="preserve">
+    <value>描画色で塗りつぶす</value>
+  </data>
+  <data name="Option.CropArea" xml:space="preserve">
+    <value>キャンバスをドラッグして残す範囲を選択</value>
+  </data>
+  <data name="Option.MergedSample" xml:space="preserve">
+    <value>結合した画像をサンプル</value>
+  </data>
+  <data name="Option.EdgeTip" xml:space="preserve">
+    <value>正の値で検出した輪郭を内側へ縮め、負の値で外側へ広げます</value>
+  </data>
+  <data name="Option.DetectTip" xml:space="preserve">
+    <value>ローカルの被写体・人物モデル、または画像の端に接する単色背景を使用します。「被写体を選択」と「背景を削除」にも適用されます。</value>
+  </data>
+  <data name="Option.CropRatioTip" xml:space="preserve">
+    <value>ドラッグ中に切り抜き枠が保持する比率</value>
+  </data>
+  <data name="Option.TrackingTip" xml:space="preserve">
+    <value>字間：各文字の後に追加する間隔（ピクセル）</value>
+  </data>
+  <data name="Option.LeadingTip" xml:space="preserve">
+    <value>行送り：ベースライン間の距離（ピクセル）。0 は自動で、文字サイズの 120%</value>
+  </data>
+  <data name="Option.AutoSelectTip" xml:space="preserve">
+    <value>レイヤーのピクセルをクリックして選択します。オフの場合はどこからでも現在のレイヤーを移動でき、Ctrl クリックで選択できます。</value>
+  </data>
+  <data name="Option.AlignLeft" xml:space="preserve">
+    <value>左揃え</value>
+  </data>
+  <data name="Option.AlignCenter" xml:space="preserve">
+    <value>中央揃え</value>
+  </data>
+  <data name="Option.AlignRight" xml:space="preserve">
+    <value>右揃え</value>
+  </data>
 </root>

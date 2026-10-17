@@ -4,6 +4,10 @@ All notable changes to Composa are recorded here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+### Fixed
+
+- Translate every left-toolbar tool group, including marquees, lassos, Magic Wand and Object Selection, retouching modes and shapes, in Simplified Chinese and Japanese. Tooltips and the corresponding options-bar labels follow the selected language while internal tool names and shortcuts remain stable.
+
 ## [1.5.0-beta.1] - 2026-10-17
 
 ### Added

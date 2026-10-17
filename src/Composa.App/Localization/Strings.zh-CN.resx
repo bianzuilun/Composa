@@ -666,4 +666,229 @@
   <data name="Blend.GrainMerge" xml:space="preserve">
     <value>颗粒合并</value>
   </data>
+  <data name="Tool.RectangleMarquee" xml:space="preserve">
+    <value>矩形选框</value>
+  </data>
+  <data name="Tool.EllipseMarquee" xml:space="preserve">
+    <value>椭圆选框</value>
+  </data>
+  <data name="Tool.FreehandLasso" xml:space="preserve">
+    <value>自由套索</value>
+  </data>
+  <data name="Tool.PolygonalLasso" xml:space="preserve">
+    <value>多边形套索</value>
+  </data>
+  <data name="Tool.MagicWand" xml:space="preserve">
+    <value>魔棒</value>
+  </data>
+  <data name="Tool.ObjectSelection" xml:space="preserve">
+    <value>对象选择</value>
+  </data>
+  <data name="Tool.Liquify" xml:space="preserve">
+    <value>液化</value>
+  </data>
+  <data name="Tool.Blur" xml:space="preserve">
+    <value>模糊</value>
+  </data>
+  <data name="Tool.Smudge" xml:space="preserve">
+    <value>涂抹</value>
+  </data>
+  <data name="Tool.Dodge" xml:space="preserve">
+    <value>减淡</value>
+  </data>
+  <data name="Tool.Burn" xml:space="preserve">
+    <value>加深</value>
+  </data>
+  <data name="Tool.Rectangle" xml:space="preserve">
+    <value>矩形</value>
+  </data>
+  <data name="Tool.RoundedRectangle" xml:space="preserve">
+    <value>圆角矩形</value>
+  </data>
+  <data name="Tool.Ellipse" xml:space="preserve">
+    <value>椭圆</value>
+  </data>
+  <data name="Tool.Line" xml:space="preserve">
+    <value>直线</value>
+  </data>
+  <data name="Tool.Type" xml:space="preserve">
+    <value>文字</value>
+  </data>
+  <data name="Tool.SpotHealingShort" xml:space="preserve">
+    <value>污点修复</value>
+  </data>
+  <data name="Tool.GroupHint" xml:space="preserve">
+    <value>{0}{1} · 长按可选择：{2}</value>
+  </data>
+  <data name="Tool.ListSeparator" xml:space="preserve">
+    <value>、</value>
+  </data>
+  <data name="Tool.ListLastSeparator" xml:space="preserve">
+    <value>和</value>
+  </data>
+  <data name="ToolTip.Move" xml:space="preserve">
+    <value>移动 / 变换（V）</value>
+  </data>
+  <data name="ToolTip.Marquee" xml:space="preserve">
+    <value>选框（M）</value>
+  </data>
+  <data name="ToolTip.Lasso" xml:space="preserve">
+    <value>套索（L）</value>
+  </data>
+  <data name="ToolTip.Magic" xml:space="preserve">
+    <value>魔棒 / 对象选择（W）</value>
+  </data>
+  <data name="ToolTip.Crop" xml:space="preserve">
+    <value>裁剪（C）</value>
+  </data>
+  <data name="ToolTip.Brush" xml:space="preserve">
+    <value>画笔（B）· 橡皮擦（E）</value>
+  </data>
+  <data name="ToolTip.Heal" xml:space="preserve">
+    <value>污点修复画笔（J）</value>
+  </data>
+  <data name="ToolTip.Clone" xml:space="preserve">
+    <value>仿制图章（S）· Alt 单击设置采样源</value>
+  </data>
+  <data name="ToolTip.Smear" xml:space="preserve">
+    <value>涂抹工具组（R）</value>
+  </data>
+  <data name="ToolTip.Gradient" xml:space="preserve">
+    <value>渐变（G）</value>
+  </data>
+  <data name="ToolTip.Shape" xml:space="preserve">
+    <value>形状（U）</value>
+  </data>
+  <data name="ToolTip.Type" xml:space="preserve">
+    <value>文字（T）· 单击创建点文字，拖动创建段落框，单击文字可编辑</value>
+  </data>
+  <data name="ToolTip.Eyedropper" xml:space="preserve">
+    <value>吸管（I）</value>
+  </data>
+  <data name="ToolTip.Hand" xml:space="preserve">
+    <value>抓手（H）· 使用任意工具时按住空格</value>
+  </data>
+  <data name="ToolTip.Zoom" xml:space="preserve">
+    <value>缩放（Z）</value>
+  </data>
+  <data name="Option.Strength" xml:space="preserve">
+    <value>强度</value>
+  </data>
+  <data name="Option.Aligned" xml:space="preserve">
+    <value>对齐</value>
+  </data>
+  <data name="Option.SampleAll" xml:space="preserve">
+    <value>采样所有图层</value>
+  </data>
+  <data name="Option.Contiguous" xml:space="preserve">
+    <value>连续</value>
+  </data>
+  <data name="Option.Edge" xml:space="preserve">
+    <value>边缘</value>
+  </data>
+  <data name="Option.Detect" xml:space="preserve">
+    <value>检测方式</value>
+  </data>
+  <data name="Option.AnySubject" xml:space="preserve">
+    <value>任意主体</value>
+  </data>
+  <data name="Option.Person" xml:space="preserve">
+    <value>人物</value>
+  </data>
+  <data name="Option.Backdrop" xml:space="preserve">
+    <value>纯色背景</value>
+  </data>
+  <data name="Option.Linear" xml:space="preserve">
+    <value>线性</value>
+  </data>
+  <data name="Option.Radial" xml:space="preserve">
+    <value>径向</value>
+  </data>
+  <data name="Option.ToTransparent" xml:space="preserve">
+    <value>前景色到透明</value>
+  </data>
+  <data name="Option.CornerRadius" xml:space="preserve">
+    <value>圆角半径</value>
+  </data>
+  <data name="Option.Ratio" xml:space="preserve">
+    <value>比例</value>
+  </data>
+  <data name="Option.Original" xml:space="preserve">
+    <value>原始比例</value>
+  </data>
+  <data name="Option.SelectAll" xml:space="preserve">
+    <value>全选</value>
+  </data>
+  <data name="Option.Trim" xml:space="preserve">
+    <value>裁切透明边缘</value>
+  </data>
+  <data name="Option.Fit" xml:space="preserve">
+    <value>适合画布</value>
+  </data>
+  <data name="Option.Bold" xml:space="preserve">
+    <value>粗体</value>
+  </data>
+  <data name="Option.Italic" xml:space="preserve">
+    <value>斜体</value>
+  </data>
+  <data name="Option.TextColor" xml:space="preserve">
+    <value>文字颜色</value>
+  </data>
+  <data name="Option.Tracking" xml:space="preserve">
+    <value>字距</value>
+  </data>
+  <data name="Option.Leading" xml:space="preserve">
+    <value>行距</value>
+  </data>
+  <data name="Option.Transform" xml:space="preserve">
+    <value>变换控件</value>
+  </data>
+  <data name="Option.NoLayer" xml:space="preserve">
+    <value>未选择图层</value>
+  </data>
+  <data name="Option.GroupMove" xml:space="preserve">
+    <value>移动文件夹内所有图层</value>
+  </data>
+  <data name="Option.NoPixels" xml:space="preserve">
+    <value>此图层没有像素</value>
+  </data>
+  <data name="Option.DrawLine" xml:space="preserve">
+    <value>以前景色绘制 · Shift 吸附到 45°</value>
+  </data>
+  <data name="Option.FillShape" xml:space="preserve">
+    <value>以前景色填充</value>
+  </data>
+  <data name="Option.CropArea" xml:space="preserve">
+    <value>在画布上拖动以选择保留区域</value>
+  </data>
+  <data name="Option.MergedSample" xml:space="preserve">
+    <value>采样合并后的图像</value>
+  </data>
+  <data name="Option.EdgeTip" xml:space="preserve">
+    <value>正值使检测轮廓向内收缩，负值使轮廓向外扩展</value>
+  </data>
+  <data name="Option.DetectTip" xml:space="preserve">
+    <value>选择本机运行的主体或人物模型，或检测与图像边缘相连的纯色背景。此设置也用于“选择主体”和“移除背景”。</value>
+  </data>
+  <data name="Option.CropRatioTip" xml:space="preserve">
+    <value>拖动时裁剪框保持的比例</value>
+  </data>
+  <data name="Option.TrackingTip" xml:space="preserve">
+    <value>字距：每个字符后的额外间距（像素）</value>
+  </data>
+  <data name="Option.LeadingTip" xml:space="preserve">
+    <value>行距：基线之间的距离（像素）。0 为自动，即字号的 120%</value>
+  </data>
+  <data name="Option.AutoSelectTip" xml:space="preserve">
+    <value>单击图层像素以选择。关闭后可从任意位置拖动当前图层，Ctrl 单击仍可选择。</value>
+  </data>
+  <data name="Option.AlignLeft" xml:space="preserve">
+    <value>左对齐</value>
+  </data>
+  <data name="Option.AlignCenter" xml:space="preserve">
+    <value>居中对齐</value>
+  </data>
+  <data name="Option.AlignRight" xml:space="preserve">
+    <value>右对齐</value>
+  </data>
 </root>
