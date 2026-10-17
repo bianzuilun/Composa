@@ -109,7 +109,7 @@ public sealed class Document
     {
         foreach (var layer in AllLayers())
         {
-            if (layer.Pixels != null) into.Add(layer.Pixels);
+            if (layer.Pixels != null) { into.Add(layer.Pixels); Composa.Rendering.DeepPixels.Collect(layer.Pixels, into); }
             if (layer.Mask != null) into.Add(layer.Mask);
         }
         if (Selection != null) into.Add(Selection);

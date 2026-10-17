@@ -4,7 +4,7 @@ using SkiaSharp;
 
 namespace Composa.IO;
 
-public enum ExportFormat { Png, Jpeg, Webp, Tiff, Pdf }
+public enum ExportFormat { Png, Jpeg, Webp, Tiff, Pdf, Png16 }
 
 public static class ImageFiles
 {
@@ -30,19 +30,36 @@ public static class ImageFiles
 
     public static SKBitmap Load(Stream stream, string name = "image")
     {
+        if (!stream.CanSeek)
+        {
+            using var seekable = new MemoryStream(); stream.CopyTo(seekable); seekable.Position = 0;
+            return Load(seekable, name);
+        }
+        var start = stream.Position;
+        var wide = Png16.IsSixteenBit(stream);
         using var codec = SKCodec.Create(stream, out var status)
             ?? throw new InvalidDataException($"{name} could not be read ({status}). Supported formats are PNG, JPEG, WebP, BMP and GIF; HEIC, AVIF and TIFF open when ImageMagick is installed.");
         var info = codec.Info;
         if (!DocumentLimits.FitsSurface(info.Width, info.Height))
             throw new InvalidDataException($"{name} is larger than the supported {DocumentLimits.MaxSide:N0} pixels a side and {DocumentLimits.MaxSurfaceMegapixels} megapixels.");
-        var bitmap = new SKBitmap(Pixels.ColorInfo(info.Width, info.Height));
-        var result = codec.GetPixels(bitmap.Info, bitmap.GetPixels());
+        SKBitmap bitmap;
+        SKCodecResult result;
+        if (wide)
+        {
+            stream.Position = start; bitmap = Png16.Decode(stream, info.ColorSpace); result = SKCodecResult.Success;
+            if (info.ColorSpace is { IsSrgb: false })
+            {
+                var canonical = DeepPixels.Convert(bitmap); bitmap.Dispose(); bitmap = canonical;
+            }
+        }
+        else { bitmap = new SKBitmap(Pixels.ColorInfo(info.Width, info.Height)); result = codec.GetPixels(bitmap.Info, bitmap.GetPixels()); }
         if (result is not (SKCodecResult.Success or SKCodecResult.IncompleteInput))
         {
             bitmap.Dispose();
             throw new InvalidDataException($"{name} could not be decoded ({result}).");
         }
-        return Upright(bitmap, codec.EncodedOrigin);
+        bitmap = Upright(bitmap, codec.EncodedOrigin);
+        return wide ? DeepPixels.Preview(bitmap) : bitmap;
     }
 
     private static SKBitmap Upright(SKBitmap bitmap, SKEncodedOrigin origin)
@@ -50,9 +67,10 @@ public static class ImageFiles
         if (origin is SKEncodedOrigin.TopLeft or SKEncodedOrigin.Default) return bitmap;
         var swap = origin is SKEncodedOrigin.LeftTop or SKEncodedOrigin.RightTop or SKEncodedOrigin.RightBottom or SKEncodedOrigin.LeftBottom;
         int w = swap ? bitmap.Height : bitmap.Width, h = swap ? bitmap.Width : bitmap.Height;
-        var result = Pixels.NewColor(w, h);
+        var result = new SKBitmap(bitmap.Info.WithSize(w, h));
         using (var canvas = new SKCanvas(result))
         {
+            canvas.Clear(SKColors.Transparent);
             var matrix = origin switch
             {
                 SKEncodedOrigin.TopRight => new SKMatrix(-1, 0, w, 0, 1, 0, 0, 0, 1),
@@ -73,6 +91,7 @@ public static class ImageFiles
 
     public static byte[] Encode(SKBitmap bitmap, ExportFormat format, int quality = 90, SKColor? matte = null, double resolution = 72)
     {
+        if (format == ExportFormat.Png16) return Png16.Encode(bitmap, resolution);
         if (format == ExportFormat.Tiff) return RasterExport.Tiff(bitmap, resolution);
         if (format == ExportFormat.Pdf) return RasterExport.Pdf(bitmap, resolution);
         var source = bitmap;

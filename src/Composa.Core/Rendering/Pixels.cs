@@ -73,17 +73,17 @@ public static class Pixels
         if (source.RowBytes != copy.RowBytes)
         {
             for (var y = 0; y < height; y++) Buffer.MemoryCopy(from + y * (long)source.RowBytes, to + y * (long)copy.RowBytes, copy.RowBytes, Math.Min(source.RowBytes, copy.RowBytes));
-            return copy;
+            return DeepPixels.CopyLink(source, copy);
         }
         long stride = source.RowBytes;
-        if (stride * height < 4_000_000) { Buffer.MemoryCopy(from, to, stride * height, stride * height); return copy; }
+        if (stride * height < 4_000_000) { Buffer.MemoryCopy(from, to, stride * height, stride * height); return DeepPixels.CopyLink(source, copy); }
         Parallel.For(0, (int)((height + ChunkRows - 1) / ChunkRows), chunk =>
         {
             var offset = chunk * ChunkRows * stride;
             var bytes = Math.Min(ChunkRows, height - (long)chunk * ChunkRows) * stride;
             Buffer.MemoryCopy(from + offset, to + offset, bytes, bytes);
         });
-        return copy;
+        return DeepPixels.CopyLink(source, copy);
     }
 
     /// <summary>Copies one bitmap's pixels over another's of the same size and format, then drops what was cached for it.</summary>
