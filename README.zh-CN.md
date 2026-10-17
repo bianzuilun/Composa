@@ -57,9 +57,10 @@ Composa 主要在 Linux 上开发，支持 X11 和通过 XWayland 运行的 Wayl
 - 多项目标签页；裁剪比例预设、吸附、Shift 保持比例和 Alt 对称裁剪。
 - 画布大小、图像大小、裁切、旋转、标尺、参考线、网格及可配置的吸附。
 - PNG、JPEG、WebP、BMP、GIF；通过 ImageMagick 读取 HEIC、AVIF、TIFF、SVG 和相机 RAW。
-- 相机 RAW 先在开发对话框中调整曝光与白平衡，再将 16 位解码结果转换为 8 位图层。
+- 相机 RAW 在现像对话框中调整曝光、白平衡、降噪、高光恢复与手动径向镜头校正，保留 16 位数据，并可继续进入 Camera Raw。
+- 保留 16 位 PNG/TIFF/HEIF 源数据，读取 OpenEXR/Radiance HDR；在图层右键菜单切换 8/16 位。视图菜单提供 ICC 印刷软打样、色域警告及持久保存的 CMYK 配置。
 - 读取 Photoshop `.psd` / `.psb` 与 GIMP `.xcf`；导入前显示需要转换或忽略的内容。
-- 导出 PNG、JPEG（压缩与文件大小预览）、WebP；撤销历史按内存限制。
+- 导出 PNG、JPEG（压缩与文件大小预览）、WebP；“导出为”提供尺寸预览、TIFF、单页 PDF、16 位 PNG/TIFF、HDR EXR，以及嵌入印刷配置的 CMYK JPEG/TIFF/PDF。撤销历史按内存限制。
 - 工具分组支持长按或右键展开；工具与视图设置在下次启动时保留。
 - 每两分钟为未保存工作创建恢复副本，在异常退出后提供恢复。
 
@@ -79,14 +80,15 @@ AI 可以创建、打开、保存和导出文档，管理与变换图层，绘�
 
 ## 与 macOS 原版的区别
 
-- 项目使用 `.cmps`（JSON 清单及图层/蒙版 PNG 组成的 ZIP），无法打开原版 `.comp` 项目。
+- 项目使用 `.cmps`（包含 JSON、PNG 图层/蒙版与浮点 EXR 的 ZIP）；格式 7 保留源精度并兼容旧项目，无法打开原版 `.comp` 项目。
 - 主体检测在本机运行 U²-Net lite 或 MODNet；纯色背景算法仍可选择，也用作后备。
 - Windows 内置 ImageMagick；Linux 的扩展格式依赖系统安装。SVG 使用 librsvg，呈现可能与 macOS 不同。
 - 蒙版始终跟随图层，无法独立解除链接变换；图层跨标签页移动使用复制粘贴。
 - 色相/饱和度使用固定颜色范围；双击滑块输入数值，重置按钮在编辑时显示。
-- Photoshop 仅支持读取 8 位 RGB；部分文字、智能对象和路径转为像素，图层效果及不支持的调整会丢弃，导入前列出这些变化。
+- Photoshop 支持读取 8/16 位 RGB 与 CMYK，并使用内嵌 ICC 转换颜色；部分文字、智能对象和路径转为像素，图层效果及不支持的调整会丢弃，导入前列出这些变化。
 - RAW 白平衡与曝光基于解码后的画面，区别于原版的传感器数据处理。
-- Camera Raw 滤镜暂不提供几何校正、矢量示波器等原版功能，大图层预览可能较慢。
+- Camera Raw 提供直方图/矢量示波器、实测颜色表与区域阴影调整；符合条件的单图层颜色调整使用着色器预览，其余走异步 CPU。暂不提供 Upright 几何校正等功能；RAW 镜头校正为手动径向调整。
+- 原生 EXR 支持无压缩/ZIPS/ZIP 扫描线，其余布局需要 HDRI ImageMagick（Windows 已内置）。完整功能对照与平台差异见[英文兼容性说明](docs/compatibility/compositor-1.5.3-audit.md)。
 - 不会自动重新载入被外部程序修改的项目；更新也不会自行安装或替换运行中的文件。
 
 完整差异说明见[英文 README](README.md#differences-from-the-macos-app)。

@@ -7,6 +7,13 @@ namespace Composa.App.Tests;
 
 public class NativeColorWorkflowTests
 {
+    private static void SaveExport(string name, byte[] bytes)
+    {
+        // Keep real files for independent decoders and release verification, beside the UI evidence.
+        var folder = Path.Combine(AppContext.BaseDirectory, "../../../../../artifacts/exports");
+        Directory.CreateDirectory(folder); File.WriteAllBytes(Path.Combine(folder, name), bytes);
+    }
+
     [Fact]
     public void Cmyk_exports_are_four_channel_files_and_pdf_embeds_its_print_profile()
     {
@@ -19,6 +26,7 @@ public class NativeColorWorkflowTests
         foreach (var format in new[] { ExportFormat.Jpeg, ExportFormat.Tiff })
         {
             var bytes = proof.Export(picture, format, 95, 300);
+            SaveExport(format == ExportFormat.Jpeg ? "print-cmyk.jpg" : "print-cmyk.tiff", bytes);
             using var decoded = new Magick.MagickImage(bytes);
             Assert.Equal(Magick.ColorSpace.CMYK, decoded.ColorSpace); Assert.NotNull(decoded.GetColorProfile());
             Assert.Equal((24u, 16u), (decoded.Width, decoded.Height));
@@ -27,6 +35,7 @@ public class NativeColorWorkflowTests
             var paper = rgb.GetPixel(2, 2); Assert.True(paper.Red > 220 && paper.Green > 220 && paper.Blue > 220);
         }
         var pdf = proof.Export(picture, ExportFormat.Pdf, resolution: 300); var text = System.Text.Encoding.Latin1.GetString(pdf);
+        SaveExport("print-cmyk.pdf", pdf);
         Assert.StartsWith("%PDF-1.4", text); Assert.Contains("/ICCBased 5 0 R", text); Assert.Contains("/N 4", text);
         Assert.True(pdf.AsSpan().IndexOf(profile) >= 0);
         var unchanged = picture.GetPixel(3, 3);
@@ -45,6 +54,8 @@ public class NativeColorWorkflowTests
         try
         {
             ImageFiles.Save(preview, path, ExportFormat.Tiff16, resolution: 300);
+            SaveExport("fine-gradient-16.tiff", File.ReadAllBytes(path));
+            SaveExport("fine-gradient-16.png", Png16.Encode(DeepPixels.Source(preview)!));
             using var decoded = ImageFiles.Load(new MemoryStream(backend.Convert(path, ImageMagickOutput.Png)));
             var result = Assert.IsType<SKBitmap>(DeepPixels.Source(decoded));
             for (var x = 0; x < 32; x++) Assert.InRange(Math.Abs(DeepPixels.Read(result, x, 1).Red - (30000 + x) / 65535f), 0, 2 / 65535f);
@@ -63,6 +74,7 @@ public class NativeColorWorkflowTests
         try
         {
             ImageFiles.Save(preview, path, ExportFormat.Exr);
+            SaveExport("highlights.exr", File.ReadAllBytes(path));
             using var decoded = ImageFiles.Load(new MemoryStream(backend.Convert(path, ImageMagickOutput.Exr)));
             var source = Assert.IsType<SKBitmap>(DeepPixels.Source(decoded));
             Assert.InRange(DeepPixels.Read(source, 1, 1).Red, 2.99f, 3.01f);

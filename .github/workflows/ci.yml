@@ -61,6 +61,15 @@ jobs:
           path: artifacts/screenshots/
           if-no-files-found: ignore
 
+      - name: Upload exported color fixtures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exports-linux
+          retention-days: 7
+          path: artifacts/exports/
+          if-no-files-found: ignore
+
   # The same suite on Windows, headless UI tests included. Composa is developed on Linux, so this is
   # the only place a path separator, a line ending or a platform folder is tested the other way round.
   build-windows:
@@ -91,4 +100,13 @@ jobs:
           name: screenshots-windows
           retention-days: 7
           path: artifacts/screenshots/
+          if-no-files-found: ignore
+
+      - name: Upload exported color fixtures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exports-windows
+          retention-days: 7
+          path: artifacts/exports/
           if-no-files-found: ignore
