@@ -20,6 +20,7 @@
   <ItemGroup>
     <!-- Every build carries the bundled film looks, so every build carries the notices that record where they came from. -->
     <None Include="../../packaging/THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="../../packaging/Magick.NET.Core-LICENSE.txt" Link="Magick.NET.Core-LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup Condition="'$(BundleImageMagick)' == 'true'">
     <PackageReference Include="Magick.NET-Q16-HDRI-AnyCPU" Version="14.17.1" GeneratePathProperty="true" />

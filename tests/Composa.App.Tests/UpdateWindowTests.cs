@@ -21,7 +21,7 @@ public sealed class UpdateWindowTests : IDisposable
 {
     // Newer than anything this build can be, without comparing against the build's own version.
     private const string Tag = "v99.0.0";
-    private const string Base = "https://github.com/dvdstelt/Composa/releases/download/" + Tag + "/";
+    private const string Base = "https://github.com/bianzuilun/Composa/releases/download/" + Tag + "/";
 
     private readonly string folder = Path.Combine(Path.GetTempPath(), "composa-update-" + Guid.NewGuid().ToString("N"));
     private readonly byte[] package = RandomNumberGenerator.GetBytes(200_000);
@@ -43,7 +43,7 @@ public sealed class UpdateWindowTests : IDisposable
         public Task<ReleaseInfo?> Latest(CancellationToken cancel) => Task.FromResult<ReleaseInfo?>(release);
     }
 
-    private ReleaseInfo Release() => new(Tag, "https://github.com/dvdstelt/Composa/releases/tag/" + Tag, false,
+    private ReleaseInfo Release() => new(Tag, "https://github.com/bianzuilun/Composa/releases/tag/" + Tag, false,
         [.. Names.Select(n => new ReleaseAsset(n, Base + n, package.Length)), new ReleaseAsset("sha256sums.txt", Base + "sha256sums.txt", 1000)]);
 
     /// <summary>Every package has the same bytes here, which is all a checksum can tell apart.</summary>

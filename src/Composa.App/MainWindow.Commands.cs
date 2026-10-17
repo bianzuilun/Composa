@@ -89,7 +89,6 @@ public sealed partial class MainWindow
 
         undoItem = Item("Undo", () => session!.Undo(), Key.Z, ctrl, () => session!.CanUndo);
         redoItem = Item("Redo", () => session!.Redo(), Key.Z, ctrl | shift, () => session!.CanRedo);
-        commands.Add(new Shortcut("Redo (Ctrl+Y)", "Redo", "Menus", new KeyGesture(Key.Y, ctrl), () => session!.Redo(), () => HasDocument && session!.CanRedo, hidden: true));
         Top("_Edit", undoItem, redoItem, Line(),
             Item("Cut", () => _ = Cut(), Key.X, ctrl, () => session!.CanCopy),
             Item("Copy", () => _ = Copy(merged: false), Key.C, ctrl, () => session!.CanCopy),
@@ -203,13 +202,16 @@ public sealed partial class MainWindow
             viewToggles.Add((item, get));
             return item;
         }
+        var proofColors = Item("Proof Colors", () => _ = ToggleProof(), Key.Y, ctrl);
+        proofColors.ToggleType = MenuItemToggleType.CheckBox; viewToggles.Add((proofColors, v => v.ProofColors));
+        var gamutWarning = Item("Gamut Warning", () => _ = ToggleProof(gamut: true), Key.Y, ctrl | shift);
+        gamutWarning.ToggleType = MenuItemToggleType.CheckBox; viewToggles.Add((gamutWarning, v => v.GamutWarning));
         Top("_View",
             Item("Search Commands…", () => _ = SearchCommands(), Key.F, ctrl, needsDocument: false),
             Item("Toggle Fullscreen", ToggleCanvasOnly, Key.F, needsDocument: false),
             Line(),
             ViewToggle("Navigator (300% and above)", v => v.ShowNavigator, v => v with { ShowNavigator = !v.ShowNavigator }),
-            Item("Proof Colors", () => _ = ToggleProof(), Key.Y, ctrl),
-            Item("Gamut Warning", () => _ = ToggleProof(gamut: true), Key.Y, ctrl | shift),
+            proofColors, gamutWarning,
             Item("CMYK Profile…", () => _ = ChooseCmykProfile(), needsDocument: false),
             Item("Fit Canvas", canvas.Fit, Key.D0, ctrl),
             Item("Actual Pixels", () => canvas.ZoomTo(1), Key.D1, ctrl),
@@ -356,6 +358,13 @@ public sealed partial class MainWindow
             }
             shortcut.Gesture = gesture;
             if (shortcut.Item != null) shortcut.Item.InputGesture = gesture;
+        }
+        // Existing user bindings take priority when an update introduces a new command's default gesture.
+        foreach (var group in AllShortcuts.Where(s => s.Gesture != null).GroupBy(s => s.Gesture!.ToString()))
+        {
+            if (!group.Any(s => settings.Shortcuts.ContainsKey(s.Id))) continue;
+            foreach (var shortcut in group.Where(s => !settings.Shortcuts.ContainsKey(s.Id)))
+            { shortcut.Gesture = null; if (shortcut.Item != null) shortcut.Item.InputGesture = null; }
         }
     }
 
@@ -1052,14 +1061,23 @@ public sealed partial class MainWindow
         {
             var original = target.PreviewOriginal!;
             var seed = (uint)Random.Shared.Next();
-            var grade = await CameraRawDialog.Show(this, lastCameraRaw, original,
-                settings => Busy(() => target.PreviewFilter(new FilterSettings { Kind = kind, CameraRaw = settings, Seed = seed })),
-                () => target.ActiveLayer is { } layer ? (target.IsEditingMask ? layer.Mask : layer.Pixels) : null,
-                () => PickLookSavePath(target.Title), target.Title);
+            CameraRawSettings? grade;
+            try
+            {
+                grade = await CameraRawDialog.Show(this, lastCameraRaw, original, _ => { },
+                    () => canvas.CameraRawScopePreview ?? (target.ActiveLayer is { } layer ? (target.IsEditingMask ? layer.Mask : layer.Pixels) : null),
+                    () => PickLookSavePath(target.Title), target.Title, async settings =>
+                    {
+                        if (canvas.TryCameraRawPreview(target, original, settings)) return;
+                        canvas.ClearCameraRawPreview();
+                        await target.PreviewFilterAsync(new FilterSettings { Kind = kind, CameraRaw = settings, Seed = seed });
+                    });
+            }
+            finally { canvas.ClearCameraRawPreview(); }
             if (grade == null) { target.CancelPreview(); return; }
             lastCameraRaw = grade;
             if (grade.IsIdentity) { target.CancelPreview(); return; }
-            target.PreviewFilter(new FilterSettings { Kind = kind, CameraRaw = grade, Seed = seed });
+            await target.PreviewFilterAsync(new FilterSettings { Kind = kind, CameraRaw = grade, Seed = seed });
             target.CommitPreview();
             lastAppliedFilter = new FilterSettings { Kind = kind, CameraRaw = grade, Seed = seed };
             return;

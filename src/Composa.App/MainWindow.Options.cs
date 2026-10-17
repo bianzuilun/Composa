@@ -272,6 +272,12 @@ public sealed partial class MainWindow
         var w = Field("W", t => t.Width, (t, v) => t with { Width = Math.Max(1, v), Height = Math.Max(1, t.Height * v / Math.Max(1e-6, t.Width)) }, 1, 100000, "0.#");
         var h = Field("H", t => t.Height, (t, v) => t with { Height = Math.Max(1, v) }, 1, 100000, "0.#");
         var angle = Field("∠", t => t.Rotation, (t, v) => t with { Rotation = v }, -360, 360, "0.##");
+        var wp = Field("W %", t => t.Width / layer.Pixels.Width * 100, (t, v) =>
+        {
+            var width = Math.Max(1, layer.Pixels.Width * v / 100);
+            return t with { Width = width, Height = Math.Max(1, t.Height * width / Math.Max(1e-6, t.Width)) };
+        }, .01, 100000, "0.#");
+        var hp = Field("H %", t => t.Height / layer.Pixels.Height * 100, (t, v) => t with { Height = Math.Max(1, layer.Pixels.Height * v / 100) }, .01, 100000, "0.#");
         refreshOptions = () =>
         {
             if (s.Document.Find(layer.Id) is not { } live) return;
@@ -279,6 +285,8 @@ public sealed partial class MainWindow
             x.Value = (decimal)live.Transform.X; y.Value = (decimal)live.Transform.Y;
             w.Value = (decimal)live.Transform.Width; h.Value = (decimal)live.Transform.Height;
             angle.Value = (decimal)live.Transform.Rotation;
+            wp.Value = (decimal)(live.Transform.Width / Math.Max(1, live.Pixels!.Width) * 100);
+            hp.Value = (decimal)(live.Transform.Height / Math.Max(1, live.Pixels.Height) * 100);
             updating = false;
         };
     }

@@ -32,6 +32,8 @@ public sealed class UpdateNotice : Border
     // The strip is the accent color, so the bar that fills it is white: an accent bar would vanish into it.
     private readonly Border progressFill = new() { Background = Brushes.White, HorizontalAlignment = HorizontalAlignment.Left, Width = 0 };
     private double fraction;
+    private readonly SelectableTextBlock releaseBody = new() { TextWrapping = TextWrapping.Wrap, Foreground = Brushes.White };
+    private readonly Expander releaseDetails = new() { IsVisible = false, HorizontalAlignment = HorizontalAlignment.Stretch };
 
     public UpdateNotice()
     {
@@ -65,12 +67,14 @@ public sealed class UpdateNotice : Border
         commandRow.Children.Add(copy);
 
         progress.Child = progressFill;
+        releaseDetails.Header = L10n.Text("What's New");
+        releaseDetails.Content = new ScrollViewer { Content = releaseBody, MaxHeight = 180, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
         progress.SizeChanged += (_, _) => LayOutProgress();
         Child = new Panel
         {
             Children =
             {
-                new StackPanel { Margin = new Thickness(12, 6), Children = { row, commandRow } },
+                new StackPanel { Margin = new Thickness(12, 6), Children = { row, commandRow, releaseDetails } },
                 progress,
             }
         };
@@ -94,9 +98,10 @@ public sealed class UpdateNotice : Border
     public event Action? Install;
 
     /// <summary>A newer version exists. <paramref name="canDownload"/> is whether a file for this install can be fetched.</summary>
-    public void Show(ReleaseVersion version, bool canDownload)
+    public void Show(ReleaseVersion version, bool canDownload, string body = "")
     {
         Enter(Phase.Available, $"Composa {version} is available. You are running {AppInfo.Version}.");
+        releaseBody.Text = body; releaseDetails.IsVisible = !string.IsNullOrWhiteSpace(body); releaseDetails.IsExpanded = false;
         if (canDownload) AddButton("Download", () => Download?.Invoke(), "Download it into your Downloads folder, checked against the release's checksums");
         AddButton("Release notes", () => OpenReleasePage?.Invoke());
         AddButton("Skip this version", () => { Skip?.Invoke(); Hide(); });
@@ -170,6 +175,7 @@ public sealed class UpdateNotice : Border
         dismiss.IsVisible = true;
         commandRow.IsVisible = false;
         progress.IsVisible = false;
+        releaseDetails.IsVisible = false;
         fraction = 0;
         IsVisible = true;
     }

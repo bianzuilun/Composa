@@ -32,19 +32,52 @@ public static class CameraRawDialog
     };
 
     public static async Task<CameraRawSettings?> Show(Window owner, CameraRawSettings initial, SKBitmap original, Action<CameraRawSettings> changed, Func<SKBitmap?> graded,
-        Func<Task<string?>>? saveLookPath = null, string title = "")
+        Func<Task<string?>>? saveLookPath = null, string title = "", Func<CameraRawSettings, Task>? changedAsync = null)
     {
         var current = initial;
         var refreshing = false;
         var hidden = new HashSet<CameraRawGroup>();
         CameraRawSettings Rendered() => hidden.Aggregate(current, (settings, group) => settings.Without(group));
         var histogram = new HistogramView { Width = 300, Height = 90 };
+        Image? renderedThumbnail = null;
+        var vectorscope = new Image { Width = 300, Height = 150, Stretch = Stretch.Uniform, IsVisible = false };
+        void RefreshScopes(SKBitmap pixels)
+        {
+            if (vectorscope.IsVisible)
+            {
+                using var plot = Vectorscope.Of(pixels).Plot(); vectorscope.Source = Ui.ToAvaloniaBitmap(plot, Vectorscope.Size);
+            }
+            else { histogram.Histogram = Histogram.Of(pixels); histogram.InvalidateVisual(); }
+        }
+        var scopeChoice = Ui.Combo(new[] { "Histogram", "Vectorscope" }, "Histogram", L10n.Text, value =>
+        {
+            histogram.IsVisible = value == "Histogram"; vectorscope.IsVisible = !histogram.IsVisible;
+            if (graded() is { } pixels) RefreshScopes(pixels);
+        }, 140);
         var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(60) };
-        timer.Tick += (_, _) =>
+        var rendering = false; var pendingRender = false; var closed = false;
+        TaskCompletionSource? renderFinished = null;
+        timer.Tick += async (_, _) =>
         {
             timer.Stop();
-            changed(Rendered());
-            if (graded() is { } pixels) { histogram.Histogram = Histogram.Of(pixels); histogram.InvalidateVisual(); }
+            if (rendering) { pendingRender = true; return; }
+            rendering = true;
+            var completion = renderFinished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            try
+            {
+                do
+                {
+                    pendingRender = false;
+                    if (changedAsync != null) await changedAsync(Rendered()); else changed(Rendered());
+                    if (closed) return;
+                    if (graded() is { } pixels)
+                    {
+                        RefreshScopes(pixels);
+                        if (renderedThumbnail != null) renderedThumbnail.Source = Ui.ToAvaloniaBitmap(pixels, 300);
+                    }
+                } while (pendingRender);
+            }
+            finally { rendering = false; completion.TrySetResult(); }
         };
         var eyes = new Dictionary<CameraRawGroup, Button>();
         Button? saveLook = null;
@@ -61,6 +94,7 @@ public static class CameraRawDialog
         // The thumbnail: click a pixel that should be neutral and Temperature and Tint follow.
         var thumb = Ui.ToAvaloniaBitmap(original, 300);
         var preview = new Image { Source = thumb, Width = thumb.PixelSize.Width, Height = thumb.PixelSize.Height, Stretch = Stretch.Uniform, Cursor = new Cursor(StandardCursorType.Cross) };
+        renderedThumbnail = preview;
         ToolTip.SetTip(preview, "Click a pixel that should be neutral to set the white balance from it");
         var readout = Ui.Label("R —   G —   B —", Palette.Secondary);
         readout.FontSize = 11;
@@ -344,7 +378,7 @@ public static class CameraRawDialog
         refreshFields.Add(() => processSummary.Text = CameraRawCalibration.ProcessSummary(current.Calibration.Process));
 
         var scroll = new ScrollViewer { Content = groups, MaxHeight = 520, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Padding = new Thickness(0, 0, 8, 0) };
-        var head = Ui.Column(6, histogram, Ui.Row(0, preview), readout);
+        var head = Ui.Column(6, scopeChoice, histogram, vectorscope, Ui.Row(0, preview), readout);
         histogram.HorizontalAlignment = preview.HorizontalAlignment = HorizontalAlignment.Left;
         // Save Look: the grade's color stages as a .cube any editor can load. What reads neighbours or the position
         // (Effects, Detail, Optics) cannot go into a table and is named in the file and in the note beside the button.
@@ -373,10 +407,13 @@ public static class CameraRawDialog
         footer.IsVisible = saveLookPath != null;
         var body = Ui.Column(10, head, Ui.Separator(false), scroll, footer);
         body.Width = 360;
-        var dialog = new DialogWindow("Camera Raw Filter", body);
+        var viewport = new ScrollViewer { Content = body, MaxHeight = Math.Clamp(owner.Bounds.Height - 140, 320, 980), HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+        var dialog = new DialogWindow("Camera Raw Filter", viewport);
         dialog.Opened += (_, _) => { timer.Stop(); timer.Start(); };
         var accepted = await dialog.Ask(owner);
+        closed = true;
         timer.Stop();
+        if (renderFinished != null) await renderFinished.Task;
         return accepted ? Rendered() : null;
     }
 }

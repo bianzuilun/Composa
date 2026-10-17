@@ -23,7 +23,9 @@ public sealed partial class CanvasView
         if (navigatorStale || navigatorPixels == null || navigatorPixels.Width != width || navigatorPixels.Height != height)
         {
             navigatorPixels?.Dispose(); navigatorPixels = Pixels.NewColor(width, height);
-            session.RenderView(navigatorPixels, new SKRectI(0, 0, width, height), new RenderView((float)scale, SKPoint.Empty));
+            if (cameraRawPreview is { } cameraRaw)
+            { using var drawing = new SKCanvas(navigatorPixels); cameraRaw.Draw(drawing, SKMatrix.CreateScale((float)scale, (float)scale)); }
+            else session.RenderView(navigatorPixels, new SKRectI(0, 0, width, height), new RenderView((float)scale, SKPoint.Empty));
             if (session.SoloMaskLayerId == null && (session.View.ProofColors || session.View.GamutWarning))
                 ColorProof?.Apply(navigatorPixels, new SKRectI(0, 0, width, height), session.View.ProofColors, session.View.GamutWarning);
             navigatorStale = false;

@@ -181,6 +181,13 @@ public sealed partial class MainWindow : Window
 
     public void AddSession(EditorSession added)
     {
+        if (added.FilePath == null && added.SuggestedName == null)
+        {
+            var number = 1;
+            string Name() => number == 1 ? "Untitled" : $"Untitled {number}";
+            while (sessions.Any(open => open.Title == Name())) number++;
+            added.SuggestedName = Name();
+        }
         // The first document starts from the remembered view options; later ones inherit them from the current tab.
         if (lastToolSource == null) { added.View = settings.View; added.Detect = settings.Detect; }
         sessions.Add(added);

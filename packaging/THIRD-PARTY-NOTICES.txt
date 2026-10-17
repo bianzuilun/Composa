@@ -55,6 +55,7 @@ The Apache License 2.0 is at https://www.apache.org/licenses/LICENSE-2.0 and the
 
 Compositor algorithms
 
+TextureInpaint.cs adapts multi-scale texture matching from Rendering/PatchPixels.c at the same pinned commit below. Its seam adaptation uses Composa's existing push-pull solver.
 ShapePaths.cs and Scanlines.cs are adapted from robbietilton/Compositor v1.5.3, commit 554104cf1c2de844c1acbd60b4f7b422bd6ce7bd, Document/ShapeTool.swift and Rendering/DitherPixels.c.
 CameraRawTables.cs, CameraRawShadows.cs, CameraRawMeasuredColor.cs and the monotone parametric curve are adapted from Document/CameraRawTables.swift, Document/CameraRawShadows.swift, Document/CameraRawColor.swift and Rendering/AdjustPixels.c at that same commit.
 CameraRawData contains the original CameraRawShadows.bin and a lossless gzip repack of CameraRawTables.bin. scripts/import-compositor-tables.py records their original SHA-256 hashes and reproduces the repack without a runtime LZMA dependency.

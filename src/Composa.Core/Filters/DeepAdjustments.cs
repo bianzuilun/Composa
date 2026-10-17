@@ -139,6 +139,7 @@ internal static class DeepAdjustments
         var length = Math.Max(1, (int)Math.Round(distance));
         var radians = angle * Math.PI / 180; var dx = Math.Cos(radians); var dy = -Math.Sin(radians);
         int padX = clamp ? 0 : (int)Math.Ceiling(Math.Abs(dx) * length / 2) + 1, padY = clamp ? 0 : (int)Math.Ceiling(Math.Abs(dy) * length / 2) + 1;
+        if (!DocumentLimits.FitsSurface(source.Width + padX * 2, source.Height + padY * 2)) throw new InvalidOperationException("The filter exceeds the supported surface size.");
         var result = DeepPixels.New(source.Width + padX * 2, source.Height + padY * 2, hdr: true);
         var samples = Math.Min(length, 96);
         Parallel.For(0, result.Height, y =>

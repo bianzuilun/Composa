@@ -1080,4 +1080,25 @@
   <data name="Port.ShortcutDelete" xml:space="preserve">
     <value>ショートカットをクリックして新しいキーの組み合わせを押します。Escapeで記録を中止し、BackspaceまたはDeleteで割り当てを解除します。ブラシのサイズと硬さ（[ ] と { }）、不透明度の数字キー、スペースによる移動、修飾キーとマウスの操作は固定です。</value>
   </data>
+  <data name="Port.RawDimensions" xml:space="preserve">
+    <value>{0} × {1} ピクセル、各チャンネル16ビットで現像</value>
+  </data>
+  <data name="Port.RawTitle" xml:space="preserve">
+    <value>{0} を現像</value>
+  </data>
+  <data name="Port.RawBalanceNote" xml:space="preserve">
+    <value>カメラのホワイトバランスを基準に、色温度と緑／マゼンタの色かぶりを調整します。</value>
+  </data>
+  <data name="Port.WhatsNew" xml:space="preserve">
+    <value>更新内容</value>
+  </data>
+  <data name="Port.Histogram" xml:space="preserve">
+    <value>ヒストグラム</value>
+  </data>
+  <data name="Port.Vectorscope" xml:space="preserve">
+    <value>ベクトルスコープ</value>
+  </data>
+  <data name="Port.SixteenBit" xml:space="preserve">
+    <value>16ビット</value>
+  </data>
 </root>

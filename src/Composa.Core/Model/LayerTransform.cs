@@ -70,6 +70,20 @@ public sealed record LayerTransform
     }
 
     public LayerTransform Translated(double dx, double dy) => this with { X = X + dx, Y = Y + dy };
+
+    /// <summary>Keep a general affine/perspective placement as four corners without baking its pixels or live style.</summary>
+    public static LayerTransform FromQuad(SKPoint[] corners)
+    {
+        if (corners.Length != 4) throw new ArgumentException("Four corners are required.");
+        var left = corners.Min(p => p.X); var top = corners.Min(p => p.Y);
+        var width = Math.Max(1, corners.Max(p => p.X) - left); var height = Math.Max(1, corners.Max(p => p.Y) - top);
+        return new LayerTransform
+        {
+            X = left, Y = top, Width = width, Height = height,
+            Distort = [corners[0].X - left, corners[0].Y - top, corners[1].X - left - width, corners[1].Y - top,
+                corners[2].X - left - width, corners[2].Y - top - height, corners[3].X - left, corners[3].Y - top - height]
+        };
+    }
 }
 
 public static class Geometry

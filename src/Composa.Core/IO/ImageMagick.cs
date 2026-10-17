@@ -78,6 +78,13 @@ public sealed class ImageMagickTool : IImageMagick, IColorConverter
 
     public byte[] Convert(string path, ImageMagickOutput output)
     {
+        if (output == ImageMagickOutput.Exr)
+        {
+            using var probe = Start("-version");
+            var version = probe?.StandardOutput.ReadToEnd() ?? "";
+            if (probe == null || !probe.WaitForExit(3000) || !version.Contains("HDRI", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("This OpenEXR layout requires an HDRI-enabled ImageMagick decoder. Its HDR values cannot be retained by the installed integer-only converter.");
+        }
         string[] arguments = output == ImageMagickOutput.Png
             ? [path + "[0]", "-auto-orient", "png:-"]
             : output == ImageMagickOutput.Exr
@@ -170,6 +177,7 @@ public sealed class ImageMagickTool : IImageMagick, IColorConverter
 
         if (!OperatingSystem.IsWindows())
         {
+            yield return "convert-im6.q16hdri";
             yield return "convert"; // ImageMagick 6, still shipped by several distributions.
             yield break;
         }

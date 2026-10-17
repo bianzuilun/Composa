@@ -18,6 +18,7 @@ public static unsafe class Inpaint
     /// <summary>Returns a copy of <paramref name="source"/> (RGBA premultiplied) with the masked area replaced.</summary>
     public static SKBitmap Fill(SKBitmap source, SKBitmap mask)
     {
+        if (TextureInpaint.TryFill(source, mask, out var textured)) return textured;
         var result = Pixels.Clone(source);
         var hole = SelectionMask.Bounds(mask, 1);
         hole = Geometry.Intersect(hole, new SKRectI(0, 0, source.Width, source.Height));

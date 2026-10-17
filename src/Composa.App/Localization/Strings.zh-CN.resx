@@ -1080,4 +1080,25 @@
   <data name="Port.ShortcutDelete" xml:space="preserve">
     <value>单击快捷键后按下新的按键组合；Escape 取消录制，Backspace 或 Delete 清除绑定。画笔大小和硬度（[ ] 和 { }）、不透明度数字键、空格平移及修饰键与鼠标手势为固定操作。</value>
   </data>
+  <data name="Port.RawDimensions" xml:space="preserve">
+    <value>{0} × {1} 像素，以每通道 16 位显影</value>
+  </data>
+  <data name="Port.RawTitle" xml:space="preserve">
+    <value>显影 {0}</value>
+  </data>
+  <data name="Port.RawBalanceNote" xml:space="preserve">
+    <value>以相机白平衡为起点，调整冷暖和绿／洋红色偏。</value>
+  </data>
+  <data name="Port.WhatsNew" xml:space="preserve">
+    <value>更新内容</value>
+  </data>
+  <data name="Port.Histogram" xml:space="preserve">
+    <value>直方图</value>
+  </data>
+  <data name="Port.Vectorscope" xml:space="preserve">
+    <value>矢量示波器</value>
+  </data>
+  <data name="Port.SixteenBit" xml:space="preserve">
+    <value>16 位</value>
+  </data>
 </root>

@@ -39,6 +39,10 @@ public sealed unsafe class BrushStroke : IDisposable
     private readonly BrushSettings settings;
     private readonly BrushMode mode;
     private readonly float blurRadius;
+    // Sparse displacement tiles: liquify always samples the untouched stroke image, once, instead of repeatedly
+    // resampling the previous dab's bytes and progressively softening texture.
+    private readonly Dictionary<int, float[]> displacement = [];
+    private const int WarpTile = 64;
     private readonly bool isMask;
     private readonly byte[] coverage;
     private readonly int width, height, bytesPerPixel;
@@ -260,7 +264,7 @@ public sealed unsafe class BrushStroke : IDisposable
         var size = (int)MathF.Ceiling(fullRadius * 2 + 3);
         var dst = (byte*)Working.GetPixels();
         var stride = Working.RowBytes;
-        int originX = (int)MathF.Floor(center.X - radius - 1), originY = (int)MathF.Floor(center.Y - radius - 1);
+        int originX = (int)MathF.Floor(center.X - fullRadius - 1), originY = (int)MathF.Floor(center.Y - fullRadius - 1);
         if (carry == null)
         {
             carrySize = size;
@@ -309,10 +313,13 @@ public sealed unsafe class BrushStroke : IDisposable
         int aw = area.Width, ah = area.Height;
         var dst = (byte*)Working.GetPixels();
         var stride = Working.RowBytes;
-        var snapshot = new byte[aw * ah * bytesPerPixel];
+        var snapshot = new float[checked(aw * ah * 2)];
         for (var y = 0; y < ah; y++)
-            fixed (byte* row = &snapshot[y * aw * bytesPerPixel])
-                Buffer.MemoryCopy(dst + (long)(y + area.Top) * stride + (long)area.Left * bytesPerPixel, row, aw * bytesPerPixel, aw * bytesPerPixel);
+        for (var x = 0; x < aw; x++)
+        {
+            var mapped = DisplacementAt(area.Left + x, area.Top + y);
+            snapshot[(y * aw + x) * 2] = mapped.X; snapshot[(y * aw + x) * 2 + 1] = mapped.Y;
+        }
 
         for (var y = rect.Top; y < rect.Bottom; y++)
         for (var x = rect.Left; x < rect.Right; x++)
@@ -324,15 +331,43 @@ public sealed unsafe class BrushStroke : IDisposable
             int x0 = (int)MathF.Floor(sx), y0 = (int)MathF.Floor(sy);
             float tx = sx - x0, ty = sy - y0;
             int xa = Math.Clamp(x0, 0, aw - 1), xb = Math.Clamp(x0 + 1, 0, aw - 1), ya = Math.Clamp(y0, 0, ah - 1), yb = Math.Clamp(y0 + 1, 0, ah - 1);
+            float Mapping(int c) => (snapshot[(ya * aw + xa) * 2 + c] * (1 - tx) + snapshot[(ya * aw + xb) * 2 + c] * tx) * (1 - ty)
+                + (snapshot[(yb * aw + xa) * 2 + c] * (1 - tx) + snapshot[(yb * aw + xb) * 2 + c] * tx) * ty;
+            var mappedX = Math.Clamp(Mapping(0), 0, width - 1); var mappedY = Math.Clamp(Mapping(1), 0, height - 1);
+            SetDisplacement(x, y, mappedX, mappedY);
+            int ix = (int)MathF.Floor(mappedX), iy = (int)MathF.Floor(mappedY), jx = Math.Min(width - 1, ix + 1), jy = Math.Min(height - 1, iy + 1);
+            float fx = mappedX - ix, fy = mappedY - iy;
+            var source = (byte*)original.GetPixels();
             var index = (long)y * stride + x * bytesPerPixel;
             for (var i = 0; i < bytesPerPixel; i++)
             {
-                var top = snapshot[(ya * aw + xa) * bytesPerPixel + i] * (1 - tx) + snapshot[(ya * aw + xb) * bytesPerPixel + i] * tx;
-                var bottom = snapshot[(yb * aw + xa) * bytesPerPixel + i] * (1 - tx) + snapshot[(yb * aw + xb) * bytesPerPixel + i] * tx;
-                dst[index + i] = (byte)Math.Clamp(top * (1 - ty) + bottom * ty + 0.5f, 0, 255);
+                var top = source[(long)iy * original.RowBytes + ix * bytesPerPixel + i] * (1 - fx) + source[(long)iy * original.RowBytes + jx * bytesPerPixel + i] * fx;
+                var bottom = source[(long)jy * original.RowBytes + ix * bytesPerPixel + i] * (1 - fx) + source[(long)jy * original.RowBytes + jx * bytesPerPixel + i] * fx;
+                dst[index + i] = (byte)Math.Clamp(top * (1 - fy) + bottom * fy + 0.5f, 0, 255);
             }
         }
         return rect;
+    }
+
+    private SKPoint DisplacementAt(int x, int y)
+    {
+        var key = y / WarpTile * ((width + WarpTile - 1) / WarpTile) + x / WarpTile;
+        if (!displacement.TryGetValue(key, out var tile)) return new SKPoint(x, y);
+        var at = (y % WarpTile * WarpTile + x % WarpTile) * 2;
+        return new SKPoint(tile[at], tile[at + 1]);
+    }
+
+    private void SetDisplacement(int x, int y, float sourceX, float sourceY)
+    {
+        var key = y / WarpTile * ((width + WarpTile - 1) / WarpTile) + x / WarpTile;
+        if (!displacement.TryGetValue(key, out var tile))
+        {
+            displacement[key] = tile = new float[WarpTile * WarpTile * 2];
+            int left = x / WarpTile * WarpTile, top = y / WarpTile * WarpTile;
+            for (var j = 0; j < WarpTile; j++) for (var i = 0; i < WarpTile; i++)
+            { tile[(j * WarpTile + i) * 2] = left + i; tile[(j * WarpTile + i) * 2 + 1] = top + j; }
+        }
+        var at = (y % WarpTile * WarpTile + x % WarpTile) * 2; tile[at] = sourceX; tile[at + 1] = sourceY;
     }
 
     /// <summary>The painted coverage as an Alpha8 mask, for tools that finish their work after the drag (healing).</summary>

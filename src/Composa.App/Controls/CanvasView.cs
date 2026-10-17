@@ -52,6 +52,11 @@ public sealed partial class CanvasView : Control
     {
         Focusable = true;
         ClipToBounds = true;
+        ContextRequested += (_, e) =>
+        {
+            if (!HasPendingGradient && !HasCrop && session?.Transform == null) return;
+            OpenPendingEditMenu(); e.Handled = true;
+        };
         antsTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(120), DispatcherPriority.Background, (_, _) =>
         {
             if (session?.Selection == null && polygon.Count == 0 && session?.TextEdit == null) return;
@@ -108,6 +113,7 @@ public sealed partial class CanvasView : Control
                 session.LayersChanged -= OnLayersChanged;
             }
             session = value;
+            cameraRawPreview = null;
             if (session != null)
             {
                 session.CanvasChanged += OnCanvasChanged;
@@ -291,7 +297,8 @@ public sealed partial class CanvasView : Control
         var units = (float)UnitsPerPixel;
         var view = SKMatrix.CreateScale(units, units).PostConcat(SKMatrix.CreateTranslation((float)origin.X, (float)origin.Y));
         var documentRect = new SKRect(0, 0, session.Document.Width, session.Document.Height);
-        var (cache, cacheSource, cacheTarget) = UpdateViewCache(view, size);
+        var cameraRaw = cameraRawPreview;
+        var (cache, cacheSource, cacheTarget) = cameraRaw == null ? UpdateViewCache(view, size) : ((SKBitmap?)null, SKRect.Empty, SKRect.Empty);
         var navigatorImage = CaptureNavigator(out var navigatorDraw);
         var overlay = CaptureOverlay(view);
         var filterOverlay = FilterOverlay?.Invoke(view);
@@ -311,7 +318,11 @@ public sealed partial class CanvasView : Control
                 canvas.DrawRect(screenRect, shadow);
             DrawCheckerboard(canvas, screenRect);
 
-            if (cache != null)
+            if (cameraRaw != null)
+            {
+                canvas.Save(); canvas.ClipRect(screenRect); cameraRaw.Draw(canvas, view); canvas.Restore();
+            }
+            else if (cache != null)
             {
                 canvas.Save();
                 canvas.ClipRect(screenRect);

@@ -57,7 +57,12 @@ public sealed partial class EditorSession
         if (layer.Text == null || layer.Name == layer.Text.LayerName()) layer.Name = style.LayerName();
         layer.Text = style;
         layer.Pixels = pixels;
-        layer.Transform = t with { Width = pixels.Width * scaleX, Height = pixels.Height * scaleY, Distort = null };
+        if (t.Distort != null)
+        {
+            var map = t.Matrix(old.Width, old.Height);
+            layer.Transform = LayerTransform.FromQuad([map.MapPoint(0, 0), map.MapPoint(pixels.Width, 0), map.MapPoint(pixels.Width, pixels.Height), map.MapPoint(0, pixels.Height)]);
+        }
+        else layer.Transform = t with { Width = pixels.Width * scaleX, Height = pixels.Height * scaleY };
         var anchorAfter = layer.Matrix.MapPoint(unit * pixels.Width, 0);
         var moved = layer.Transform with { X = layer.Transform.X + anchorBefore.X - anchorAfter.X, Y = layer.Transform.Y + anchorBefore.Y - anchorAfter.Y };
         // Freshly drawn glyphs are only sharp when they sit on the pixel grid at their own size.

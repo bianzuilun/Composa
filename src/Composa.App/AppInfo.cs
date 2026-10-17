@@ -12,7 +12,7 @@ public static class AppInfo
     public const string Name = "Composa";
 
     /// <summary>The release URL a user is sent to when a newer version exists.</summary>
-    public const string ReleasesUrl = "https://github.com/dvdstelt/Composa/releases";
+    public const string ReleasesUrl = "https://github.com/bianzuilun/Composa/releases";
 
     /// <summary>
     /// The version without build metadata: MinVer writes <c>0.2.0+&lt;sha&gt;</c>, and the commit hash is

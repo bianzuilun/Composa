@@ -351,6 +351,8 @@ public sealed class LayersPanel : UserControl
             name.MaxWidth = 150;
             if (layer.IsLive) name.FontStyle = FontStyle.Italic;
             content.Children.Add(name);
+            if (layer.Pixels is { } pixels && DeepPixels.Source(pixels) is { } wide)
+                content.Children.Add(Ui.Label(DeepPixels.IsHdr(wide) ? "HDR" : L10n.Text("16-bit"), Palette.Secondary, 10));
         }
 
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*") };

@@ -16,14 +16,16 @@ public sealed class CmykProof
 {
     private readonly byte[] rgbProfile;
     private readonly byte[] cmykProfile;
+    private readonly IColorConverter converter;
     public string Name { get; }
     public ColorLattice Lattice { get; }
 
-    public CmykProof(string name, byte[] rgbProfile, byte[] cmykProfile)
+    public CmykProof(string name, byte[] rgbProfile, byte[] cmykProfile, IColorConverter? converter = null)
     {
         if (cmykProfile.Length < 128 || cmykProfile.Length > 16 * 1024 * 1024 || !cmykProfile.AsSpan(16, 4).SequenceEqual("CMYK"u8) || !cmykProfile.AsSpan(36, 4).SequenceEqual("acsp"u8))
             throw new InvalidDataException("Choose a valid CMYK ICC profile.");
         Name = name; this.rgbProfile = rgbProfile.ToArray(); this.cmykProfile = cmykProfile.ToArray();
+        this.converter = converter ?? ImageMagick.Current as IColorConverter ?? throw new InvalidOperationException("CMYK conversion needs ImageMagick with ICC color management.");
         const int size = 33;
         using var grid = Pixels.NewColor(size * size, size);
         for (var b = 0; b < size; b++) for (var g = 0; g < size; g++) for (var r = 0; r < size; r++)
@@ -40,8 +42,7 @@ public sealed class CmykProof
     }
 
     private byte[] Convert(byte[] png, bool proof, ExportFormat format, int quality, double resolution) =>
-        ImageMagick.Current is IColorConverter backend ? backend.ConvertColor(png, rgbProfile, cmykProfile, proof, format, quality, resolution)
-        : throw new InvalidOperationException("CMYK conversion needs ImageMagick with ICC color management.");
+        converter.ConvertColor(png, rgbProfile, cmykProfile, proof, format, quality, resolution);
 
     public byte[] Export(SKBitmap bitmap, ExportFormat format, int quality = 90, double resolution = 72)
     {

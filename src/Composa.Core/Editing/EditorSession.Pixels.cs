@@ -265,7 +265,7 @@ public sealed partial class EditorSession
         return true;
     }
 
-    public void PreviewFilter(FilterSettings settings)
+    private FilterSettings FilterInLayer(FilterSettings settings)
     {
         // Radii and distances are given in document pixels; a scaled-down photo has several source pixels to each.
         if (previewLayer is { } target)
@@ -293,16 +293,30 @@ public sealed partial class EditorSession
                 settings = settings with { VignetteFillsClear = previewFillsClear, VignetteFrame = frame };
             }
         }
-        PreviewFilterCore(settings);
+        return settings;
     }
 
-    private void PreviewFilterCore(FilterSettings settings) => Preview(source =>
+    public void PreviewFilter(FilterSettings settings) => PreviewFilterCore(FilterInLayer(settings));
+
+    private static (SKBitmap Result, int GrowX, int GrowY) RunFilter(SKBitmap source, FilterSettings settings)
     {
         if (source.ColorType != SKColorType.Alpha8) return ImageFilters.Run(source, settings);
         using var color = MaskToColor(source);
         var (result, growX, growY) = ImageFilters.Run(color, settings);
         using (result) return (ColorToMask(result), growX, growY);
-    });
+    }
+
+    private void PreviewFilterCore(FilterSettings settings) => Preview(source => RunFilter(source, settings));
+
+    /// <summary>Compute against the immutable preview original off-thread; adopt it only while the same edit is open.</summary>
+    public async Task PreviewFilterAsync(FilterSettings settings)
+    {
+        if (previewOriginal is not { } original || previewLayer is not { } layer) return;
+        settings = FilterInLayer(settings);
+        var result = await Task.Run(() => RunFilter(original, settings));
+        if (!ReferenceEquals(previewOriginal, original) || previewLayer != layer) { result.Result.Dispose(); return; }
+        Preview(_ => result);
+    }
 
     public void PreviewContentAwareFill() => Preview(source =>
     {

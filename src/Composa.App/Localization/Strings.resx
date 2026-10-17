@@ -1080,4 +1080,25 @@
   <data name="Port.ShortcutDelete" xml:space="preserve">
     <value>Click a shortcut, then press its new key combination; Escape stops recording and Backspace or Delete clears it. Brush size and hardness ([ ] and { }), the opacity digits, Space to pan and the modifier-and-mouse gestures are fixed.</value>
   </data>
+  <data name="Port.RawDimensions" xml:space="preserve">
+    <value>{0} × {1} pixels, developed at 16 bits per channel</value>
+  </data>
+  <data name="Port.RawTitle" xml:space="preserve">
+    <value>Develop {0}</value>
+  </data>
+  <data name="Port.RawBalanceNote" xml:space="preserve">
+    <value>Cooler to warmer, and green to magenta, away from the camera's own white balance.</value>
+  </data>
+  <data name="Port.WhatsNew" xml:space="preserve">
+    <value>What's New</value>
+  </data>
+  <data name="Port.Histogram" xml:space="preserve">
+    <value>Histogram</value>
+  </data>
+  <data name="Port.Vectorscope" xml:space="preserve">
+    <value>Vectorscope</value>
+  </data>
+  <data name="Port.SixteenBit" xml:space="preserve">
+    <value>16-bit</value>
+  </data>
 </root>
