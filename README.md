@@ -78,6 +78,10 @@ Composa is developed on Linux, on X11 and Wayland (through XWayland), and that i
 
 A user guide covering every tool, menu and the AI control is in [docs/](docs/README.md).
 
+### Interface language
+
+Choose **Help > Language (restart required)** to follow the system or select English, 简体中文 or 日本語. The preference is saved and applies after restarting Composa. System selection uses Simplified Chinese for `zh-CN`, `zh-SG` and `zh-Hans` locales, Japanese for Japanese locales, and English otherwise. This first increment translates the main menus, blend modes, common buttons, selected dialog and tool-option labels, and some history names. Unmigrated text falls back to English. User content and the `docs/` guide remain unchanged.
+
 ### AI control
 
 Composa can be driven by an AI agent through the [Model Context Protocol](https://modelcontextprotocol.io). Tick **Help > Allow AI Control** (off by default, remembered between launches) and the running application answers on a private, per-user pipe; the status bar says "AI connected" while an agent is attached. Every tool goes through the same editing commands the window uses, so an agent's change shows up as it happens and Ctrl+Z takes it back like any other step.

@@ -2,8 +2,11 @@ using System.Globalization;
 using System.Resources;
 using System.Text.Json;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Composa.App.Controls;
 using Composa.Editing;
@@ -76,6 +79,7 @@ public class LocalizationTests
             session.AddBlankLayer();
             session.Rename(session.ActiveLayer!, "Save");
             Assert.Equal("Save", session.ActiveLayer!.Name);
+            Assert.Contains(window.GetVisualDescendants().OfType<TextBlock>(), block => block.Text == "Save");
             Assert.Equal(Icons.Layers, HistoryPanel.IconFor("New Layer"));
             Assert.Equal("History", window.GetVisualDescendants().OfType<SideDock>().Single().Section("History").Title);
             var help = (MenuItem)menu.Items[^1]!;
@@ -90,6 +94,19 @@ public class LocalizationTests
             Assert.Single(languages.Items.OfType<MenuItem>().Where(item => item.IsChecked));
             Screenshots.Save(window, "localization-" + code);
             foreach (var dialog in window.OwnedWindows.ToArray()) dialog.Close();
+            Dispatcher.UIThread.RunJobs();
+            window.KeyPressQwerty(PhysicalKey.F1, RawInputModifiers.None);
+            Dispatcher.UIThread.RunJobs();
+            var shortcuts = Assert.Single(window.OwnedWindows);
+            shortcuts.GetVisualDescendants().OfType<TextBox>().First().Text = L10n.Get("Common.Save");
+            Dispatcher.UIThread.RunJobs();
+            var recorder = shortcuts.GetVisualDescendants().OfType<Button>().Single(button => Equals(button.Content, "Ctrl+S"));
+            recorder.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            shortcuts.KeyPressQwerty(PhysicalKey.K, RawInputModifiers.Control);
+            shortcuts.Close(true);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal("Ctrl+K", window.Settings.Shortcuts["Save"]);
+            Assert.False(window.Settings.Shortcuts.ContainsKey(L10n.Get("Common.Save")));
         }
         finally
         {
