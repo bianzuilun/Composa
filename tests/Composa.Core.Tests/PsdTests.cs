@@ -466,8 +466,8 @@ public class PsdTests
     {
         byte[] Plain() { var w = new PsdWriter { Width = 10, Height = 10 }; w.Layers.Add(new PsdWriterLayer { Image = Solid(10, 10, SKColors.Red) }); return w.Build(); }
         Assert.Contains("format version", Assert.Throws<PsdException>(() => PsdImport.Load(new PsdWriter { Version = 3 }.Build())).Message);
-        Assert.Contains("8-bit RGB", Assert.Throws<PsdException>(() => PsdImport.Load(new PsdWriter { Mode = 4 }.Build())).Message);
-        Assert.Contains("8-bit RGB", Assert.Throws<PsdException>(() => PsdImport.Load(new PsdWriter { Depth = 16 }.Build())).Message);
+        Assert.Contains("RGB and CMYK", Assert.Throws<PsdException>(() => PsdImport.Load(new PsdWriter { Mode = 1 }.Build())).Message);
+        Assert.Contains("8-bit or 16-bit", Assert.Throws<PsdException>(() => PsdImport.Load(new PsdWriter { Depth = 32 }.Build())).Message);
         Assert.Contains("larger", Assert.Throws<PsdException>(() => PsdImport.Load(new PsdWriter { Width = 40_000, Height = 10 }.Build())).Message);
         Assert.Contains("larger", Assert.Throws<PsdException>(() => PsdImport.Load(Plain(), pixelBudget: 50)).Message);
         Assert.Contains("not a Photoshop", Assert.Throws<PsdException>(() => PsdImport.Load("hello world, not a psd"u8.ToArray())).Message);

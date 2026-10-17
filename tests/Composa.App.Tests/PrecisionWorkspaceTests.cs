@@ -83,7 +83,8 @@ public class PrecisionWorkspaceTests
             window.UpdateNotice.Show(new ReleaseVersion(1, 5, 3, ""), false, "Added 16-bit layers and print proofing.");
             var details = window.UpdateNotice.GetVisualDescendants().OfType<Expander>().Single();
             Assert.True(details.IsVisible); details.IsExpanded = true;
-            Assert.Contains(window.UpdateNotice.GetVisualDescendants().OfType<SelectableTextBlock>(), text => text.Text!.Contains("16-bit layers"));
+            Dispatcher.UIThread.RunJobs();
+            Assert.Contains(window.UpdateNotice.GetVisualDescendants().OfType<SelectableTextBlock>(), text => text.Text?.Contains("16-bit layers") == true);
             Assert.True(Screenshots.Save(window, "update-release-body"));
         }
         finally { window.Close(); }

@@ -61,12 +61,11 @@ public sealed partial class CanvasView
         private readonly SKShader filter;
         private readonly SKMatrix placement;
         private readonly float opacity;
-        private readonly ColorLattice lattice;
         private SKBitmap? scopePreview;
 
-        private CameraRawPreviewFrame(SKBitmap source, SKBitmap cubePixels, SKImage image, SKShader filter, Layer layer, ColorLattice lattice)
+        private CameraRawPreviewFrame(SKBitmap source, SKBitmap cubePixels, SKImage image, SKShader filter, Layer layer)
         {
-            this.source = source; this.cubePixels = cubePixels; this.filter = filter; this.lattice = lattice;
+            this.source = source; this.cubePixels = cubePixels; this.filter = filter;
             this.image = image; placement = layer.Matrix; opacity = (float)layer.Opacity;
         }
 
@@ -89,7 +88,7 @@ public sealed partial class CanvasView
             using var uniforms = new SKRuntimeEffectUniforms(effect);
             var filter = effect.ToShader(uniforms, children);
             if (filter == null) { image.Dispose(); pixels.Dispose(); return null; }
-            return new CameraRawPreviewFrame(source, pixels, image, filter, layer, lattice);
+            return new CameraRawPreviewFrame(source, pixels, image, filter, layer);
         }
 
         internal void Draw(SKCanvas canvas, SKMatrix view)
@@ -108,8 +107,8 @@ public sealed partial class CanvasView
                 var scale = Math.Min(1, 384.0 / Math.Max(source.Width, source.Height));
                 var preview = Pixels.NewColor(Math.Max(1, (int)(source.Width * scale)), Math.Max(1, (int)(source.Height * scale)));
                 using (var canvas = new SKCanvas(preview))
-                { canvas.Scale((float)scale); canvas.DrawImage(image, 0, 0, new SKSamplingOptions(SKFilterMode.Linear)); }
-                new ColorLookupAdjustment { Lattice = lattice }.Apply(preview);
+                using (var paint = new SKPaint { Shader = filter })
+                { canvas.Scale((float)scale); canvas.DrawRect(0, 0, source.Width, source.Height, paint); }
                 return scopePreview = preview;
             }
         }

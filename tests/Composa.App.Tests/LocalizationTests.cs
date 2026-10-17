@@ -52,8 +52,13 @@ public class LocalizationTests
             foreach (var (key, source) in english)
             {
                 Assert.False(string.IsNullOrWhiteSpace(translated[key]));
-                Assert.Equal(System.Text.CompositeFormat.Parse(source).MinimumArgumentCount,
-                    System.Text.CompositeFormat.Parse(translated[key]).MinimumArgumentCount);
+                // Static text may show literal shortcut braces, such as { }. Only strings
+                // with numbered placeholders are passed through string.Format at runtime.
+                if (System.Text.RegularExpressions.Regex.IsMatch(source, @"\{\d"))
+                    Assert.Equal(System.Text.CompositeFormat.Parse(source).MinimumArgumentCount,
+                        System.Text.CompositeFormat.Parse(translated[key]).MinimumArgumentCount);
+                else
+                    Assert.False(System.Text.RegularExpressions.Regex.IsMatch(translated[key], @"\{\d"), key);
             }
         }
     }

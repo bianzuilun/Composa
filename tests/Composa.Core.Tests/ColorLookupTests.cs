@@ -481,13 +481,13 @@ public class ColorLookupTests
 
         MemoryStream Tampered(Action<System.IO.Compression.ZipArchive> change)
         {
-            var copy = new MemoryStream(bytes.ToArray());
+            var copy = new MemoryStream(); copy.Write(bytes); copy.Position = 0;
             using (var zip = new System.IO.Compression.ZipArchive(copy, System.IO.Compression.ZipArchiveMode.Update, leaveOpen: true)) change(zip);
             copy.Position = 0;
             return copy;
         }
 
-        // What an older Composa says about this file is the message it has always had, now with 6 as its own ceiling.
+        // A future project version is refused using the current format ceiling.
         var newer = Tampered(zip =>
         {
             var entry = zip.GetEntry("manifest.json")!;
