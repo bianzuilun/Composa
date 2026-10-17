@@ -32,7 +32,7 @@ internal static class DeepAdjustments
         if (adjustment is MotionBlurAdjustment motion)
         {
             using var blurred = Motion(bitmap, motion.Distance / Math.Max(step, .000001), motion.Angle, clamp: true).Result;
-            Pixels.CopyPixels(blurred, bitmap); return;
+            DeepPixels.CopyWide(blurred, bitmap); return;
         }
         var op = step > 1.01 ? adjustment.CreateOp(step) ?? adjustment.CreateOp() : adjustment.CreateOp();
         void Row(int y)

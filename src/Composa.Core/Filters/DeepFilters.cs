@@ -62,12 +62,7 @@ internal static unsafe class DeepFilters
     private static SKBitmap Blur(SKBitmap source, double radius, int gx, int gy, bool clamp)
     {
         if (!Composa.Model.DocumentLimits.FitsSurface(source.Width + gx * 2, source.Height + gy * 2)) throw new InvalidOperationException("The filter exceeds the supported surface size.");
-        var result = DeepPixels.New(source.Width + gx * 2, source.Height + gy * 2, hdr: true);
-        using var filter = SKImageFilter.CreateBlur((float)radius, (float)radius, clamp ? SKShaderTileMode.Clamp : SKShaderTileMode.Decal);
-        using var canvas = new SKCanvas(result);
-        using var paint = new SKPaint { ImageFilter = filter, BlendMode = SKBlendMode.Src };
-        canvas.DrawBitmap(source, gx, gy, paint);
-        return result;
+        return FloatBlur.Gaussian(source, radius, clamp, gx, gy);
     }
 
     private static bool OpaqueBorder(SKBitmap source)

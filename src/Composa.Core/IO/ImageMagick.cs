@@ -108,6 +108,7 @@ public sealed class ImageMagickTool : IImageMagick, IColorConverter
             File.WriteAllBytes(input, png); File.WriteAllBytes(rgb, rgbProfile); File.WriteAllBytes(cmyk, cmykProfile);
             var arguments = new List<string> { input, "-intent", "Relative", "-black-point-compensation", "-profile", rgb, "-profile", cmyk };
             if (proof) arguments.AddRange(["-profile", rgb]);
+            else arguments.AddRange(["-alpha", "off"]);
             arguments.AddRange(["-depth", "8", "-quality", Math.Clamp(quality, 1, 100).ToString(), "-units", "PixelsPerInch", "-density", resolution.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 proof ? "png:-" : format == ExportFormat.Pdf ? "cmyk:-" : format == ExportFormat.Jpeg ? "jpeg:-" : "tiff:-"]);
             return Run(input, arguments.ToArray(), 180_000);

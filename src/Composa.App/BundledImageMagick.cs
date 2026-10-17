@@ -62,6 +62,7 @@ public sealed class BundledImageMagick : IO.IImageMagick, IO.IColorConverter
         image.BlackPointCompensation = true;
         image.TransformColorSpace(rgb, cmyk);
         if (proof) image.TransformColorSpace(rgb);
+        else image.Alpha(Magick.AlphaOption.Off);
         image.Depth = 8; image.Quality = (uint)Math.Clamp(quality, 1, 100); image.Density = new Magick.Density(resolution);
         if (!proof && format == IO.ExportFormat.Pdf) { using var pixels = image.GetPixels(); return pixels.ToByteArray("CMYK") ?? throw new InvalidDataException("CMYK samples could not be read."); }
         return image.ToByteArray(proof ? Magick.MagickFormat.Png : format == IO.ExportFormat.Jpeg ? Magick.MagickFormat.Jpeg : Magick.MagickFormat.Tiff);

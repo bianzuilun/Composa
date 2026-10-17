@@ -96,6 +96,15 @@ public static unsafe class DeepPixels
         return result;
     }
 
+    internal static void CopyWide(SKBitmap source, SKBitmap target)
+    {
+        if (source.Width != target.Width || source.Height != target.Height || !IsWide(source) || !IsWide(target)) throw new ArgumentException("Matching wide surfaces are required.");
+        if (source.ColorType == target.ColorType) { Pixels.CopyPixels(source, target); return; }
+        using (var canvas = new SKCanvas(target))
+        using (var paint = new SKPaint { BlendMode = SKBlendMode.Src }) canvas.DrawBitmap(source, 0, 0, paint);
+        Pixels.Invalidate(target);
+    }
+
     /// <summary>Mirror a geometric raster edit in a float surface and associate its full precision result.</summary>
     internal static void PreserveDraw(SKBitmap source, SKBitmap result, Action<SKCanvas, SKBitmap> draw)
     {

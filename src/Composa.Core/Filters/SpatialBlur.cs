@@ -52,6 +52,7 @@ public static class SpatialBlur
             SKBitmap Blur(double radius)
             {
                 if (radius < 0.01) return Pixels.Clone(source);
+                if (wide) return FloatBlur.Gaussian(source, radius, settings.ClampEdges);
                 var bitmap = wide ? DeepPixels.New(source.Width, source.Height, hdr: true) : Pixels.NewColor(source.Width, source.Height);
                 using var filter = SKImageFilter.CreateBlur((float)radius, (float)radius, settings.ClampEdges ? SKShaderTileMode.Clamp : SKShaderTileMode.Decal);
                 using var canvas = new SKCanvas(bitmap);

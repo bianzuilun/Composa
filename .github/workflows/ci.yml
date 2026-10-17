@@ -53,10 +53,11 @@ jobs:
       # Screenshots are how a UI regression is inspected without a display, so they are worth
       # keeping when something failed.
       - name: Upload screenshots
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: screenshots
+          retention-days: 7
           path: artifacts/screenshots/
           if-no-files-found: ignore
 
@@ -84,9 +85,10 @@ jobs:
         run: dotnet test --configuration Release --no-build
 
       - name: Upload screenshots
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: screenshots-windows
+          retention-days: 7
           path: artifacts/screenshots/
           if-no-files-found: ignore

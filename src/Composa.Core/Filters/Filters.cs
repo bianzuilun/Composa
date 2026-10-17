@@ -192,6 +192,11 @@ public static unsafe class ImageFilters
     /// <summary>Softens a bitmap in place with a Gaussian of <paramref name="sigma"/>, its edges continued outward so nothing fades into transparency.</summary>
     public static void BlurInPlace(SKBitmap bitmap, float sigma)
     {
+        if (DeepPixels.IsWide(bitmap))
+        {
+            using var blurred = FloatBlur.Gaussian(bitmap, sigma, clamp: true);
+            DeepPixels.CopyWide(blurred, bitmap); return;
+        }
         sigma = Math.Max(0.1f, sigma);
         using var filter = SKImageFilter.CreateBlur(sigma, sigma, SKShaderTileMode.Clamp);
         using var source = Pixels.Clone(bitmap);
