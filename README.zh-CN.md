@@ -95,7 +95,7 @@ AI 可以创建、打开、保存和导出文档，管理与变换图层，绘�
 
 ## 下载与安装
 
-上游[发布页](https://github.com/dvdstelt/Composa/releases)提供 x86-64 与 arm64 构建，无需单独安装 .NET。此分支新增的语言功能需要包含这些更改的构建；上游已有发布包不一定包含。
+本分支[发布页](https://github.com/bianzuilun/Composa/releases)提供包含语言适配和功能更新的 x86-64 与 arm64 构建，无需单独安装 .NET。
 
 | 格式 | 平台 | 使用方式 |
 | --- | --- | --- |

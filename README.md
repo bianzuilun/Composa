@@ -121,7 +121,7 @@ Beyond the macOS app, this version adds Ctrl-drag to move a layer with any tool,
 
 ## Download
 
-Every release publishes these on the [releases page](https://github.com/dvdstelt/Composa/releases), for x86-64 and arm64. None of them needs .NET installed.
+Every release publishes these on this fork's [releases page](https://github.com/bianzuilun/Composa/releases), for x86-64 and arm64. None of them needs .NET installed.
 
 | Format | For | Notes |
 | --- | --- | --- |
@@ -182,7 +182,7 @@ Composa checks once a day whether a newer version has been released, and shows a
 
 Download fetches the release's file for the way your copy was installed and the processor it runs on (the `.deb`, `.rpm`, AppImage or tarball, the Windows installer or zip) into your Downloads folder, and checks it against the release's `sha256sums.txt` before offering it. Show in Folder then opens the file manager with it selected, and Install, where there is an installer, hands it over: on Windows Composa quits, asking about unsaved work, and starts the setup; a `.deb` or `.rpm` opens in your software installer, with the `sudo apt install` or `sudo dnf install` command beside it to copy. A downloaded AppImage is made executable. Nothing is downloaded until you press Download, nothing starts until you press Install, and Composa never replaces its own files. The Windows builds are unsigned, so SmartScreen may warn when the setup starts, as it does for a setup downloaded from the releases page. More in [Settings and updates](docs/settings-and-updates.md#updates).
 
-The check is a single anonymous `GET` to `https://api.github.com/repos/dvdstelt/Composa/releases/latest`. It sends no version number, no identifier, no machine details and no telemetry of any kind, and GitHub sees only what any visitor to that URL would show. If the request fails, nothing is reported and nothing is retried until the next day. A download sends the same and nothing more.
+The check is a single anonymous `GET` to `https://api.github.com/repos/bianzuilun/Composa/releases/latest`. It sends no version number, no identifier, no machine details and no telemetry of any kind, and GitHub sees only what any visitor to that URL would show. If the request fails, nothing is reported and nothing is retried until the next day. A download sends the same and nothing more.
 
 Turn it off under **Help > Check for Updates Automatically**, or set `COMPOSA_DISABLE_UPDATE_CHECK=1`, which is there so a distribution packager can switch it off without patching code. **Help > Check for Updates** still works when the automatic check is off.
 

@@ -30,8 +30,8 @@
   </developer>
 
   <launchable type="desktop-id">composa.desktop</launchable>
-  <url type="homepage">https://github.com/dvdstelt/Composa</url>
-  <url type="bugtracker">https://github.com/dvdstelt/Composa/issues</url>
+  <url type="homepage">https://github.com/bianzuilun/Composa</url>
+  <url type="bugtracker">https://github.com/bianzuilun/Composa/issues</url>
 
   <provides>
     <binary>composa</binary>

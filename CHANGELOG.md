@@ -220,5 +220,6 @@ The first release with downloadable packages. Composa has been buildable from so
 
 - Camera RAW and HEIC files could report a misleading error instead of saying that ImageMagick was missing. ImageMagick is now located once and asked to identify itself rather than trusted for its name.
 
-[Unreleased]: https://github.com/dvdstelt/Composa/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/bianzuilun/Composa/compare/v1.5.3...HEAD
+[1.5.3]: https://github.com/bianzuilun/Composa/releases/tag/v1.5.3
 [0.2.0]: https://github.com/dvdstelt/Composa/releases/tag/v0.2.0

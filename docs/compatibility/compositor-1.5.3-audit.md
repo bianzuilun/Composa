@@ -25,7 +25,7 @@ The original release bodies, tags, publication dates and source URLs are preserv
 
 ## Implementation map
 
-These entries describe implemented paths, not a claim that the final regression and package checks have passed. Final verification is recorded with the release.
+These entries map the implemented paths. Verification below records the tested scope; it does not imply pixel-for-pixel parity with Apple's frameworks.
 
 | Area | Composa implementation |
 | --- | --- |
@@ -53,6 +53,13 @@ Compositor uses AppKit, Core Image, Metal, Vision and Apple's camera pipeline. C
 - Native EXR reading covers uncompressed/ZIPS/ZIP scanline half/float channels. Other EXR layouts require the bundled HDRI decoder on Windows or an HDRI-enabled system ImageMagick on Linux; an integer-only fallback is refused rather than clipping highlights silently.
 - Composa retains its own application branding and icon. Upstream's icon replacement is an artwork change, not an editing capability.
 - Some features already existed in the starting fork (WebP, canvas rotations, grouping, parts of selection handling). Release notes distinguish those from newly added work.
+
+## Verification
+
+- [Windows/Linux regression run](https://github.com/bianzuilun/Composa/actions/runs/39077904789): 414 Core tests and 303 headless App tests passed on each OS. The Linux configuration without bundled ImageMagick also compiled. [Package rehearsal](https://github.com/bianzuilun/Composa/actions/runs/39077904687) passed on Windows and Linux.
+- Windows headless screenshots were inspected for Chinese tool groups, Japanese text, the depth badge, measured shader preview, RAW controls and expandable update notes. The Linux runner lacks CJK fonts, so its localization screenshots are not font-rendering evidence.
+- Real exported fixtures from [the evidence run](https://github.com/bianzuilun/Composa/actions/runs/39078133942) were checked with Pillow/LittleCMS, tifffile, OpenEXR and PyMuPDF: CMYK JPEG/TIFF have four channels and a 654,352-byte ICC profile; the PDF renders its embedded ICCBased image on one DPI-sized page; 16-bit PNG/TIFF retain 32 adjacent sample values; EXR retains linear red 12.82984 (extended-sRGB red 3), beyond white.
+- Precision regression tests cover native composition and adjustment layers, Gaussian blur, resampling, project/HDR round trips, independent PSD16 fixtures, RAW development, editable-content resizing, texture fill and asynchronous filter undo. Existing selection, text, model, update and localization suites remain enabled.
 
 ## Delivery requirements
 

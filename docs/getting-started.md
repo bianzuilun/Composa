@@ -2,7 +2,7 @@
 
 ## Installing
 
-Every release on the [releases page](https://github.com/dvdstelt/Composa/releases) comes in these forms:
+Every release on this fork's [releases page](https://github.com/bianzuilun/Composa/releases) comes in these forms:
 
 - **Linux**: an AppImage, a `.deb` for Debian and Ubuntu, an `.rpm` for Fedora and openSUSE, and a plain tarball, each for x86-64 and arm64. The AppImage and the tarball run from wherever you put them. The packages install Composa like any other application and put it in your menu.
 - **Windows**: an installer that needs no administrator rights, and a portable zip, each for x64 and arm64. The installer adds a Start menu entry, registers Composa for its own `.cmps` project files and offers itself under Open with for images without taking any of them over.
