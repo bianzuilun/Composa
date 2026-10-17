@@ -1,5 +1,7 @@
 # Composa
 
+[English](README.md) | [简体中文](README.zh-CN.md) | [日本語](README.ja.md)
+
 A layer-based image editor for compositing and retouching, with Photoshop-style tools and shortcuts. It is a from-scratch implementation of [Compositor](https://github.com/robbietilton/Compositor), Robbie Tilton's free and open-source macOS app.
 
 https://github.com/user-attachments/assets/e215c376-2bb3-44d2-af26-3117d2c70348
@@ -75,6 +77,10 @@ Composa is developed on Linux, on X11 and Wayland (through XWayland), and that i
 - Autosave for crash recovery: unsaved work is copied to `~/.cache/composa/recovery` every two minutes and offered back after an unclean exit
 
 A user guide covering every tool, menu and the AI control is in [docs/](docs/README.md).
+
+### Interface language
+
+Choose **Help > Language (restart required)** to follow the system or select English, 简体中文 or 日本語. The preference is saved and applies after restarting Composa. System selection uses Simplified Chinese for `zh-CN`, `zh-SG` and `zh-Hans` locales, Japanese for Japanese locales, and English otherwise. This first increment translates the main menus, blend modes, common buttons, selected dialog and tool-option labels, and some history names. Unmigrated text falls back to English. User content and the `docs/` guide remain unchanged.
 
 ### AI control
 

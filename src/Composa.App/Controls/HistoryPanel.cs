@@ -124,7 +124,7 @@ public sealed class HistoryPanel : UserControl
         var brush = ahead ? Palette.Secondary : Palette.Foreground;
         var name = new TextBlock
         {
-            Text = step.Name, Foreground = brush, FontStyle = ahead ? FontStyle.Italic : FontStyle.Normal,
+            Text = L10n.Text(step.Name), Foreground = brush, FontStyle = ahead ? FontStyle.Italic : FontStyle.Normal,
             TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(8, 0, 0, 0)
         };
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto") };

@@ -492,8 +492,8 @@ public sealed partial class MainWindow : Window
         }
 
         foregroundSwatch.Cursor = backgroundSwatch.Cursor = new Cursor(StandardCursorType.Hand);
-        ToolTip.SetTip(foregroundSwatch, "Foreground color");
-        ToolTip.SetTip(backgroundSwatch, "Background color");
+        ToolTip.SetTip(foregroundSwatch, L10n.Text("Foreground color"));
+        ToolTip.SetTip(backgroundSwatch, L10n.Text("Background color"));
         foregroundSwatch.PointerPressed += (_, _) => _ = PickColor(foreground: true);
         backgroundSwatch.PointerPressed += (_, _) => _ = PickColor(foreground: false);
         backgroundSwatch.Margin = new Thickness(14, 14, 0, 0);
@@ -534,15 +534,15 @@ public sealed partial class MainWindow : Window
     {
         var title = Ui.Label("Composa", size: 26, weight: FontWeight.SemiBold);
         title.HorizontalAlignment = HorizontalAlignment.Center;
-        var subtitle = Ui.Label("Create a canvas, open a project or image, or drop files here.", Palette.Secondary);
+        var subtitle = Ui.Label(L10n.Text("Create a canvas, open a project or image, or drop files here."), Palette.Secondary);
         subtitle.HorizontalAlignment = HorizontalAlignment.Center;
-        var buttons = Ui.Row(10, Ui.TextButton("New Canvas…", () => _ = NewCanvas(), accent: true), Ui.TextButton("Open…", () => _ = Open()));
+        var buttons = Ui.Row(10, Ui.TextButton(L10n.Text("New Canvas…"), () => _ = NewCanvas(), accent: true), Ui.TextButton(L10n.Text("Open…"), () => _ = Open()));
         buttons.HorizontalAlignment = HorizontalAlignment.Center;
         var box = Ui.Column(14, title, subtitle, buttons);
         var recent = settings.RecentFiles.Where(p => File.Exists(p) || Directory.Exists(p)).Take(6).ToList();
         if (recent.Count > 0)
         {
-            var heading = Ui.Label("Recent", Palette.Secondary);
+            var heading = Ui.Label(L10n.Text("Recent"), Palette.Secondary);
             heading.HorizontalAlignment = HorizontalAlignment.Center;
             heading.Margin = new Thickness(0, 18, 0, 0);
             box.Children.Add(heading);
@@ -624,7 +624,7 @@ public sealed partial class MainWindow : Window
         {
             zoomText.Text = "";
             sizeText.Text = "";
-            hintText.Text = "Ready when you are";
+            hintText.Text = L10n.Get("Welcome.Ready");
             return;
         }
         zoomText.Text = canvas.Zoom >= 0.1 ? $"{canvas.Zoom * 100:0.#}%" : $"{canvas.Zoom * 100:0.##}%";

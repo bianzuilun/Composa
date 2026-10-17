@@ -1,0 +1,669 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <data name="Menu.File" xml:space="preserve">
+    <value>_File</value>
+  </data>
+  <data name="Menu.Edit" xml:space="preserve">
+    <value>_Edit</value>
+  </data>
+  <data name="Menu.Select" xml:space="preserve">
+    <value>_Select</value>
+  </data>
+  <data name="Menu.Image" xml:space="preserve">
+    <value>_Image</value>
+  </data>
+  <data name="Menu.Filter" xml:space="preserve">
+    <value>F_ilter</value>
+  </data>
+  <data name="Menu.Layer" xml:space="preserve">
+    <value>_Layer</value>
+  </data>
+  <data name="Menu.View" xml:space="preserve">
+    <value>_View</value>
+  </data>
+  <data name="Menu.Window" xml:space="preserve">
+    <value>_Window</value>
+  </data>
+  <data name="Menu.Help" xml:space="preserve">
+    <value>_Help</value>
+  </data>
+  <data name="Language.Menu" xml:space="preserve">
+    <value>Language (restart required)</value>
+  </data>
+  <data name="Language.System" xml:space="preserve">
+    <value>Follow System</value>
+  </data>
+  <data name="Language.RestartTitle" xml:space="preserve">
+    <value>Language saved</value>
+  </data>
+  <data name="Language.RestartMessage" xml:space="preserve">
+    <value>Restart Composa to apply the selected language.</value>
+  </data>
+  <data name="Common.OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Common.Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Common.DontSave" xml:space="preserve">
+    <value>Don't Save</value>
+  </data>
+  <data name="Common.Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Common.Reset" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="Common.None" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="Common.Width" xml:space="preserve">
+    <value>Width</value>
+  </data>
+  <data name="Common.Height" xml:space="preserve">
+    <value>Height</value>
+  </data>
+  <data name="Common.Angle" xml:space="preserve">
+    <value>Angle</value>
+  </data>
+  <data name="Common.Opacity" xml:space="preserve">
+    <value>Opacity</value>
+  </data>
+  <data name="Common.Size" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="Common.Color" xml:space="preserve">
+    <value>Color</value>
+  </data>
+  <data name="Common.Preview" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="Common.Apply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="Common.Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Common.Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Common.Custom" xml:space="preserve">
+    <value>Custom</value>
+  </data>
+  <data name="Common.Transparent" xml:space="preserve">
+    <value>Transparent</value>
+  </data>
+  <data name="Common.White" xml:space="preserve">
+    <value>White</value>
+  </data>
+  <data name="Common.Black" xml:space="preserve">
+    <value>Black</value>
+  </data>
+  <data name="Common.Background" xml:space="preserve">
+    <value>Background</value>
+  </data>
+  <data name="Common.BeforeAfter" xml:space="preserve">
+    <value>Before / After</value>
+  </data>
+  <data name="Dialog.Unsaved" xml:space="preserve">
+    <value>Unsaved Changes</value>
+  </data>
+  <data name="Dialog.SaveChanges" xml:space="preserve">
+    <value>Save changes to "{0}" before closing?</value>
+  </data>
+  <data name="File.New" xml:space="preserve">
+    <value>New Canvas</value>
+  </data>
+  <data name="File.Open" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="File.Recent" xml:space="preserve">
+    <value>Open Recent</value>
+  </data>
+  <data name="File.Place" xml:space="preserve">
+    <value>Place Images as Layers</value>
+  </data>
+  <data name="File.SaveAs" xml:space="preserve">
+    <value>Save As</value>
+  </data>
+  <data name="File.ExportPng" xml:space="preserve">
+    <value>Export PNG</value>
+  </data>
+  <data name="File.ExportJpeg" xml:space="preserve">
+    <value>Export JPEG</value>
+  </data>
+  <data name="File.ExportWebp" xml:space="preserve">
+    <value>Export WebP</value>
+  </data>
+  <data name="File.ExportLook" xml:space="preserve">
+    <value>Export Look as .cube</value>
+  </data>
+  <data name="File.CloseProject" xml:space="preserve">
+    <value>Close Project</value>
+  </data>
+  <data name="File.Quit" xml:space="preserve">
+    <value>Quit</value>
+  </data>
+  <data name="Edit.Undo" xml:space="preserve">
+    <value>Undo</value>
+  </data>
+  <data name="Edit.Redo" xml:space="preserve">
+    <value>Redo</value>
+  </data>
+  <data name="Edit.UndoStep" xml:space="preserve">
+    <value>Undo {0}</value>
+  </data>
+  <data name="Edit.RedoStep" xml:space="preserve">
+    <value>Redo {0}</value>
+  </data>
+  <data name="Edit.Cut" xml:space="preserve">
+    <value>Cut</value>
+  </data>
+  <data name="Edit.Copy" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="Edit.CopyMerged" xml:space="preserve">
+    <value>Copy Merged</value>
+  </data>
+  <data name="Edit.Paste" xml:space="preserve">
+    <value>Paste</value>
+  </data>
+  <data name="Edit.PasteSpecial" xml:space="preserve">
+    <value>Paste Special</value>
+  </data>
+  <data name="Edit.PasteInPlace" xml:space="preserve">
+    <value>Paste in Place</value>
+  </data>
+  <data name="Edit.PasteInto" xml:space="preserve">
+    <value>Paste Into</value>
+  </data>
+  <data name="Edit.FillForeground" xml:space="preserve">
+    <value>Fill with Foreground Color</value>
+  </data>
+  <data name="Edit.FillBackground" xml:space="preserve">
+    <value>Fill with Background Color</value>
+  </data>
+  <data name="Edit.Clear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="Edit.ContentAware" xml:space="preserve">
+    <value>Content-Aware Fill</value>
+  </data>
+  <data name="Edit.Shortcuts" xml:space="preserve">
+    <value>Keyboard Shortcuts</value>
+  </data>
+  <data name="Select.All" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="Select.Deselect" xml:space="preserve">
+    <value>Deselect</value>
+  </data>
+  <data name="Select.Inverse" xml:space="preserve">
+    <value>Inverse</value>
+  </data>
+  <data name="Select.LayerPixels" xml:space="preserve">
+    <value>Layer's Pixels</value>
+  </data>
+  <data name="Select.LayerMask" xml:space="preserve">
+    <value>Layer's Mask</value>
+  </data>
+  <data name="Select.Subject" xml:space="preserve">
+    <value>Subject</value>
+  </data>
+  <data name="Select.ColorRange" xml:space="preserve">
+    <value>Color Range</value>
+  </data>
+  <data name="Select.Expand" xml:space="preserve">
+    <value>Expand</value>
+  </data>
+  <data name="Select.Contract" xml:space="preserve">
+    <value>Contract</value>
+  </data>
+  <data name="Select.Feather" xml:space="preserve">
+    <value>Feather</value>
+  </data>
+  <data name="Select.ExpandSelection" xml:space="preserve">
+    <value>Expand Selection</value>
+  </data>
+  <data name="Select.ContractSelection" xml:space="preserve">
+    <value>Contract Selection</value>
+  </data>
+  <data name="Select.FeatherSelection" xml:space="preserve">
+    <value>Feather Selection</value>
+  </data>
+  <data name="Select.ExpandBy" xml:space="preserve">
+    <value>Expand by</value>
+  </data>
+  <data name="Select.ContractBy" xml:space="preserve">
+    <value>Contract by</value>
+  </data>
+  <data name="Select.FeatherRadius" xml:space="preserve">
+    <value>Feather radius</value>
+  </data>
+  <data name="Image.Curves" xml:space="preserve">
+    <value>Curves</value>
+  </data>
+  <data name="Image.Levels" xml:space="preserve">
+    <value>Levels</value>
+  </data>
+  <data name="Image.HueSaturation" xml:space="preserve">
+    <value>Hue/Saturation</value>
+  </data>
+  <data name="Image.BrightnessContrast" xml:space="preserve">
+    <value>Brightness/Contrast</value>
+  </data>
+  <data name="Image.Exposure" xml:space="preserve">
+    <value>Exposure</value>
+  </data>
+  <data name="Image.BlackWhite" xml:space="preserve">
+    <value>Black &amp; White</value>
+  </data>
+  <data name="Image.ColorBalance" xml:space="preserve">
+    <value>Color Balance</value>
+  </data>
+  <data name="Image.GradientMap" xml:space="preserve">
+    <value>Gradient Map</value>
+  </data>
+  <data name="Image.ColorLookup" xml:space="preserve">
+    <value>Color Lookup</value>
+  </data>
+  <data name="Image.Grain" xml:space="preserve">
+    <value>Grain</value>
+  </data>
+  <data name="Image.Invert" xml:space="preserve">
+    <value>Invert</value>
+  </data>
+  <data name="Image.AutoLevels" xml:space="preserve">
+    <value>Auto Levels</value>
+  </data>
+  <data name="Image.RemoveBackground" xml:space="preserve">
+    <value>Remove Background</value>
+  </data>
+  <data name="Image.CanvasSize" xml:space="preserve">
+    <value>Canvas Size</value>
+  </data>
+  <data name="Image.ImageSize" xml:space="preserve">
+    <value>Image Size</value>
+  </data>
+  <data name="Image.Trim" xml:space="preserve">
+    <value>Trim</value>
+  </data>
+  <data name="Image.RevealAll" xml:space="preserve">
+    <value>Reveal All</value>
+  </data>
+  <data name="Image.Duplicate" xml:space="preserve">
+    <value>Duplicate</value>
+  </data>
+  <data name="Image.RotateCW" xml:space="preserve">
+    <value>Rotate Canvas 90° Clockwise</value>
+  </data>
+  <data name="Image.RotateCCW" xml:space="preserve">
+    <value>Rotate Canvas 90° Counterclockwise</value>
+  </data>
+  <data name="Image.FlipHorizontal" xml:space="preserve">
+    <value>Flip Canvas Horizontal</value>
+  </data>
+  <data name="Image.FlipVertical" xml:space="preserve">
+    <value>Flip Canvas Vertical</value>
+  </data>
+  <data name="Layer.New" xml:space="preserve">
+    <value>New Layer</value>
+  </data>
+  <data name="Layer.NewAdjustment" xml:space="preserve">
+    <value>New Adjustment Layer</value>
+  </data>
+  <data name="Layer.EditAdjustment" xml:space="preserve">
+    <value>Edit Adjustment</value>
+  </data>
+  <data name="Layer.Transform" xml:space="preserve">
+    <value>Transform Layer</value>
+  </data>
+  <data name="Layer.ViaCopy" xml:space="preserve">
+    <value>Duplicate Layer / Layer via Copy</value>
+  </data>
+  <data name="Layer.Rename" xml:space="preserve">
+    <value>Rename Layer</value>
+  </data>
+  <data name="Layer.Delete" xml:space="preserve">
+    <value>Delete Layer</value>
+  </data>
+  <data name="Layer.AddMask" xml:space="preserve">
+    <value>Add Layer Mask</value>
+  </data>
+  <data name="Layer.InvertMask" xml:space="preserve">
+    <value>Invert Layer Mask</value>
+  </data>
+  <data name="Layer.ApplyMask" xml:space="preserve">
+    <value>Apply Layer Mask</value>
+  </data>
+  <data name="Layer.CreateClipping" xml:space="preserve">
+    <value>Create Clipping Mask</value>
+  </data>
+  <data name="Layer.ReleaseClipping" xml:space="preserve">
+    <value>Release Clipping Mask</value>
+  </data>
+  <data name="Layer.GroupSelected" xml:space="preserve">
+    <value>Group Selected Layers</value>
+  </data>
+  <data name="Layer.Ungroup" xml:space="preserve">
+    <value>Ungroup</value>
+  </data>
+  <data name="Layer.MoveUp" xml:space="preserve">
+    <value>Move Layer Up</value>
+  </data>
+  <data name="Layer.MoveDown" xml:space="preserve">
+    <value>Move Layer Down</value>
+  </data>
+  <data name="Layer.MergeDown" xml:space="preserve">
+    <value>Merge Down</value>
+  </data>
+  <data name="Layer.MergeLayers" xml:space="preserve">
+    <value>Merge Layers</value>
+  </data>
+  <data name="Layer.MergeGroup" xml:space="preserve">
+    <value>Merge Group</value>
+  </data>
+  <data name="Layer.MergeVisible" xml:space="preserve">
+    <value>Merge Visible</value>
+  </data>
+  <data name="Layer.StampVisible" xml:space="preserve">
+    <value>Stamp Visible</value>
+  </data>
+  <data name="Layer.Flatten" xml:space="preserve">
+    <value>Flatten Image</value>
+  </data>
+  <data name="Layer.Effects" xml:space="preserve">
+    <value>Layer Effects</value>
+  </data>
+  <data name="Layer.DeleteEffect" xml:space="preserve">
+    <value>Delete Effect</value>
+  </data>
+  <data name="Layer.EditText" xml:space="preserve">
+    <value>Edit Text</value>
+  </data>
+  <data name="Layer.Rasterize" xml:space="preserve">
+    <value>Rasterize Layer</value>
+  </data>
+  <data name="Layer.Enhance" xml:space="preserve">
+    <value>Enhance Resolution</value>
+  </data>
+  <data name="Layer.RotateCW" xml:space="preserve">
+    <value>Rotate Layer 90° Clockwise</value>
+  </data>
+  <data name="Layer.RotateCCW" xml:space="preserve">
+    <value>Rotate Layer 90° Counterclockwise</value>
+  </data>
+  <data name="Layer.Rotate180" xml:space="preserve">
+    <value>Rotate Layer 180°</value>
+  </data>
+  <data name="Layer.FlipHorizontal" xml:space="preserve">
+    <value>Flip Layer Horizontal</value>
+  </data>
+  <data name="Layer.FlipVertical" xml:space="preserve">
+    <value>Flip Layer Vertical</value>
+  </data>
+  <data name="View.PixelGrid" xml:space="preserve">
+    <value>Pixel Grid (800% and above)</value>
+  </data>
+  <data name="View.Fit" xml:space="preserve">
+    <value>Fit Canvas</value>
+  </data>
+  <data name="View.ActualPixels" xml:space="preserve">
+    <value>Actual Pixels</value>
+  </data>
+  <data name="View.ZoomIn" xml:space="preserve">
+    <value>Zoom In</value>
+  </data>
+  <data name="View.ZoomOut" xml:space="preserve">
+    <value>Zoom Out</value>
+  </data>
+  <data name="View.TransformControls" xml:space="preserve">
+    <value>Show Transform Controls</value>
+  </data>
+  <data name="View.Rulers" xml:space="preserve">
+    <value>Rulers</value>
+  </data>
+  <data name="View.Show" xml:space="preserve">
+    <value>Show</value>
+  </data>
+  <data name="View.Grid" xml:space="preserve">
+    <value>Grid</value>
+  </data>
+  <data name="View.Guides" xml:space="preserve">
+    <value>Guides</value>
+  </data>
+  <data name="View.GridSettings" xml:space="preserve">
+    <value>Grid Settings</value>
+  </data>
+  <data name="View.Snap" xml:space="preserve">
+    <value>Snap</value>
+  </data>
+  <data name="View.SnapTo" xml:space="preserve">
+    <value>Snap To</value>
+  </data>
+  <data name="View.Layers" xml:space="preserve">
+    <value>Layers</value>
+  </data>
+  <data name="View.DocumentBounds" xml:space="preserve">
+    <value>Document Bounds</value>
+  </data>
+  <data name="View.LockGuides" xml:space="preserve">
+    <value>Lock Guides</value>
+  </data>
+  <data name="View.ClearGuides" xml:space="preserve">
+    <value>Clear Guides</value>
+  </data>
+  <data name="Help.AutoUpdates" xml:space="preserve">
+    <value>Check for Updates Automatically</value>
+  </data>
+  <data name="Help.CheckUpdates" xml:space="preserve">
+    <value>Check for Updates</value>
+  </data>
+  <data name="Help.AiControl" xml:space="preserve">
+    <value>Allow AI Control</value>
+  </data>
+  <data name="Help.About" xml:space="preserve">
+    <value>About Composa</value>
+  </data>
+  <data name="Panel.History" xml:space="preserve">
+    <value>History</value>
+  </data>
+  <data name="Welcome.Message" xml:space="preserve">
+    <value>Create a canvas, open a project or image, or drop files here.</value>
+  </data>
+  <data name="Welcome.Recent" xml:space="preserve">
+    <value>Recent</value>
+  </data>
+  <data name="Welcome.Ready" xml:space="preserve">
+    <value>Ready when you are</value>
+  </data>
+  <data name="Tool.Brush" xml:space="preserve">
+    <value>Brush</value>
+  </data>
+  <data name="Tool.Eraser" xml:space="preserve">
+    <value>Eraser</value>
+  </data>
+  <data name="Tool.Move" xml:space="preserve">
+    <value>Move</value>
+  </data>
+  <data name="Tool.Crop" xml:space="preserve">
+    <value>Crop</value>
+  </data>
+  <data name="Tool.Gradient" xml:space="preserve">
+    <value>Gradient</value>
+  </data>
+  <data name="Tool.Shape" xml:space="preserve">
+    <value>Shape</value>
+  </data>
+  <data name="Tool.Text" xml:space="preserve">
+    <value>Text</value>
+  </data>
+  <data name="Tool.Hand" xml:space="preserve">
+    <value>Hand</value>
+  </data>
+  <data name="Tool.Zoom" xml:space="preserve">
+    <value>Zoom</value>
+  </data>
+  <data name="Tool.Eyedropper" xml:space="preserve">
+    <value>Eyedropper</value>
+  </data>
+  <data name="Tool.CloneStamp" xml:space="preserve">
+    <value>Clone Stamp</value>
+  </data>
+  <data name="Tool.SpotHealing" xml:space="preserve">
+    <value>Spot Healing Brush</value>
+  </data>
+  <data name="Tool.Foreground" xml:space="preserve">
+    <value>Foreground color</value>
+  </data>
+  <data name="Tool.Background" xml:space="preserve">
+    <value>Background color</value>
+  </data>
+  <data name="Option.Hardness" xml:space="preserve">
+    <value>Hardness</value>
+  </data>
+  <data name="Option.Smoothing" xml:space="preserve">
+    <value>Smoothing</value>
+  </data>
+  <data name="Option.Tolerance" xml:space="preserve">
+    <value>Tolerance</value>
+  </data>
+  <data name="Option.AutoSelect" xml:space="preserve">
+    <value>Auto Select</value>
+  </data>
+  <data name="Filter.Gaussian" xml:space="preserve">
+    <value>Gaussian Blur</value>
+  </data>
+  <data name="Filter.Motion" xml:space="preserve">
+    <value>Motion Blur</value>
+  </data>
+  <data name="Filter.Noise" xml:space="preserve">
+    <value>Add Noise</value>
+  </data>
+  <data name="Filter.Sharpen" xml:space="preserve">
+    <value>Sharpen</value>
+  </data>
+  <data name="Filter.Lens" xml:space="preserve">
+    <value>Lens Correction</value>
+  </data>
+  <data name="Filter.Vignette" xml:space="preserve">
+    <value>Vignette</value>
+  </data>
+  <data name="Filter.Bloom" xml:space="preserve">
+    <value>Bloom / Glow</value>
+  </data>
+  <data name="Filter.Contrast" xml:space="preserve">
+    <value>Tonal Contrast</value>
+  </data>
+  <data name="Filter.Dither" xml:space="preserve">
+    <value>Dither</value>
+  </data>
+  <data name="Filter.CameraRaw" xml:space="preserve">
+    <value>Camera Raw Filter</value>
+  </data>
+  <data name="Filter.Painterly" xml:space="preserve">
+    <value>Painterly</value>
+  </data>
+  <data name="Effect.Stroke" xml:space="preserve">
+    <value>Stroke</value>
+  </data>
+  <data name="Effect.DropShadow" xml:space="preserve">
+    <value>Drop Shadow</value>
+  </data>
+  <data name="Effect.OuterGlow" xml:space="preserve">
+    <value>Outer Glow</value>
+  </data>
+  <data name="Effect.InnerGlow" xml:space="preserve">
+    <value>Inner Glow</value>
+  </data>
+  <data name="Effect.ColorOverlay" xml:space="preserve">
+    <value>Color Overlay</value>
+  </data>
+  <data name="Effect.InnerShadow" xml:space="preserve">
+    <value>Inner Shadow</value>
+  </data>
+  <data name="Blend.Normal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="Blend.Multiply" xml:space="preserve">
+    <value>Multiply</value>
+  </data>
+  <data name="Blend.Screen" xml:space="preserve">
+    <value>Screen</value>
+  </data>
+  <data name="Blend.Overlay" xml:space="preserve">
+    <value>Overlay</value>
+  </data>
+  <data name="Blend.Darken" xml:space="preserve">
+    <value>Darken</value>
+  </data>
+  <data name="Blend.Lighten" xml:space="preserve">
+    <value>Lighten</value>
+  </data>
+  <data name="Blend.Difference" xml:space="preserve">
+    <value>Difference</value>
+  </data>
+  <data name="Blend.Exclusion" xml:space="preserve">
+    <value>Exclusion</value>
+  </data>
+  <data name="Blend.Hue" xml:space="preserve">
+    <value>Hue</value>
+  </data>
+  <data name="Blend.Saturation" xml:space="preserve">
+    <value>Saturation</value>
+  </data>
+  <data name="Blend.Luminosity" xml:space="preserve">
+    <value>Luminosity</value>
+  </data>
+  <data name="Blend.ColorDodge" xml:space="preserve">
+    <value>Color Dodge</value>
+  </data>
+  <data name="Blend.ColorBurn" xml:space="preserve">
+    <value>Color Burn</value>
+  </data>
+  <data name="Blend.SoftLight" xml:space="preserve">
+    <value>Soft Light</value>
+  </data>
+  <data name="Blend.HardLight" xml:space="preserve">
+    <value>Hard Light</value>
+  </data>
+  <data name="Blend.LinearBurn" xml:space="preserve">
+    <value>Linear Burn</value>
+  </data>
+  <data name="Blend.LinearDodge" xml:space="preserve">
+    <value>Linear Dodge (Add)</value>
+  </data>
+  <data name="Blend.VividLight" xml:space="preserve">
+    <value>Vivid Light</value>
+  </data>
+  <data name="Blend.LinearLight" xml:space="preserve">
+    <value>Linear Light</value>
+  </data>
+  <data name="Blend.PinLight" xml:space="preserve">
+    <value>Pin Light</value>
+  </data>
+  <data name="Blend.HardMix" xml:space="preserve">
+    <value>Hard Mix</value>
+  </data>
+  <data name="Blend.Subtract" xml:space="preserve">
+    <value>Subtract</value>
+  </data>
+  <data name="Blend.Divide" xml:space="preserve">
+    <value>Divide</value>
+  </data>
+  <data name="Blend.GrainExtract" xml:space="preserve">
+    <value>Grain Extract</value>
+  </data>
+  <data name="Blend.GrainMerge" xml:space="preserve">
+    <value>Grain Merge</value>
+  </data>
+</root>

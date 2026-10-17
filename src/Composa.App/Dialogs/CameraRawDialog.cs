@@ -214,7 +214,7 @@ public static class CameraRawDialog
             Update(current with { Curve = current.Curve with { Rgb = Points(0), Red = Points(1), Green = Points(2), Blue = Points(3) } });
         };
         var channelPicker = Ui.Combo(channels, "RGB", c => c, c => curveEditor.Channel = Array.IndexOf(channels, c), 100);
-        var resetCurve = Ui.TextButton("Reset", () => { Update(current with { Curve = new CameraRawCurve() }); curveEditor.Curves = ToEditor(current.Curve); });
+        var resetCurve = Ui.TextButton(L10n.Text("Reset"), () => { Update(current with { Curve = new CameraRawCurve() }); curveEditor.Curves = ToEditor(current.Curve); });
         resetCurve.MinWidth = 0;
         Group(CameraRawGroup.Curve, "Curve", Column(
             Heading("Parametric"),

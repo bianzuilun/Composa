@@ -25,7 +25,7 @@ public sealed class ProgressWindow : Window
         CanResize = false;
         ShowInTaskbar = false;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        var button = Ui.TextButton("Cancel", cancel);
+        var button = Ui.TextButton(L10n.Text("Cancel"), cancel);
         button.IsCancel = true;
         Content = new StackPanel
         {

@@ -99,7 +99,7 @@ public sealed class ToolButton : ToggleButton
         {
             var item = new MenuItem
             {
-                Header = choice.Name, Icon = Icons.Create(choice.Icon, 16), InputGesture = choice.Key(), Tag = choice,
+                Header = L10n.Text(choice.Name), Icon = Icons.Create(choice.Icon, 16), InputGesture = choice.Key(), Tag = choice,
                 ToggleType = MenuItemToggleType.Radio, IsChecked = choice.IsCurrent()
             };
             item.Click += (_, _) => choice.Choose();
