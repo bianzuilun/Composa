@@ -112,7 +112,7 @@ public sealed partial class MainWindow
         pendingKind = kind;
         pendingAsset = asset;
         downloadedPath = null;
-        updateNotice.Show(result.Version, asset != null);
+        updateNotice.Show(result.Version, asset != null, result.Release?.Body ?? "");
     }
 
     /// <summary>Help &gt; Check for Updates. Unlike the automatic check, this always reports what happened.</summary>

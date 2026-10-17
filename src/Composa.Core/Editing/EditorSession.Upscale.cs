@@ -48,7 +48,9 @@ public sealed partial class EditorSession
             foreach (var (layer, source, w, h) in jobs)
             {
                 var before = finished;
-                var perLayer = new Progress<(int Done, int Total)>(p => progress?.Report((before + p.Done, totals)));
+                // Do not queue these reports through another SynchronizationContext: a late tile
+                // report could arrive after the final count, making progress run backwards.
+                var perLayer = new TileProgress(p => progress?.Report((before + p.Done, totals)));
                 var enlarged = await Task.Run(() =>
                 {
                     using var big = Upscaler.Enlarge(source, model, perLayer, cancellation);
@@ -58,6 +60,7 @@ public sealed partial class EditorSession
                 finished += Upscaling.PlanTiles(source.Width, source.Height).Count;
                 progress?.Report((finished, totals));
                 results[layer.Id] = (source, enlarged);
+                cancellation.ThrowIfCancellationRequested();
             }
         }
         catch
@@ -67,10 +70,15 @@ public sealed partial class EditorSession
         }
         return new EnhancedLayers(results);
     }
+
+    private sealed class TileProgress(Action<(int Done, int Total)> report) : IProgress<(int Done, int Total)>
+    {
+        public void Report((int Done, int Total) value) => report(value);
+    }
 }
 
 /// <summary>Enlarged pixels per layer id, with the committed bitmap each was made from.</summary>
-public sealed class EnhancedLayers(Dictionary<Guid, (SKBitmap Source, SKBitmap Result)> results)
+public sealed class EnhancedLayers(Dictionary<Guid, (SKBitmap Source, SKBitmap Result)> results) : IDisposable
 {
     public int Count => results.Count;
 
@@ -83,6 +91,13 @@ public sealed class EnhancedLayers(Dictionary<Guid, (SKBitmap Source, SKBitmap R
     {
         var inUse = document.AllLayers().Select(l => l.Pixels).ToHashSet();
         foreach (var (_, result) in results.Values) if (!inUse.Contains(result)) result.Dispose();
+        results.Clear();
+    }
+
+    /// <summary>Discard an uncommitted preparation, for example when its progress window was cancelled.</summary>
+    public void Dispose()
+    {
+        foreach (var (_, result) in results.Values) result.Dispose();
         results.Clear();
     }
 }

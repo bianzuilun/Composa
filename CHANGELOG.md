@@ -4,6 +4,34 @@ All notable changes to Composa are recorded here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+## [1.5.3] - 2026-10-18
+
+This release implements the editing changes in Compositor 1.4.1 through 1.5.3 on Composa's cross-platform engine. The [compatibility audit](docs/compatibility/compositor-1.5.3-audit.md) maps all fourteen upstream releases to the implementation and records platform differences.
+
+### Added
+
+- High-precision raster editing: retain 16-bit sources through composition, adjustments, blur, geometry, masks and project saves; convert individual layers between 8 and 16 bits, with depth badges in Layers. New project format 7 retains native 16-bit PNG or floating-point EXR sources and still reads older projects.
+- HDR import from OpenEXR and Radiance RGBE, floating-point EXR export, 16-bit PNG/TIFF export, and 16-bit RGB/CMYK Photoshop layers with ZIP prediction and embedded ICC profiles. Export As adds TIFF and one-page PDF alongside sized PNG/JPEG/WebP previews.
+- ICC-based CMYK proof colors, gamut warnings, a saved print-profile choice and CMYK JPEG/TIFF/PDF export. Proofing changes the view without changing the RGB document; exported CMYK files include the print profile.
+- Progressive Blur with draggable canvas endpoints, preserve-transparency Gaussian blur, independent Scanlines controls with glow, displacement, dots, color split and black level, and Repeat Last Filter.
+- Measured Camera Raw color tables pinned to Compositor 1.5.3, regional Shadows, monotone curves, per-group reset, bounded histogram/scopes and a full-resolution shader preview for eligible color-only single-layer grades. Other grades run asynchronously on the CPU.
+- 16-bit RAW development with luminance/chroma denoise, highlight recovery, manual radial lens correction and an option to continue directly into Camera Raw.
+- Texture-aware healing/fill, sharper source-based Liquify, stable smudge pickup and an independent Blur-tool radius.
+- Command search, canvas-only/fullscreen mode, physical canvas units and print presets, transform percentages and resize snapping, mask-from-selection/inverse and solo-mask gestures, folder import, welcome-screen paste and tab-bar image drops.
+
+### Changed
+
+- Rounded rectangles offer continuous Smooth Corners and fill-first options. Nonuniform image resizing retains editable text, shapes and layer effects.
+- Tabs can be reordered and scrolled; selected layers scroll into view; middle-button dragging pans Layers and Ctrl+middle dragging zooms the canvas. Options scroll horizontally and zoom/pan cursors follow modifier changes immediately.
+- Shortcut recording can clear a binding with Backspace/Delete; saved custom bindings take precedence over new defaults. Print proofing uses Ctrl+Y, while Redo remains Ctrl+Shift+Z.
+- Update checks and downloads use this fork's releases and show expandable release-body text. Safe Untitled naming resets when all documents close.
+- The system/English/Simplified Chinese/Japanese preference and restart behavior remain available. New controls use the same localization catalogs; documentation stays English with separate Chinese/Japanese READMEs.
+
+### Compatibility notes
+
+- Native EXR decoding covers uncompressed/ZIPS/ZIP scanlines; other layouts need an HDRI-enabled ImageMagick (bundled on Windows). Integer-only fallbacks refuse HDR rather than silently clipping it.
+- Shader acceleration depends on the host Skia renderer and the grade. No upstream speed multiplier is claimed. RAW lens correction is manual radial correction, not Apple's automatic camera profiles. Composa keeps its own branding and icon.
+
 ## [1.5.0-beta.2] - 2026-10-17
 
 ### Fixed
@@ -192,5 +220,6 @@ The first release with downloadable packages. Composa has been buildable from so
 
 - Camera RAW and HEIC files could report a misleading error instead of saying that ImageMagick was missing. ImageMagick is now located once and asked to identify itself rather than trusted for its name.
 
-[Unreleased]: https://github.com/dvdstelt/Composa/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/bianzuilun/Composa/compare/v1.5.3...HEAD
+[1.5.3]: https://github.com/bianzuilun/Composa/releases/tag/v1.5.3
 [0.2.0]: https://github.com/dvdstelt/Composa/releases/tag/v0.2.0

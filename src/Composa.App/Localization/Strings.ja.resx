@@ -891,4 +891,214 @@
   <data name="Option.AlignRight" xml:space="preserve">
     <value>右揃え</value>
   </data>
+  <data name="Port.CommandSearch" xml:space="preserve">
+    <value>コマンドを検索</value>
+  </data>
+  <data name="Port.CommandPlaceholder" xml:space="preserve">
+    <value>コマンドとツールを検索</value>
+  </data>
+  <data name="Port.Run" xml:space="preserve">
+    <value>実行</value>
+  </data>
+  <data name="Port.Fullscreen" xml:space="preserve">
+    <value>全画面キャンバスを切り替え</value>
+  </data>
+  <data name="Port.LastFilter" xml:space="preserve">
+    <value>前回のフィルター</value>
+  </data>
+  <data name="Port.Fill" xml:space="preserve">
+    <value>塗りつぶし</value>
+  </data>
+  <data name="Port.SmoothCorners" xml:space="preserve">
+    <value>滑らかな角丸</value>
+  </data>
+  <data name="Port.PreserveAlpha" xml:space="preserve">
+    <value>透明度を保持</value>
+  </data>
+  <data name="Port.ProgressiveBlur" xml:space="preserve">
+    <value>段階的ぼかし</value>
+  </data>
+  <data name="Port.From" xml:space="preserve">
+    <value>始点のぼかし半径</value>
+  </data>
+  <data name="Port.To" xml:space="preserve">
+    <value>終点のぼかし半径</value>
+  </data>
+  <data name="Port.PointHelp" xml:space="preserve">
+    <value>キャンバス上の端点をドラッグして、ぼかしの方向と範囲を調整します。</value>
+  </data>
+  <data name="Port.Scanlines" xml:space="preserve">
+    <value>スキャンライン</value>
+  </data>
+  <data name="Port.Spacing" xml:space="preserve">
+    <value>線の間隔</value>
+  </data>
+  <data name="Port.Thickness" xml:space="preserve">
+    <value>線の太さ</value>
+  </data>
+  <data name="Port.Glow" xml:space="preserve">
+    <value>グロー</value>
+  </data>
+  <data name="Port.Dots" xml:space="preserve">
+    <value>ドット</value>
+  </data>
+  <data name="Port.Wobble" xml:space="preserve">
+    <value>揺らぎ</value>
+  </data>
+  <data name="Port.Displace" xml:space="preserve">
+    <value>変位</value>
+  </data>
+  <data name="Port.Smoothness" xml:space="preserve">
+    <value>滑らかさ</value>
+  </data>
+  <data name="Port.Threshold" xml:space="preserve">
+    <value>しきい値</value>
+  </data>
+  <data name="Port.Split" xml:space="preserve">
+    <value>色分離</value>
+  </data>
+  <data name="Port.Density" xml:space="preserve">
+    <value>濃度</value>
+  </data>
+  <data name="Port.Contrast" xml:space="preserve">
+    <value>コントラスト</value>
+  </data>
+  <data name="Port.BlackLevel" xml:space="preserve">
+    <value>黒レベル</value>
+  </data>
+  <data name="Port.Colors" xml:space="preserve">
+    <value>カラーモード</value>
+  </data>
+  <data name="Port.Mono" xml:space="preserve">
+    <value>白黒</value>
+  </data>
+  <data name="Port.TwoColors" xml:space="preserve">
+    <value>2 色</value>
+  </data>
+  <data name="Port.OriginalColors" xml:space="preserve">
+    <value>元の色</value>
+  </data>
+  <data name="Port.DarkColor" xml:space="preserve">
+    <value>暗部の色</value>
+  </data>
+  <data name="Port.LightColor" xml:space="preserve">
+    <value>明部の色</value>
+  </data>
+  <data name="Port.Pixels" xml:space="preserve">
+    <value>ピクセル</value>
+  </data>
+  <data name="Port.Inches" xml:space="preserve">
+    <value>インチ</value>
+  </data>
+  <data name="Port.Centimeters" xml:space="preserve">
+    <value>センチメートル</value>
+  </data>
+  <data name="Port.Millimeters" xml:space="preserve">
+    <value>ミリメートル</value>
+  </data>
+  <data name="Port.ExportAs" xml:space="preserve">
+    <value>書き出し形式</value>
+  </data>
+  <data name="Port.Export" xml:space="preserve">
+    <value>書き出す</value>
+  </data>
+  <data name="Port.ExportTiff" xml:space="preserve">
+    <value>TIFF を書き出し</value>
+  </data>
+  <data name="Port.ExportPdf" xml:space="preserve">
+    <value>PDF を書き出し</value>
+  </data>
+  <data name="Port.Proportions" xml:space="preserve">
+    <value>縦横比を固定</value>
+  </data>
+  <data name="Port.Quality" xml:space="preserve">
+    <value>品質</value>
+  </data>
+  <data name="Port.ExportBudget" xml:space="preserve">
+    <value>書き出しサイズが対応するピクセル数の上限を超えています。</value>
+  </data>
+  <data name="Port.Navigator" xml:space="preserve">
+    <value>ナビゲーター（300% 以上）</value>
+  </data>
+  <data name="Port.AllDocuments" xml:space="preserve">
+    <value>すべてのドキュメント</value>
+  </data>
+  <data name="Port.AddMaskHint" xml:space="preserve">
+    <value>レイヤーマスクを追加（Alt：選択範囲を反転、またはすべて隠す）</value>
+  </data>
+  <data name="Port.MaskHint" xml:space="preserve">
+    <value>レイヤーマスク：クリックで描画、Alt で単独表示、Shift で無効化、Ctrl で選択範囲に読み込み</value>
+  </data>
+  <data name="Port.SaveLookAdaptive" xml:space="preserve">
+    <value>色を .cube LUT に保存します。画像に依存するコントラスト、ハイライト、シャドウ、効果、ディテール、光学補正は除外されます。</value>
+  </data>
+  <data name="Port.Depth8" xml:space="preserve">
+    <value>レイヤーを8ビットに変換</value>
+  </data>
+  <data name="Port.Depth16" xml:space="preserve">
+    <value>レイヤーを16ビットに変換</value>
+  </data>
+  <data name="Port.Png16" xml:space="preserve">
+    <value>PNG（16ビット）</value>
+  </data>
+  <data name="Port.Tiff16" xml:space="preserve">
+    <value>TIFF（16ビット）</value>
+  </data>
+  <data name="Port.RawLumaNoise" xml:space="preserve">
+    <value>輝度ノイズ軽減</value>
+  </data>
+  <data name="Port.RawColorNoise" xml:space="preserve">
+    <value>カラーノイズ軽減</value>
+  </data>
+  <data name="Port.HighlightRecovery" xml:space="preserve">
+    <value>ハイライト復元</value>
+  </data>
+  <data name="Port.LensDistortion" xml:space="preserve">
+    <value>レンズの歪曲</value>
+  </data>
+  <data name="Port.ContinueRaw" xml:space="preserve">
+    <value>Camera Rawで続ける</value>
+  </data>
+  <data name="Port.BlurRadius" xml:space="preserve">
+    <value>ぼかし半径</value>
+  </data>
+  <data name="Port.Cmyk" xml:space="preserve">
+    <value>CMYK（JPEG、TIFF、PDF）</value>
+  </data>
+  <data name="Port.Proof" xml:space="preserve">
+    <value>色の校正</value>
+  </data>
+  <data name="Port.Gamut" xml:space="preserve">
+    <value>色域外警告</value>
+  </data>
+  <data name="Port.CmykProfile" xml:space="preserve">
+    <value>CMYKプロファイル</value>
+  </data>
+  <data name="Port.CmykValid" xml:space="preserve">
+    <value>有効なCMYK ICCプロファイルを選択してください。</value>
+  </data>
+  <data name="Port.ShortcutDelete" xml:space="preserve">
+    <value>ショートカットをクリックして新しいキーの組み合わせを押します。Escapeで記録を中止し、BackspaceまたはDeleteで割り当てを解除します。ブラシのサイズと硬さ（[ ] と { }）、不透明度の数字キー、スペースによる移動、修飾キーとマウスの操作は固定です。</value>
+  </data>
+  <data name="Port.RawDimensions" xml:space="preserve">
+    <value>{0} × {1} ピクセル、各チャンネル16ビットで現像</value>
+  </data>
+  <data name="Port.RawTitle" xml:space="preserve">
+    <value>{0} を現像</value>
+  </data>
+  <data name="Port.RawBalanceNote" xml:space="preserve">
+    <value>カメラのホワイトバランスを基準に、色温度と緑／マゼンタの色かぶりを調整します。</value>
+  </data>
+  <data name="Port.WhatsNew" xml:space="preserve">
+    <value>更新内容</value>
+  </data>
+  <data name="Port.Histogram" xml:space="preserve">
+    <value>ヒストグラム</value>
+  </data>
+  <data name="Port.Vectorscope" xml:space="preserve">
+    <value>ベクトルスコープ</value>
+  </data>
+  <data name="Port.SixteenBit" xml:space="preserve">
+    <value>16ビット</value>
+  </data>
 </root>

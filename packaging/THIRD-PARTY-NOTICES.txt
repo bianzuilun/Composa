@@ -2,9 +2,9 @@ Third-party software in this build of Composa
 
 Composa itself is MIT licensed; see LICENSE.
 
-The Windows and macOS builds of Composa include Magick.NET, which is how they open HEIC, AVIF, TIFF and camera RAW files without ImageMagick being installed separately. Linux builds do not include it and use the ImageMagick that the distribution provides instead.
+The Windows and macOS builds of Composa include Magick.NET, which is how they open HEIC, AVIF, TIFF and camera RAW files without ImageMagick being installed separately. Linux builds include only the managed Magick.NET.Core ICC profile resources and use the ImageMagick that the distribution provides for conversions.
 
-Magick.NET is licensed under the Apache License 2.0. It carries ImageMagick (ImageMagick License) and the libraries ImageMagick uses to read and write image formats, all compiled into the single native library Magick.Native-Q16-<architecture>.dll (or .dylib on macOS) that sits next to the Composa executable. Every component, its version and its full licence text is listed in ImageMagick-NOTICE.txt, which is Magick.NET's own notice file, shipped unchanged.
+Magick.NET is licensed under the Apache License 2.0. It carries ImageMagick (ImageMagick License) and the libraries ImageMagick uses to read and write image formats, all compiled into the single native library Magick.Native-Q16-HDRI-<architecture>.dll (or .dylib on macOS) that sits next to the Composa executable. Every component, its version and its full licence text is listed in ImageMagick-NOTICE.txt, which is Magick.NET's own notice file, shipped unchanged.
 
 Several of those components are licensed under the GNU Lesser General Public License, among them libraw (camera RAW), libheif and libde265 (HEIC). Composa does not modify them. The native library is loaded at runtime as a separate file, so it can be replaced with one built from source. The sources and the build scripts that produce it are published at:
 
@@ -52,3 +52,33 @@ The models are not source code and are not covered by Composa's MIT licence; eac
                         4,871,181 bytes, SHA-256 09b757accd747d7e423c1d352b3e8f23e77cc5742d04bae958d4eb8082b76fa4
 
 The Apache License 2.0 is at https://www.apache.org/licenses/LICENSE-2.0 and the BSD 3-Clause License at https://opensource.org/license/bsd-3-clause. The models are used unmodified; BRIA's RMBG models, which are better known, are licensed for non-commercial use only and are deliberately not included, and so is GFPGAN face restoration, which invents faces.
+
+Compositor algorithms
+
+TextureInpaint.cs adapts multi-scale texture matching from Rendering/PatchPixels.c at the same pinned commit below. Its seam adaptation uses Composa's existing push-pull solver.
+ShapePaths.cs and Scanlines.cs are adapted from robbietilton/Compositor v1.5.3, commit 554104cf1c2de844c1acbd60b4f7b422bd6ce7bd, Document/ShapeTool.swift and Rendering/DitherPixels.c.
+CameraRawTables.cs, CameraRawShadows.cs, CameraRawMeasuredColor.cs and the monotone parametric curve are adapted from Document/CameraRawTables.swift, Document/CameraRawShadows.swift, Document/CameraRawColor.swift and Rendering/AdjustPixels.c at that same commit.
+CameraRawData contains the original CameraRawShadows.bin and a lossless gzip repack of CameraRawTables.bin. scripts/import-compositor-tables.py records their original SHA-256 hashes and reproduces the repack without a runtime LZMA dependency.
+DeepFilters.cs and DeepAdjustments.cs adapt precision reconstruction from Rendering/DeepPixels.c. DeepPixels.cs adapts the immutable source/painted-preview approach and per-channel noise from Document/DeepLayers.swift and Rendering/DeepPixels.c at that same commit.
+
+MIT License
+
+Copyright (c) 2026 Wonder Assembly LLC
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

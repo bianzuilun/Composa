@@ -71,6 +71,7 @@ public sealed partial class EditorSession
         if (want == have || (long)want.Width * want.Height > DocumentLimits.MaxSurfacePixels) return;
         var grown = Pixels.NewColor(want.Width, want.Height);
         using (var canvas = new SKCanvas(grown)) canvas.DrawBitmap(pixels, have.Left - want.Left, have.Top - want.Top);
+        DeepPixels.PreserveDraw(pixels, grown, (drawing, wide) => drawing.DrawBitmap(wide, have.Left - want.Left, have.Top - want.Top));
         layer.Pixels = grown;
         if (layer.Mask is { } mask) layer.Mask = GrownMask(mask, want.Width, want.Height, have.Left - want.Left, have.Top - want.Top);
         layer.Transform = LayerTransform.Identity(want.Width, want.Height) with { X = want.Left, Y = want.Top };
@@ -117,6 +118,7 @@ public sealed partial class EditorSession
 
         var grown = Pixels.NewColor((int)width, (int)height);
         using (var canvas = new SKCanvas(grown)) canvas.DrawBitmap(pixels, left, top);
+        DeepPixels.PreserveDraw(pixels, grown, (drawing, wide) => drawing.DrawBitmap(wide, left, top));
         layer.Pixels = grown;
         if (layer.Mask is { } mask) layer.Mask = GrownMask(mask, (int)width, (int)height, left, top);
 
@@ -137,6 +139,7 @@ public sealed partial class EditorSession
     private static unsafe SKBitmap MixBySelection(SKBitmap original, SKBitmap modified, SKBitmap? selection)
     {
         if (selection == null) return modified;
+        var wide = original.ColorType == SKColorType.Rgba8888 ? DeepPixels.MixSelection(original, modified, selection) : null;
         var bpp = original.BytesPerPixel;
         byte* o = (byte*)original.GetPixels(), m = (byte*)modified.GetPixels(), s = (byte*)selection.GetPixels();
         int width = Math.Min(original.Width, selection.Width), height = Math.Min(original.Height, selection.Height);
@@ -154,6 +157,7 @@ public sealed partial class EditorSession
                 }
             }
         });
+        if (wide != null) DeepPixels.Attach(modified, wide);
         return modified;
     }
 
@@ -261,7 +265,7 @@ public sealed partial class EditorSession
         return true;
     }
 
-    public void PreviewFilter(FilterSettings settings)
+    private FilterSettings FilterInLayer(FilterSettings settings)
     {
         // Radii and distances are given in document pixels; a scaled-down photo has several source pixels to each.
         if (previewLayer is { } target)
@@ -270,6 +274,14 @@ public sealed partial class EditorSession
             var scale = Math.Sqrt(Math.Abs(matrix.ScaleX * matrix.ScaleY - matrix.SkewX * matrix.SkewY));
             if (scale > 1e-6 && Math.Abs(scale - 1) > 1e-3)
                 settings = settings with { Radius = settings.Radius / scale, BloomRadius = settings.BloomRadius / scale, TonalRadius = settings.TonalRadius / scale, CameraRawScale = 1 / scale, Painterly = settings.Painterly with { BrushSize = settings.Painterly.BrushSize / scale } };
+            if (settings.Kind == FilterKind.ProgressiveBlur && matrix.TryInvert(out var inverseBlur))
+                settings = settings with
+                {
+                    ProgressiveStart = settings.ProgressiveStart is { } start ? inverseBlur.MapPoint(start) : null,
+                    ProgressiveEnd = settings.ProgressiveEnd is { } end ? inverseBlur.MapPoint(end) : null,
+                    ProgressiveFrom = settings.ProgressiveFrom / Math.Max(scale, 1e-6),
+                    ProgressiveTo = settings.ProgressiveTo / Math.Max(scale, 1e-6)
+                };
             // A floating layer's blur spreads past its edges; one that fills the canvas has nothing to spread into.
             var bounds = target.Pixels != null ? target.Bounds : new SKRect(0, 0, document.Width, document.Height);
             settings = settings with { ClampEdges = bounds.Left <= 0.5f && bounds.Top <= 0.5f && bounds.Right >= document.Width - 0.5f && bounds.Bottom >= document.Height - 0.5f };
@@ -281,16 +293,30 @@ public sealed partial class EditorSession
                 settings = settings with { VignetteFillsClear = previewFillsClear, VignetteFrame = frame };
             }
         }
-        PreviewFilterCore(settings);
+        return settings;
     }
 
-    private void PreviewFilterCore(FilterSettings settings) => Preview(source =>
+    public void PreviewFilter(FilterSettings settings) => PreviewFilterCore(FilterInLayer(settings));
+
+    private static (SKBitmap Result, int GrowX, int GrowY) RunFilter(SKBitmap source, FilterSettings settings)
     {
         if (source.ColorType != SKColorType.Alpha8) return ImageFilters.Run(source, settings);
         using var color = MaskToColor(source);
         var (result, growX, growY) = ImageFilters.Run(color, settings);
         using (result) return (ColorToMask(result), growX, growY);
-    });
+    }
+
+    private void PreviewFilterCore(FilterSettings settings) => Preview(source => RunFilter(source, settings));
+
+    /// <summary>Compute against the immutable preview original off-thread; adopt it only while the same edit is open.</summary>
+    public async Task PreviewFilterAsync(FilterSettings settings)
+    {
+        if (previewOriginal is not { } original || previewLayer is not { } layer) return;
+        settings = FilterInLayer(settings);
+        var result = await Task.Run(() => RunFilter(original, settings));
+        if (!ReferenceEquals(previewOriginal, original) || previewLayer != layer) { result.Result.Dispose(); return; }
+        Preview(_ => result);
+    }
 
     public void PreviewContentAwareFill() => Preview(source =>
     {
@@ -311,6 +337,8 @@ public sealed partial class EditorSession
             using (var canvas = new SKCanvas(cropped))
             using (var paint = new SKPaint { BlendMode = SKBlendMode.Src })
                 canvas.DrawBitmap(result, -growX, -growY, paint);
+            var offsetX = growX; var offsetY = growY;
+            DeepPixels.PreserveDraw(result, cropped, (drawing, wide) => drawing.DrawBitmap(wide, -offsetX, -offsetY));
             result.Dispose();
             result = cropped;
             growX = growY = 0;
@@ -433,7 +461,7 @@ public sealed partial class EditorSession
             end = new SKColor(0, 0, 0, Gray(Background));
         }
         var painted = Pixels.Clone(original);
-        using (var canvas = new SKCanvas(painted))
+        void Draw(SKCanvas canvas)
         {
             canvas.SetMatrix(in inverse);
             using var shader = GradientRadial
@@ -444,6 +472,8 @@ public sealed partial class EditorSession
             paint.Color = paint.Color.WithAlpha((byte)Math.Round(Math.Clamp(GradientOpacity, 0, 1) * 255));
             canvas.DrawPaint(paint);
         }
+        using (var canvas = new SKCanvas(painted)) Draw(canvas);
+        DeepPixels.PreserveDraw(original, painted, (canvas, source) => { canvas.DrawBitmap(source, 0, 0); Draw(canvas); });
         var selection = SelectionInTargetSpace(layer);
         var previous = Target(layer);
         SetTarget(layer, MixBySelection(original, painted, selection));
@@ -475,7 +505,7 @@ public sealed partial class EditorSession
             case ShapeKind.Ellipse: canvas.DrawOval(rect, paint); break;
             case ShapeKind.RoundedRectangle:
                 var radius = (float)Math.Min(style.CornerRadius, Math.Min(width, height) / 2.0);
-                canvas.DrawRoundRect(rect, radius, radius, paint);
+                using (var path = ShapePaths.Rectangle(rect, radius, style.SmoothCorners)) canvas.DrawPath(path, paint);
                 break;
             default: canvas.DrawRect(rect, paint); break;
         }
@@ -486,7 +516,7 @@ public sealed partial class EditorSession
     /// <summary>Adds the Shape tool's current shape in the foreground color.</summary>
     public Layer? AddShape(SKRect rect) =>
         ShapeKind == ShapeKind.Line ? AddLine(new SKPoint(rect.Left, rect.Top), new SKPoint(rect.Right, rect.Bottom))
-                                    : AddShape(new ShapeStyle(ShapeKind, (uint)Foreground, ShapeCornerRadius), rect);
+                                    : AddShape(new ShapeStyle(ShapeKind, (uint)Foreground, ShapeCornerRadius) { SmoothCorners = ShapeSmoothCorners }, rect);
 
     /// <summary>Adds a live rectangle, rounded rectangle or ellipse filling <paramref name="rect"/>, whatever the tool is set to.</summary>
     public Layer? AddShape(ShapeStyle style, SKRect rect)
@@ -553,6 +583,13 @@ public sealed partial class EditorSession
             using var paint = new SKPaint { BlendMode = SKBlendMode.DstIn };
             canvas.DrawBitmap(document.Selection, -area.Left, -area.Top, paint);
         }
+        DeepPixels.PreserveDraw(source, pixels, (drawing, wide) =>
+        {
+            drawing.DrawBitmap(wide, sourceArea.Left - area.Left, sourceArea.Top - area.Top);
+            if (document.Selection == null) return;
+            using var paint = new SKPaint { BlendMode = SKBlendMode.DstIn };
+            drawing.DrawBitmap(document.Selection, -area.Left, -area.Top, paint);
+        });
         return new ClipboardImage(pixels, new SKPointI(area.Left, area.Top));
     }
 

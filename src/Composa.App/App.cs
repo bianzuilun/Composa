@@ -9,6 +9,11 @@ public sealed class App : Application
 {
     public override void Initialize()
     {
+        IO.ImageMagick.RgbProfile ??= global::ImageMagick.ColorProfiles.SRGB.ToByteArray();
+        IO.ImageMagick.DefaultCmykProfile ??= global::ImageMagick.ColorProfiles.CoatedFOGRA39.ToByteArray();
+#if BUNDLED_IMAGEMAGICK
+        IO.ImageMagick.Bundled ??= BundledImageMagick.TryLoad;
+#endif
         L10n.Initialize(Settings.Load().Language);
         RequestedThemeVariant = ThemeVariant.Dark;
         Styles.Add(new FluentTheme { DensityStyle = DensityStyle.Compact });

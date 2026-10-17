@@ -210,9 +210,9 @@ public class CameraRawDialogTests
         Assert.Equal(["Light", "Color", "Color Grading", "Effects", "Curve", "Color Mixer", "Detail", "Optics", "Calibration"], headers);
         Assert.True(groups[0].IsExpanded && groups[1].IsExpanded && groups[2].IsExpanded && !groups[3].IsExpanded); // Light, Color and Color Grading open, as upstream opens them.
         // The Light group's eye is shown because Exposure is set; clicking it renders without the group.
-        var eye = ((Grid)groups[0].Header!).Children.OfType<Button>().Single();
+        var eye = ((Grid)groups[0].Header!).Children.OfType<Button>().Single(button => Equals(button.Tag, "group-visibility"));
         Assert.True(eye.IsVisible);
-        Assert.False(((Grid)groups[3].Header!).Children.OfType<Button>().Single().IsVisible);
+        Assert.False(((Grid)groups[3].Header!).Children.OfType<Button>().Single(button => Equals(button.Tag, "group-visibility")).IsVisible);
         // Color sliders show their colors; every slider resets to a fresh grade's value, read from the defaults.
         groups[5].IsExpanded = groups[6].IsExpanded = true;                 // A collapsed group keeps its sliders out of the tree.
         Dispatcher.UIThread.RunJobs();

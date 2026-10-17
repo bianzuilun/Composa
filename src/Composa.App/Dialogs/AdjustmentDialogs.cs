@@ -381,11 +381,36 @@ public static class AdjustmentDialogs
         var panel = new StackPanel { Spacing = 8 };
         // A filter opens with its defaults, so Reset puts a slider back to the value it opened with.
         void Slider(string label, double value, double min, double max, Func<double, FilterSettings> apply, double step = 1, string format = "0") =>
-            panel.Children.Add(Ui.SliderField(label, value, min, max, v => Update(apply(v)), step, format, FieldWidth, reset: value));
+            panel.Children.Add(Ui.SliderField(L10n.Text(label), value, min, max, v => Update(apply(v)), step, format, FieldWidth, reset: value));
         switch (initial.Kind)
         {
             case FilterKind.GaussianBlur:
                 Slider("Radius", initial.Radius, 0.1, 250, v => current with { Radius = v }, 0.1, "0.0");
+                panel.Children.Add(Ui.Check(L10n.Text("Preserve Transparency"), initial.PreserveTransparency, v => Update(current with { PreserveTransparency = v })));
+                break;
+            case FilterKind.Scanlines:
+                Slider("Line Spacing", initial.Scanlines.Spacing, 2, 32, v => current with { Scanlines = current.Scanlines with { Spacing = (int)v } });
+                Slider("Thickness", initial.Scanlines.Thickness, 5, 100, v => current with { Scanlines = current.Scanlines with { Thickness = v } });
+                Slider("Glow", initial.Scanlines.Glow, 0, 100, v => current with { Scanlines = current.Scanlines with { Glow = v } });
+                Slider("Dots", initial.Scanlines.Dots, 0, 100, v => current with { Scanlines = current.Scanlines with { Dots = v } });
+                Slider("Wobble", initial.Scanlines.Wobble, 0, 64, v => current with { Scanlines = current.Scanlines with { Wobble = v } });
+                Slider("Displace", initial.Scanlines.Displace, -100, 100, v => current with { Scanlines = current.Scanlines with { Displace = v } });
+                Slider("Smoothness", initial.Scanlines.Smoothness, 0, 100, v => current with { Scanlines = current.Scanlines with { Smoothness = v } });
+                Slider("Threshold", initial.Scanlines.Threshold, 0, 100, v => current with { Scanlines = current.Scanlines with { Threshold = v } });
+                Slider("Color Split", initial.Scanlines.Split, 0, 16, v => current with { Scanlines = current.Scanlines with { Split = (int)v } });
+                Slider("Density", initial.Scanlines.Density, -100, 100, v => current with { Scanlines = current.Scanlines with { Density = v } });
+                Slider("Contrast", initial.Scanlines.Contrast, -100, 100, v => current with { Scanlines = current.Scanlines with { Contrast = v } });
+                Slider("Black Level", initial.Scanlines.BlackLevel, 0, 100, v => current with { Scanlines = current.Scanlines with { BlackLevel = v } });
+                panel.Children.Add(Ui.Row(10, Ui.Label(L10n.Text("Colors")), Ui.Combo(Enum.GetValues<DitherColors>(), initial.Scanlines.Colors,
+                    v => L10n.Text(v == DitherColors.BlackWhite ? "Black and White" : v == DitherColors.TwoColors ? "Two Colors" : "Original Colors"),
+                    v => Update(current with { Scanlines = current.Scanlines with { Colors = v } }), 160)));
+                foreach (var dark in new[] { true, false })
+                    panel.Children.Add(Ui.TextButton(L10n.Text(dark ? "Dark Color" : "Light Color"), async () =>
+                    {
+                        var chosen = await Prompts.Color(owner, L10n.Text(dark ? "Dark Color" : "Light Color"), new SKColor(dark ? current.Scanlines.Dark : current.Scanlines.Light));
+                        if (chosen is not { } color) return;
+                        Update(current with { Scanlines = dark ? current.Scanlines with { Dark = (uint)color } : current.Scanlines with { Light = (uint)color } });
+                    }));
                 break;
             case FilterKind.MotionBlur:
                 // The blur runs along a line, so its dial is a line rather than a light. It turns the full circle as Photoshop's field

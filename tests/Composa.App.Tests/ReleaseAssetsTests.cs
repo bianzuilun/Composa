@@ -13,27 +13,27 @@ public class ReleaseAssetsTests
     public const string V120 = """
     {
       "tag_name": "v1.2.0",
-      "html_url": "https://github.com/dvdstelt/Composa/releases/tag/v1.2.0",
+      "html_url": "https://github.com/bianzuilun/Composa/releases/tag/v1.2.0",
       "prerelease": false,
       "assets": [
-        { "name": "Composa-1.2.0-aarch64.AppImage", "size": 41060872, "browser_download_url": "https://github.com/dvdstelt/Composa/releases/download/v1.2.0/Composa-1.2.0-aarch64.AppImage" },
-        { "name": "Composa-1.2.0-x86_64.AppImage", "size": 43510264, "browser_download_url": "https://github.com/dvdstelt/Composa/releases/download/v1.2.0/Composa-1.2.0-x86_64.AppImage" },
-        { "name": "composa-1.2.0-1.aarch64.rpm", "size": 44057151, "browser_download_url": "https://github.com/dvdstelt/Composa/releases/download/v1.2.0/composa-1.2.0-1.aarch64.rpm" },
-        { "name": "composa-1.2.0-1.x86_64.rpm", "size": 46469944, "browser_download_url": "https://github.com/dvdstelt/Composa/releases/download/v1.2.0/composa-1.2.0-1.x86_64.rpm" },
-        { "name": "composa-1.2.0-linux-arm64.tar.gz", "size": 41219991, "browser_download_url": "https://github.com/dvdstelt/Composa/releases/download/v1.2.0/composa-1.2.0-linux-arm64.tar.gz" },
-        { "name": "composa-1.2.0-linux-x64.tar.gz", "size": 43282934, "browser_download_url": "https://github.com/dvdstelt/Composa/releases/download/v1.2.0/composa-1.2.0-linux-x64.tar.gz" },
-        { "name": "composa-1.2.0-win-arm64-setup.exe", "size": 41475463, "browser_download_url": "https://github.com/dvdstelt/Composa/releases/download/v1.2.0/composa-1.2.0-win-arm64-setup.exe" },
-        { "name": "composa-1.2.0-win-arm64.zip", "size": 55008002, "browser_download_url": "https://github.com/dvdstelt/Composa/releases/download/v1.2.0/composa-1.2.0-win-arm64.zip" },
-        { "name": "composa-1.2.0-win-x64-setup.exe", "size": 45117217, "browser_download_url": "https://github.com/dvdstelt/Composa/releases/download/v1.2.0/composa-1.2.0-win-x64-setup.exe" },
-        { "name": "composa-1.2.0-win-x64.zip", "size": 58169386, "browser_download_url": "https://github.com/dvdstelt/Composa/releases/download/v1.2.0/composa-1.2.0-win-x64.zip" },
-        { "name": "composa_1.2.0_amd64.deb", "size": 33786732, "browser_download_url": "https://github.com/dvdstelt/Composa/releases/download/v1.2.0/composa_1.2.0_amd64.deb" },
-        { "name": "composa_1.2.0_arm64.deb", "size": 30207124, "browser_download_url": "https://github.com/dvdstelt/Composa/releases/download/v1.2.0/composa_1.2.0_arm64.deb" },
-        { "name": "sha256sums.txt", "size": 1140, "browser_download_url": "https://github.com/dvdstelt/Composa/releases/download/v1.2.0/sha256sums.txt" }
+        { "name": "Composa-1.2.0-aarch64.AppImage", "size": 41060872, "browser_download_url": "https://github.com/bianzuilun/Composa/releases/download/v1.2.0/Composa-1.2.0-aarch64.AppImage" },
+        { "name": "Composa-1.2.0-x86_64.AppImage", "size": 43510264, "browser_download_url": "https://github.com/bianzuilun/Composa/releases/download/v1.2.0/Composa-1.2.0-x86_64.AppImage" },
+        { "name": "composa-1.2.0-1.aarch64.rpm", "size": 44057151, "browser_download_url": "https://github.com/bianzuilun/Composa/releases/download/v1.2.0/composa-1.2.0-1.aarch64.rpm" },
+        { "name": "composa-1.2.0-1.x86_64.rpm", "size": 46469944, "browser_download_url": "https://github.com/bianzuilun/Composa/releases/download/v1.2.0/composa-1.2.0-1.x86_64.rpm" },
+        { "name": "composa-1.2.0-linux-arm64.tar.gz", "size": 41219991, "browser_download_url": "https://github.com/bianzuilun/Composa/releases/download/v1.2.0/composa-1.2.0-linux-arm64.tar.gz" },
+        { "name": "composa-1.2.0-linux-x64.tar.gz", "size": 43282934, "browser_download_url": "https://github.com/bianzuilun/Composa/releases/download/v1.2.0/composa-1.2.0-linux-x64.tar.gz" },
+        { "name": "composa-1.2.0-win-arm64-setup.exe", "size": 41475463, "browser_download_url": "https://github.com/bianzuilun/Composa/releases/download/v1.2.0/composa-1.2.0-win-arm64-setup.exe" },
+        { "name": "composa-1.2.0-win-arm64.zip", "size": 55008002, "browser_download_url": "https://github.com/bianzuilun/Composa/releases/download/v1.2.0/composa-1.2.0-win-arm64.zip" },
+        { "name": "composa-1.2.0-win-x64-setup.exe", "size": 45117217, "browser_download_url": "https://github.com/bianzuilun/Composa/releases/download/v1.2.0/composa-1.2.0-win-x64-setup.exe" },
+        { "name": "composa-1.2.0-win-x64.zip", "size": 58169386, "browser_download_url": "https://github.com/bianzuilun/Composa/releases/download/v1.2.0/composa-1.2.0-win-x64.zip" },
+        { "name": "composa_1.2.0_amd64.deb", "size": 33786732, "browser_download_url": "https://github.com/bianzuilun/Composa/releases/download/v1.2.0/composa_1.2.0_amd64.deb" },
+        { "name": "composa_1.2.0_arm64.deb", "size": 30207124, "browser_download_url": "https://github.com/bianzuilun/Composa/releases/download/v1.2.0/composa_1.2.0_arm64.deb" },
+        { "name": "sha256sums.txt", "size": 1140, "browser_download_url": "https://github.com/bianzuilun/Composa/releases/download/v1.2.0/sha256sums.txt" }
       ]
     }
     """;
 
-    private const string LatestEndpoint = "https://api.github.com/repos/dvdstelt/Composa/releases/latest";
+    private const string LatestEndpoint = "https://api.github.com/repos/bianzuilun/Composa/releases/latest";
 
     public static async Task<ReleaseInfo> Parse(string json)
     {
@@ -50,9 +50,9 @@ public class ReleaseAssetsTests
         Assert.Equal("v1.2.0", release.Tag);
         Assert.Equal(13, release.Assets.Count);
         var deb = release.Assets.Single(a => a.Name == "composa_1.2.0_amd64.deb");
-        Assert.Equal("https://github.com/dvdstelt/Composa/releases/download/v1.2.0/composa_1.2.0_amd64.deb", deb.Url);
+        Assert.Equal("https://github.com/bianzuilun/Composa/releases/download/v1.2.0/composa_1.2.0_amd64.deb", deb.Url);
         Assert.Equal(33786732, deb.Size);
-        Assert.Equal("https://github.com/dvdstelt/Composa/releases/download/v1.2.0/sha256sums.txt", release.Checksums?.Url);
+        Assert.Equal("https://github.com/bianzuilun/Composa/releases/download/v1.2.0/sha256sums.txt", release.Checksums?.Url);
     }
 
     /// <summary>Nothing identifying goes out with the request: the same bare User-Agent as ever, and no version.</summary>
@@ -70,9 +70,9 @@ public class ReleaseAssetsTests
     public async Task Files_from_anywhere_else_are_left_out()
     {
         var json = V120
-            .Replace("https://github.com/dvdstelt/Composa/releases/download/v1.2.0/composa_1.2.0_amd64.deb", "https://example.com/composa_1.2.0_amd64.deb")
-            .Replace("https://github.com/dvdstelt/Composa/releases/download/v1.2.0/composa-1.2.0-1.x86_64.rpm", "http://github.com/dvdstelt/Composa/releases/download/v1.2.0/composa-1.2.0-1.x86_64.rpm")
-            .Replace("https://github.com/dvdstelt/Composa/releases/download/v1.2.0/composa-1.2.0-linux-x64.tar.gz", "https://github.com/someone/Composa/releases/download/v1.2.0/composa-1.2.0-linux-x64.tar.gz");
+            .Replace("https://github.com/bianzuilun/Composa/releases/download/v1.2.0/composa_1.2.0_amd64.deb", "https://example.com/composa_1.2.0_amd64.deb")
+            .Replace("https://github.com/bianzuilun/Composa/releases/download/v1.2.0/composa-1.2.0-1.x86_64.rpm", "http://github.com/bianzuilun/Composa/releases/download/v1.2.0/composa-1.2.0-1.x86_64.rpm")
+            .Replace("https://github.com/bianzuilun/Composa/releases/download/v1.2.0/composa-1.2.0-linux-x64.tar.gz", "https://github.com/someone/Composa/releases/download/v1.2.0/composa-1.2.0-linux-x64.tar.gz");
         var release = await Parse(json);
         Assert.Equal(10, release.Assets.Count);
         Assert.Null(ReleaseAssets.For(InstallKind.Deb, Architecture.X64, release));
@@ -136,7 +136,7 @@ public class ReleaseAssetsTests
     [Fact]
     public void A_prerelease_is_found_under_each_formats_spelling()
     {
-        var release = new ReleaseInfo("v1.3.0-beta.1", "https://github.com/dvdstelt/Composa/releases/tag/v1.3.0-beta.1", true,
+        var release = new ReleaseInfo("v1.3.0-beta.1", "https://github.com/bianzuilun/Composa/releases/tag/v1.3.0-beta.1", true,
         [
             Asset("composa_1.3.0.beta.1_amd64.deb"),
             Asset("composa-1.3.0-0.beta.1.x86_64.rpm"),
@@ -152,5 +152,5 @@ public class ReleaseAssetsTests
         Assert.Equal("composa-1.3.0-beta.1-win-x64.zip", ReleaseAssets.For(InstallKind.WindowsZip, Architecture.X64, release)?.Name);
     }
 
-    private static ReleaseAsset Asset(string name) => new(name, "https://github.com/dvdstelt/Composa/releases/download/v1.3.0-beta.1/" + name, 1);
+    private static ReleaseAsset Asset(string name) => new(name, "https://github.com/bianzuilun/Composa/releases/download/v1.3.0-beta.1/" + name, 1);
 }

@@ -7,7 +7,7 @@ namespace Composa.App.Tests;
 /// <summary>Every download here is answered by <see cref="FakeHttp"/>: nothing reaches the network.</summary>
 public sealed class UpdateDownloadTests : IDisposable
 {
-    private const string Base = "https://github.com/dvdstelt/Composa/releases/download/v1.3.0/";
+    private const string Base = "https://github.com/bianzuilun/Composa/releases/download/v1.3.0/";
     private const string Name = "composa_1.3.0_amd64.deb";
 
     private readonly string folder = Path.Combine(Path.GetTempPath(), "composa-download-" + Guid.NewGuid().ToString("N"));
@@ -22,7 +22,7 @@ public sealed class UpdateDownloadTests : IDisposable
 
     private ReleaseAsset Asset => new(Name, Base + Name, package.Length);
 
-    private ReleaseInfo Release(bool withSums = true) => new("v1.3.0", "https://github.com/dvdstelt/Composa/releases/tag/v1.3.0", false,
+    private ReleaseInfo Release(bool withSums = true) => new("v1.3.0", "https://github.com/bianzuilun/Composa/releases/tag/v1.3.0", false,
         withSums ? [Asset, new ReleaseAsset("sha256sums.txt", Base + "sha256sums.txt", 200)] : [Asset]);
 
     private Dictionary<string, byte[]> Files(string? sums = null) => new()

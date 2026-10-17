@@ -4,7 +4,7 @@ APP=composa
 APP_NAME=Composa
 APP_ID=org.composa.Composa
 MAINTAINER="Dennis van der Stelt <dennis.vanderstelt@gmail.com>"
-HOMEPAGE="https://github.com/dvdstelt/Composa"
+HOMEPAGE="https://github.com/bianzuilun/Composa"
 SUMMARY="Layer-based image editor for compositing and retouching"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

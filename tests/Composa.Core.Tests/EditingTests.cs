@@ -631,10 +631,11 @@ public class EditingTests
     }
 
     [Fact]
-    public void Exports_encode_and_reload()
+    public void Skia_raster_exports_encode_and_reload_without_an_external_decoder()
     {
         using var bitmap = Gradient(32, 24);
-        foreach (var format in Enum.GetValues<ExportFormat>())
+        // TIFF and PDF use the native document writers, checked separately in CompositorPortTests.
+        foreach (var format in new[] { ExportFormat.Png, ExportFormat.Jpeg, ExportFormat.Webp })
         {
             var bytes = ImageFiles.Encode(bitmap, format);
             using var reloaded = ImageFiles.Load(new MemoryStream(bytes));

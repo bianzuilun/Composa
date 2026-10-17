@@ -11,6 +11,7 @@ public enum ShapeKind { Rectangle, RoundedRectangle, Ellipse, Line }
 public sealed record ShapeStyle(ShapeKind Kind, uint Fill, double CornerRadius)
 {
     /// <summary>A line's thickness in layer pixels; other shapes ignore it.</summary>
+    public bool SmoothCorners { get; init; }
     public double LineWidth { get; init; }
     /// <summary>A line's two ends as fractions of the layer's box (0 to 1), so a scaled line still runs between the same two places. Null runs corner to corner.</summary>
     public double? StartX { get; init; }

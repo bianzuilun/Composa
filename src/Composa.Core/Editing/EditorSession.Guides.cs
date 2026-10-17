@@ -123,9 +123,9 @@ public sealed partial class EditorSession
     /// A point moved onto the nearest snap target within a tolerance, each axis on its own, without centers as a crop
     /// edge: where a marquee or a shape starts and where its corner is dragged to. Also says what it snapped to.
     /// </summary>
-    public (SKPoint Point, float? SnapX, float? SnapY) SnapPoint(SKPoint point, float tolerance)
+    public (SKPoint Point, float? SnapX, float? SnapY) SnapPoint(SKPoint point, float tolerance, IReadOnlySet<Guid>? moving = null)
     {
-        var (xs, ys) = SnapTargets(null, includeCenters: false);
+        var (xs, ys) = SnapTargets(moving, includeCenters: false);
         float? x = Nearest(point.X, xs), y = Nearest(point.Y, ys);
         return (new SKPoint(x ?? point.X, y ?? point.Y), x, y);
 

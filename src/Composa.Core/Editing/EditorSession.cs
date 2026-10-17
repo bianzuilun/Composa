@@ -109,6 +109,7 @@ public sealed partial class EditorSession
     };
     public ShapeKind ShapeKind { get; set; } = ShapeKind.Rectangle;
     public double ShapeCornerRadius { get; set; } = 24;
+    public bool ShapeSmoothCorners { get; set; }
     /// <summary>A Line shape's thickness in document pixels.</summary>
     public double ShapeLineWidth { get; set; } = 4;
     /// <summary>The settings new text starts with; the color follows the foreground color.</summary>
@@ -119,6 +120,7 @@ public sealed partial class EditorSession
     /// <summary>When the active layer has a mask: paint, fill and filter the mask instead of the pixels.</summary>
     public bool EditingMask { get; set; }
     public Guid? SoloLayerId { get; set; }
+    public Guid? SoloMaskLayerId { get; private set; }
 
     /// <summary>Raised after pixels changed; the rectangle is in document space (null means everything, including size).</summary>
     public event Action<SKRectI?>? CanvasChanged;
@@ -331,8 +333,23 @@ public sealed partial class EditorSession
     /// Renders what a view shows straight from the layers, at the view's own resolution. The canvas uses this rather
     /// than <see cref="Composite"/>, so its cost follows the screen size and not the document size.
     /// </summary>
-    public void RenderView(SKBitmap target, SKRectI area, RenderView view) =>
+    public void RenderView(SKBitmap target, SKRectI area, RenderView view)
+    {
+        if (SoloMaskLayerId is { } id && document.Find(id) is { Mask: { } mask } layer)
+        {
+            using var drawing = new SKCanvas(target);
+            drawing.ClipRect(area);
+            drawing.Clear(SKColors.Black);
+            drawing.Scale(view.Scale); drawing.Translate(-view.Origin.X, -view.Origin.Y);
+            var matrix = DocumentRenderer.MaskMatrix(layer);
+            drawing.Concat(in matrix);
+            using var paint = new SKPaint { Color = SKColors.White };
+            drawing.DrawBitmap(mask, 0, 0, paint);
+            return;
+        }
+        SoloMaskLayerId = null;
         DocumentRenderer.Render(document, target, area, view, CurrentOptions());
+    }
 
     private RenderOptions? CurrentOptions()
     {

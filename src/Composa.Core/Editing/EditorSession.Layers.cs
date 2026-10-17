@@ -33,6 +33,7 @@ public sealed partial class EditorSession
         }
         else document.SetActive(id);
         if (ActiveLayer?.Mask == null) EditingMask = false;
+        if (SoloMaskLayerId != null && SoloMaskLayerId != document.ActiveLayerId) { SoloMaskLayerId = null; InvalidateAll(); }
         LayersChanged?.Invoke();
     }
 
@@ -449,6 +450,7 @@ public sealed partial class EditorSession
         if (right < 0 || (left == 0 && top == 0 && right == pixels.Width - 1 && bottom == pixels.Height - 1)) return;
         var trimmed = Pixels.NewColor(right - left + 1, bottom - top + 1);
         using (var canvas = new SKCanvas(trimmed)) canvas.DrawBitmap(pixels, -left, -top);
+        DeepPixels.PreserveDraw(pixels, trimmed, (drawing, wide) => drawing.DrawBitmap(wide, -left, -top));
         layer.Pixels = trimmed;
         layer.Transform = LayerTransform.Identity(trimmed.Width, trimmed.Height) with { X = layer.Transform.X + left, Y = layer.Transform.Y + top };
     }
@@ -465,6 +467,12 @@ public sealed partial class EditorSession
                 layer.Mask = document.Selection != null ? Pixels.Clone(document.Selection) : Pixels.NewMask(document.Width, document.Height, hideAll ? (byte)0 : (byte)255);
             else if (document.Selection != null) layer.Mask = SelectionInLayerSpace(layer)!;
             else layer.Mask = Pixels.NewMask(layer.Pixels.Width, layer.Pixels.Height, hideAll ? (byte)0 : (byte)255);
+            if (document.Selection != null && hideAll)
+            {
+                var selected = layer.Mask;
+                layer.Mask = Composa.Selections.SelectionMask.Invert(selected);
+                selected.Dispose();
+            }
             layer.MaskEnabled = true;
         });
         EditingMask = true;
@@ -472,9 +480,20 @@ public sealed partial class EditorSession
         LayersChanged?.Invoke();
     }
 
+    /// <summary>Alt-click on a mask shows its coverage without changing the document or its export.</summary>
+    public void ToggleSoloMask(Layer layer)
+    {
+        if (layer.Mask == null) return;
+        if (SoloMaskLayerId == layer.Id) SoloMaskLayerId = null;
+        else { SelectLayer(layer.Id); EditingMask = true; SoloMaskLayerId = layer.Id; }
+        InvalidateAll();
+        LayersChanged?.Invoke();
+    }
+
     public void DeleteMask(Layer layer)
     {
         if (layer.Mask == null) return;
+        if (SoloMaskLayerId == layer.Id) { SoloMaskLayerId = null; InvalidateAll(); }
         Apply("Delete Layer Mask", () => layer.Mask = null);
         EditingMask = false;
         Invalidate(AffectedArea(layer));
@@ -485,12 +504,19 @@ public sealed partial class EditorSession
     public void ApplyMask(Layer layer)
     {
         if (layer.Mask == null || layer.Pixels == null) return;
+        if (SoloMaskLayerId == layer.Id) { SoloMaskLayerId = null; InvalidateAll(); }
         Apply("Apply Layer Mask", () =>
         {
             var pixels = Pixels.Clone(layer.Pixels);
             using (var canvas = new SKCanvas(pixels))
             using (var paint = new SKPaint { BlendMode = SKBlendMode.DstIn })
                 canvas.DrawBitmap(layer.Mask, new SKRect(0, 0, pixels.Width, pixels.Height), paint);
+            DeepPixels.PreserveDraw(layer.Pixels, pixels, (drawing, wide) =>
+            {
+                drawing.DrawBitmap(wide, 0, 0);
+                using var paint = new SKPaint { BlendMode = SKBlendMode.DstIn };
+                drawing.DrawBitmap(layer.Mask, new SKRect(0, 0, pixels.Width, pixels.Height), paint);
+            });
             layer.Pixels = pixels;
             layer.Mask = null;
         });

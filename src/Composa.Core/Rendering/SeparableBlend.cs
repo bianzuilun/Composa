@@ -18,6 +18,18 @@ public static class SeparableBlend
         if (destination.Width != source.Width || destination.Height != source.Height) throw new ArgumentException("The bitmaps must be the same size.");
         var blend = FunctionFor(mode);
         var scale = (float)Math.Clamp(opacity, 0, 1);
+        if (DeepPixels.IsWide(destination))
+        {
+            for (var y = 0; y < destination.Height; y++) for (var x = 0; x < destination.Width; x++)
+            {
+                var s = DeepPixels.Read(source, x, y); var d = DeepPixels.Read(destination, x, y);
+                var sa = s.Alpha * scale; var da = d.Alpha; if (sa <= 0) continue;
+                var both = sa * da;
+                float Channel(float cb, float cs) => cs * scale * (1 - da) + cb * (1 - sa) + both * blend(da <= 0 ? 0 : Math.Min(1, cb / da), Math.Min(1, cs / s.Alpha));
+                DeepPixels.Write(destination, x, y, new SKColorF(Channel(d.Red, s.Red), Channel(d.Green, s.Green), Channel(d.Blue, s.Blue), sa + da - both));
+            }
+            return;
+        }
         var dst = (byte*)destination.GetPixels();
         var src = (byte*)source.GetPixels();
         int dstStride = destination.RowBytes, srcStride = source.RowBytes, width = destination.Width;

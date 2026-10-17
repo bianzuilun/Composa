@@ -60,7 +60,7 @@ public class UpdateCheckTests
     }
 
     private static ReleaseInfo Release(string tag, bool pre = false)
-        => new(tag, "https://github.com/dvdstelt/Composa/releases/tag/" + tag, pre);
+        => new(tag, "https://github.com/bianzuilun/Composa/releases/tag/" + tag, pre);
 
     private static Settings Fresh() => new() { CheckForUpdates = true };
 

@@ -71,6 +71,27 @@ internal static class PsdChannels
         }
     }
 
+    /// <summary>Sixteen-bit planes retain big-endian samples; ZIP prediction adds whole 16-bit samples.</summary>
+    public static byte[] Decode16(int compression, int width, int height, ReadOnlySpan<byte> data, bool largeDocument = false, PsdCrop? crop = null)
+    {
+        var byteWidth = checked(width * 2);
+        var byteCrop = crop is { } part ? new PsdCrop(part.X * 2, part.Y, part.Width * 2, part.Height) : (PsdCrop?)null;
+        if (compression != ZipWithPrediction) return Decode(compression, byteWidth, height, data, largeDocument, byteCrop);
+        var plane = Inflate(data, (long)byteWidth * height);
+        for (var y = 0; y < height; y++)
+        {
+            ushort previous = 0;
+            for (var x = 0; x < width; x++)
+            {
+                var at = y * byteWidth + x * 2;
+                var sample = System.Buffers.Binary.BinaryPrimitives.ReadUInt16BigEndian(plane.AsSpan(at, 2));
+                previous = unchecked((ushort)(previous + sample));
+                System.Buffers.Binary.BinaryPrimitives.WriteUInt16BigEndian(plane.AsSpan(at, 2), previous);
+            }
+        }
+        return byteCrop is { } cut ? Slice(plane, byteWidth, cut) : plane;
+    }
+
     /// <summary>A PackBits row's byte count: 2 bytes in a PSD, 4 in a PSB.</summary>
     public static int RowCount(ref PsdCursor cursor, bool largeDocument)
     {
@@ -183,6 +204,81 @@ internal static class PsdChannels
     }
 
     private static byte Premultiply(byte value, byte alpha) => alpha == 255 ? value : (byte)((value * alpha + 127) / 255);
+
+    public static SKBitmap ColorImage16(int width, int height, byte[]? red, byte[]? green, byte[]? blue, byte[]? alpha)
+    {
+        var bitmap = DeepPixels.New(width, height);
+        float Sample(byte[]? plane, int i, float missing) => plane == null ? missing : System.Buffers.Binary.BinaryPrimitives.ReadUInt16BigEndian(plane.AsSpan(i * 2, 2)) / 65535f;
+        try
+        {
+            for (var y = 0; y < height; y++) for (var x = 0; x < width; x++)
+            {
+                var i = y * width + x; var a = Sample(alpha, i, 1);
+                DeepPixels.Write(bitmap, x, y, new SKColorF(Sample(red, i, 0) * a, Sample(green, i, 0) * a, Sample(blue, i, 0) * a, a));
+            }
+            return DeepPixels.Preview(bitmap);
+        }
+        catch { bitmap.Dispose(); throw; }
+    }
+
+    internal static SKBitmap RgbProfile(SKBitmap preview, byte[]? profile)
+    {
+        if (profile == null) return preview;
+        using var space = SKColorSpace.CreateIcc(profile);
+        if (space == null || space.IsSrgb) return preview;
+        var source = DeepPixels.Source(preview) ?? preview;
+        using var tagged = new SKBitmap(source.Info.WithColorSpace(space));
+        Pixels.CopyPixels(source, tagged);
+        if (DeepPixels.IsWide(source))
+        {
+            var converted = DeepPixels.Preview(DeepPixels.Convert(tagged)); preview.Dispose(); return converted;
+        }
+        using var srgb = SKColorSpace.CreateSrgb();
+        using var output = new SKBitmap(preview.Info.WithColorSpace(srgb));
+        using (var canvas = new SKCanvas(output)) canvas.DrawBitmap(tagged, 0, 0);
+        Pixels.CopyPixels(output, preview); Pixels.Invalidate(preview); return preview;
+    }
+
+    public static SKBitmap CmykImage(int width, int height, int depth, byte[]? cyan, byte[]? magenta, byte[]? yellow, byte[]? black, byte[]? alpha, byte[]? profile)
+    {
+        if (ImageMagick.Current is not IColorConverter converter) throw new PsdException("CMYK Photoshop files need ImageMagick with ICC color management.");
+        var bytes = depth / 8; var count = checked(width * height); var samples = new byte[checked(count * 4 * bytes)];
+        byte[]?[] planes = [cyan, magenta, yellow, black];
+        for (var i = 0; i < count; i++) for (var c = 0; c < 4; c++)
+        {
+            var plane = planes[c];
+            if (depth == 8) samples[i * 4 + c] = plane == null ? (byte)0 : (byte)(255 - plane[i]);
+            else
+            {
+                var value = plane == null ? (ushort)0 : (ushort)(65535 - System.Buffers.Binary.BinaryPrimitives.ReadUInt16BigEndian(plane.AsSpan(i * 2, 2)));
+                System.Buffers.Binary.BinaryPrimitives.WriteUInt16LittleEndian(samples.AsSpan((i * 4 + c) * 2, 2), value);
+            }
+        }
+        var rgb = converter.DecodeCmyk(samples, width, height, depth, profile);
+        using var stream = new MemoryStream(rgb);
+        var bitmap = ImageFiles.Load(stream);
+        if (bitmap.Width != width || bitmap.Height != height) { bitmap.Dispose(); throw PsdException.Truncated(); }
+        if (alpha == null) return bitmap;
+        if (DeepPixels.Source(bitmap) is { } wide)
+        {
+            var masked = DeepPixels.Convert(wide);
+            for (var y = 0; y < height; y++) for (var x = 0; x < width; x++)
+            {
+                var i = y * width + x;
+                var a = depth == 16 ? System.Buffers.Binary.BinaryPrimitives.ReadUInt16BigEndian(alpha.AsSpan(i * 2, 2)) / 65535f : alpha[i] / 255f;
+                var p = DeepPixels.Read(wide, x, y); DeepPixels.Write(masked, x, y, new SKColorF(p.Red * a, p.Green * a, p.Blue * a, a));
+            }
+            bitmap.Dispose(); return DeepPixels.Preview(masked);
+        }
+        var target = bitmap.GetPixelSpan();
+        for (var i = 0; i < count; i++)
+        {
+            var a = depth == 16 ? alpha[i * 2] : alpha[i];
+            for (var c = 0; c < 3; c++) target[i * 4 + c] = Premultiply(target[i * 4 + c], a);
+            target[i * 4 + 3] = a;
+        }
+        Pixels.Invalidate(bitmap); return bitmap;
+    }
 
     /// <summary>An Alpha8 mask from one gray plane.</summary>
     public static SKBitmap MaskImage(int width, int height, byte[] gray)

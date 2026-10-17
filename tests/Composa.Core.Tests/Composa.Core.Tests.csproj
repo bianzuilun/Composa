@@ -22,6 +22,8 @@
   <ItemGroup>
     <!-- Files GIMP itself wrote (see Fixtures/Xcf/make-fixtures.py), read by XcfFixtureTests. -->
     <None Include="Fixtures/**/*.xcf" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures/Png16/*.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures/Psd16/*.psd" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

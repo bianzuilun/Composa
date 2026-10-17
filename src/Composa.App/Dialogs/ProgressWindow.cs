@@ -2,6 +2,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 
 namespace Composa.App.Dialogs;
 
@@ -41,6 +43,11 @@ public sealed class ProgressWindow : Window
         };
         // Closing the window any other way (Escape, the title bar) cancels too; a window closed by the finished work does not.
         Closing += (_, _) => { if (!finished) cancel(); };
+        AddHandler(KeyDownEvent, (_, e) =>
+        {
+            if (e.Key != Key.Escape) return;
+            cancel(); e.Handled = true;
+        }, RoutingStrategies.Tunnel);
     }
 
     /// <summary>
@@ -64,7 +71,15 @@ public sealed class ProgressWindow : Window
             window = new ProgressWindow(current, cancellation.Cancel);
             _ = window.ShowDialog(owner);
         }
-        try { return await task; }
+        try
+        {
+            var result = await task;
+            // A worker can finish while Cancel is waiting on the UI queue. Cancel still wins
+            // until the result has been handed back to the command that commits it.
+            if (!cancellation.IsCancellationRequested) return result;
+            if (result is IDisposable disposable) disposable.Dispose();
+            return default;
+        }
         catch (OperationCanceledException) { return default; }
         finally
         {

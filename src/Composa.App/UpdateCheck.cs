@@ -24,11 +24,11 @@ public sealed record ReleaseAsset(string Name, string Url, long Size)
     public static bool IsOwnAsset(string url) =>
         Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps &&
         uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase) &&
-        uri.AbsolutePath.StartsWith("/dvdstelt/Composa/releases/download/", StringComparison.Ordinal);
+        uri.AbsolutePath.StartsWith("/bianzuilun/Composa/releases/download/", StringComparison.Ordinal);
 }
 
 /// <param name="Assets">The release's own files, the packages and <see cref="ChecksumsName"/>, and nothing from anywhere else.</param>
-public sealed record ReleaseInfo(string Tag, string Url, bool PreRelease, IReadOnlyList<ReleaseAsset>? Assets = null)
+public sealed record ReleaseInfo(string Tag, string Url, bool PreRelease, IReadOnlyList<ReleaseAsset>? Assets = null, string Body = "")
 {
     /// <summary>What the release workflow calls the file that lists every package's SHA-256.</summary>
     public const string ChecksumsName = "sha256sums.txt";
@@ -48,7 +48,7 @@ public interface IReleaseSource
 /// <param name="handler">Stands in for the network in tests; null uses a real connection.</param>
 public sealed class GitHubReleaseSource(HttpMessageHandler? handler = null) : IReleaseSource
 {
-    private const string Endpoint = "https://api.github.com/repos/dvdstelt/Composa/releases/latest";
+    private const string Endpoint = "https://api.github.com/repos/bianzuilun/Composa/releases/latest";
 
     /// <summary>
     /// GitHub refuses a request with no User-Agent. Nothing identifying is sent: no version, no
@@ -60,7 +60,8 @@ public sealed class GitHubReleaseSource(HttpMessageHandler? handler = null) : IR
         [property: JsonPropertyName("tag_name")] string? TagName,
         [property: JsonPropertyName("html_url")] string? HtmlUrl,
         [property: JsonPropertyName("prerelease")] bool PreRelease,
-        [property: JsonPropertyName("assets")] List<AssetPayload>? Assets);
+        [property: JsonPropertyName("assets")] List<AssetPayload>? Assets,
+        [property: JsonPropertyName("body")] string? Body);
 
     private sealed record AssetPayload(
         [property: JsonPropertyName("name")] string? Name,
@@ -79,7 +80,7 @@ public sealed class GitHubReleaseSource(HttpMessageHandler? handler = null) : IR
             .Where(a => a.Name is { Length: > 0 } && a.Url is { } link && ReleaseAsset.IsOwnAsset(link))
             .Select(a => new ReleaseAsset(a.Name!, a.Url!, a.Size))
             .ToList();
-        return new ReleaseInfo(tag, url, payload.PreRelease, assets);
+        return new ReleaseInfo(tag, url, payload.PreRelease, assets, payload.Body ?? "");
     }
 }
 

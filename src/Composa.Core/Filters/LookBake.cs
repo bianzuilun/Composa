@@ -62,10 +62,25 @@ public static class LookBake
     public static readonly CameraRawGroup[] SpatialGroups = [CameraRawGroup.Effects, CameraRawGroup.Detail, CameraRawGroup.Optics];
 
     /// <summary>The Camera Raw groups of <paramref name="grade"/> that would be left out of a bake because they adjust something and are spatial.</summary>
-    public static List<CameraRawGroup> LeftOutOf(CameraRawSettings grade) => SpatialGroups.Where(grade.Adjusts).ToList();
+    public static List<CameraRawGroup> LeftOutOf(CameraRawSettings grade)
+    {
+        var groups = SpatialGroups.Where(grade.Adjusts).ToList();
+        if (grade.Contrast != 0 || grade.Highlights != 0 || grade.Shadows != 0) groups.Insert(0, CameraRawGroup.Light);
+        return groups;
+    }
+
+    /// <summary>Names the particular Light controls omitted, instead of implying the whole Light group was removed.</summary>
+    public static IEnumerable<string> LeftOutNames(CameraRawSettings grade)
+    {
+        if (grade.Contrast != 0) yield return "Contrast";
+        if (grade.Highlights != 0) yield return "Highlights";
+        if (grade.Shadows != 0) yield return "Shadows";
+        foreach (var group in SpatialGroups.Where(grade.Adjusts)) yield return group.ToString();
+    }
 
     /// <summary>The grade with <see cref="SpatialGroups"/> taken out: what a table can hold of it.</summary>
-    public static CameraRawSettings ColorOnly(CameraRawSettings grade) => SpatialGroups.Aggregate(grade, (settings, group) => settings.Without(group));
+    public static CameraRawSettings ColorOnly(CameraRawSettings grade) =>
+        SpatialGroups.Aggregate(grade, (settings, group) => settings.Without(group)) with { Contrast = 0, Highlights = 0, Shadows = 0 };
 
     /// <summary>Bakes a Camera Raw grade's color stages, <see cref="ColorOnly"/>, through the pipeline itself.</summary>
     public static ColorLattice Bake(CameraRawSettings grade, int size, string title = "") =>

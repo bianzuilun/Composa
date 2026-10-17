@@ -9,6 +9,7 @@ using Avalonia.Threading;
 using Composa.Editing;
 using Composa.Model;
 using Composa.Rendering;
+using Composa.IO;
 using Geometry = Composa.Model.Geometry;
 using Composa.Selections;
 using SkiaSharp;
@@ -18,6 +19,8 @@ namespace Composa.App.Controls;
 /// <summary>The editing surface: shows the flattened document with zoom and pan, draws tool overlays, and turns pointer input into edits.</summary>
 public sealed partial class CanvasView : Control
 {
+    public CmykProof? ColorProof { get; private set; }
+    public void SetColorProof(CmykProof? proof) { ColorProof = proof; viewStale = true; navigatorStale = true; InvalidateVisual(); }
     private EditorSession? session;
     private double zoom = 1;
     private Point origin; // Where the document's top-left sits, in control coordinates.
@@ -49,6 +52,11 @@ public sealed partial class CanvasView : Control
     {
         Focusable = true;
         ClipToBounds = true;
+        ContextRequested += (_, e) =>
+        {
+            if (!HasPendingGradient && !HasCrop && session?.Transform == null) return;
+            OpenPendingEditMenu(); e.Handled = true;
+        };
         antsTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(120), DispatcherPriority.Background, (_, _) =>
         {
             if (session?.Selection == null && polygon.Count == 0 && session?.TextEdit == null) return;
@@ -84,6 +92,11 @@ public sealed partial class CanvasView : Control
     /// <summary>Handles a box dragged with the Object Selection tool (document pixels and the selection mode), as <see cref="ObjectClick"/> handles a click.</summary>
     public Action<SKRectI, Composa.Selections.SelectionMode>? ObjectBox { get; set; }
     public double Zoom => zoom;
+    public Func<SKPoint, bool>? FilterPointPressed { get; set; }
+    public Action<SKPoint>? FilterPointMoved { get; set; }
+    public Action? FilterPointReleased { get; set; }
+    public Func<SKMatrix, Action<SKCanvas>>? FilterOverlay { get; set; }
+    private bool filterPointDragging;
 
     public EditorSession? Session
     {
@@ -100,6 +113,7 @@ public sealed partial class CanvasView : Control
                 session.LayersChanged -= OnLayersChanged;
             }
             session = value;
+            cameraRawPreview = null;
             if (session != null)
             {
                 session.CanvasChanged += OnCanvasChanged;
@@ -112,6 +126,9 @@ public sealed partial class CanvasView : Control
             spaceDown = false;
             outlineStale = true;
             fitPending = true;
+            navigatorStale = true;
+            navigatorRect = SKRect.Empty;
+            navigatorDragging = false;
             viewStale = true;
             UpdateCursor();
             InvalidateVisual();
@@ -121,6 +138,7 @@ public sealed partial class CanvasView : Control
 
     private void OnCanvasChanged(SKRectI? area)
     {
+        navigatorStale = true;
         if (area is { } changed && !viewStale)
         {
             var (scale, shown, _, _) = viewKey;
@@ -237,10 +255,10 @@ public sealed partial class CanvasView : Control
 
     // ---- Rendering ----------------------------------------------------------------------------------------------
 
-    private sealed class DrawOperation(Rect bounds, Action<SKCanvas> draw) : ICustomDrawOperation
+    private sealed class DrawOperation(Rect bounds, Action<SKCanvas> draw, IDisposable? held = null) : ICustomDrawOperation
     {
         public Rect Bounds { get; } = bounds;
-        public void Dispose() { }
+        public void Dispose() => held?.Dispose();
         public bool Equals(ICustomDrawOperation? other) => false;
         public bool HitTest(Point p) => true;
 
@@ -279,8 +297,11 @@ public sealed partial class CanvasView : Control
         var units = (float)UnitsPerPixel;
         var view = SKMatrix.CreateScale(units, units).PostConcat(SKMatrix.CreateTranslation((float)origin.X, (float)origin.Y));
         var documentRect = new SKRect(0, 0, session.Document.Width, session.Document.Height);
-        var (cache, cacheSource, cacheTarget) = UpdateViewCache(view, size);
+        var cameraRaw = cameraRawPreview;
+        var (cache, cacheSource, cacheTarget) = cameraRaw == null ? UpdateViewCache(view, size) : ((SKBitmap?)null, SKRect.Empty, SKRect.Empty);
+        var navigatorImage = CaptureNavigator(out var navigatorDraw);
         var overlay = CaptureOverlay(view);
+        var filterOverlay = FilterOverlay?.Invoke(view);
         var rulers = CaptureRulers((float)Scaling);
         var grid = ShowPixelGrid && zoom >= 8;
         var nearest = zoom >= 1;
@@ -297,7 +318,11 @@ public sealed partial class CanvasView : Control
                 canvas.DrawRect(screenRect, shadow);
             DrawCheckerboard(canvas, screenRect);
 
-            if (cache != null)
+            if (cameraRaw != null)
+            {
+                canvas.Save(); canvas.ClipRect(screenRect); cameraRaw.Draw(canvas, view); canvas.Restore();
+            }
+            else if (cache != null)
             {
                 canvas.Save();
                 canvas.ClipRect(screenRect);
@@ -309,8 +334,10 @@ public sealed partial class CanvasView : Control
             if (grid) DrawPixelGrid(canvas, view, documentRect, new SKRect(0, 0, (float)size.Width, (float)size.Height));
             if (outline != null) DrawAnts(canvas, outline, view, phase, scaling);
             overlay?.Invoke(canvas);
+            filterOverlay?.Invoke(canvas);
             rulers?.Invoke(canvas);
-        }));
+            navigatorDraw?.Invoke(canvas);
+        }, navigatorImage));
     }
 
     /// <summary>What the ants stroke: the selection's outline, or when zoomed out on a complex one, the outline traced at screen resolution.</summary>
@@ -368,7 +395,12 @@ public sealed partial class CanvasView : Control
         viewKey = key;
         viewStale = false;
         viewDirty = SKRectI.Empty;
-        if (!dirty.IsEmpty) session.RenderView(viewCache, dirty, new RenderView(scale, viewOrigin));
+        if (!dirty.IsEmpty)
+        {
+            session.RenderView(viewCache, dirty, new RenderView(scale, viewOrigin));
+            if (session.SoloMaskLayerId == null && (session.View.ProofColors || session.View.GamutWarning))
+                ColorProof?.Apply(viewCache, dirty, session.View.ProofColors, session.View.GamutWarning);
+        }
         return (viewCache, new SKRect(0, 0, width, height), target);
     }
 

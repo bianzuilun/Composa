@@ -32,23 +32,58 @@ public static class CameraRawDialog
     };
 
     public static async Task<CameraRawSettings?> Show(Window owner, CameraRawSettings initial, SKBitmap original, Action<CameraRawSettings> changed, Func<SKBitmap?> graded,
-        Func<Task<string?>>? saveLookPath = null, string title = "")
+        Func<Task<string?>>? saveLookPath = null, string title = "", Func<CameraRawSettings, Task>? changedAsync = null)
     {
         var current = initial;
+        var refreshing = false;
         var hidden = new HashSet<CameraRawGroup>();
         CameraRawSettings Rendered() => hidden.Aggregate(current, (settings, group) => settings.Without(group));
         var histogram = new HistogramView { Width = 300, Height = 90 };
+        Image? renderedThumbnail = null;
+        var vectorscope = new Image { Width = 300, Height = 150, Stretch = Stretch.Uniform, IsVisible = false };
+        void RefreshScopes(SKBitmap pixels)
+        {
+            if (vectorscope.IsVisible)
+            {
+                using var plot = Vectorscope.Of(pixels).Plot(); vectorscope.Source = Ui.ToAvaloniaBitmap(plot, Vectorscope.Size);
+            }
+            else { histogram.Histogram = Histogram.Of(pixels); histogram.InvalidateVisual(); }
+        }
+        var scopeChoice = Ui.Combo(new[] { "Histogram", "Vectorscope" }, "Histogram", L10n.Text, value =>
+        {
+            histogram.IsVisible = value == "Histogram"; vectorscope.IsVisible = !histogram.IsVisible;
+            if (graded() is { } pixels) RefreshScopes(pixels);
+        }, 140);
         var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(60) };
-        timer.Tick += (_, _) =>
+        var rendering = false; var pendingRender = false; var closed = false;
+        TaskCompletionSource? renderFinished = null;
+        timer.Tick += async (_, _) =>
         {
             timer.Stop();
-            changed(Rendered());
-            if (graded() is { } pixels) { histogram.Histogram = Histogram.Of(pixels); histogram.InvalidateVisual(); }
+            if (rendering) { pendingRender = true; return; }
+            rendering = true;
+            var completion = renderFinished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            try
+            {
+                do
+                {
+                    pendingRender = false;
+                    if (changedAsync != null) await changedAsync(Rendered()); else changed(Rendered());
+                    if (closed) return;
+                    if (graded() is { } pixels)
+                    {
+                        RefreshScopes(pixels);
+                        if (renderedThumbnail != null) renderedThumbnail.Source = Ui.ToAvaloniaBitmap(pixels, 300);
+                    }
+                } while (pendingRender);
+            }
+            finally { rendering = false; completion.TrySetResult(); }
         };
         var eyes = new Dictionary<CameraRawGroup, Button>();
         Button? saveLook = null;
         void Update(CameraRawSettings value)
         {
+            if (refreshing) return;
             current = value;
             foreach (var (group, eye) in eyes) eye.IsVisible = current.Adjusts(group);
             if (saveLook != null) saveLook.IsEnabled = !LookBake.ColorOnly(Rendered()).IsIdentity;
@@ -59,6 +94,7 @@ public static class CameraRawDialog
         // The thumbnail: click a pixel that should be neutral and Temperature and Tint follow.
         var thumb = Ui.ToAvaloniaBitmap(original, 300);
         var preview = new Image { Source = thumb, Width = thumb.PixelSize.Width, Height = thumb.PixelSize.Height, Stretch = Stretch.Uniform, Cursor = new Cursor(StandardCursorType.Cross) };
+        renderedThumbnail = preview;
         ToolTip.SetTip(preview, "Click a pixel that should be neutral to set the white balance from it");
         var readout = Ui.Label("R —   G —   B —", Palette.Secondary);
         readout.FontSize = 11;
@@ -81,10 +117,29 @@ public static class CameraRawDialog
             if (balance != null) balance.SelectedIndex = 0;
         };
 
+        var refreshFields = new List<Action>();
+        void RefreshControls()
+        {
+            refreshing = true;
+            try { foreach (var refresh in refreshFields) refresh(); }
+            finally { refreshing = false; }
+        }
+        ComboBox Combo<T>(T[] values, Func<CameraRawSettings, T> get, Func<T, string> label, Action<T> changed, double width) where T : notnull
+        {
+            var combo = Ui.Combo(values, get(current), label, value => { if (!refreshing) changed(value); }, width);
+            refreshFields.Add(() => combo.SelectedIndex = Array.IndexOf(values, get(current)));
+            return combo;
+        }
+        CheckBox Check(string label, Func<CameraRawSettings, bool> get, Func<CameraRawSettings, bool, CameraRawSettings> set)
+        {
+            var box = Ui.Check(label, get(current), value => { if (!refreshing) Update(set(current, value)); });
+            refreshFields.Add(() => box.IsChecked = get(current));
+            return box;
+        }
         var groups = new StackPanel { Spacing = 6 };
         Expander Group(CameraRawGroup group, string title, Control body, bool open = false)
         {
-            var eye = new Button { Classes = { "flat" }, Padding = new Thickness(4), Content = Icons.Create(Icons.Eye, 13, Palette.Secondary), IsVisible = initial.Adjusts(group) };
+            var eye = new Button { Tag = "group-visibility", Classes = { "flat" }, Padding = new Thickness(4), Content = Icons.Create(Icons.Eye, 13, Palette.Secondary), IsVisible = initial.Adjusts(group) };
             ToolTip.SetTip(eye, "Switch this group off or on without clearing its sliders");
             eye.Click += (_, _) =>
             {
@@ -94,9 +149,20 @@ public static class CameraRawDialog
                 timer.Start();
             };
             eyes[group] = eye;
-            var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Width = 288 };
+            var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"), Width = 288 };
             header.Children.Add(Ui.Label(title, weight: FontWeight.SemiBold));
-            Grid.SetColumn(eye, 1);
+            var resetGroup = Ui.TextButton(L10n.Text("Reset"), () =>
+            {
+                Update(current.ResetGroup(group));
+                hidden.Remove(group);
+                eye.Content = Icons.Create(Icons.Eye, 13, Palette.Secondary);
+                RefreshControls();
+            });
+            resetGroup.Tag = "group-reset";
+            resetGroup.MinWidth = 0;
+            Grid.SetColumn(resetGroup, 1);
+            header.Children.Add(resetGroup);
+            Grid.SetColumn(eye, 2);
             header.Children.Add(eye);
             body.Margin = new Thickness(8, 6, 0, 4);
             var expander = new Expander { Header = header, Content = body, IsExpanded = open, HorizontalAlignment = HorizontalAlignment.Stretch, Padding = new Thickness(0) };
@@ -110,6 +176,7 @@ public static class CameraRawDialog
             var field = Ui.SliderField(label, get(current), min, max, v => Update(set(current, v)), step, format, FieldWidth, track, get(defaults));
             // The field's own tip explains its gestures; what the slider adjusts goes above that.
             if (tip != null) ToolTip.SetTip(field, Ui.Column(6, Ui.Label(tip), (Control)ToolTip.GetTip(field)!));
+            refreshFields.Add(() => field.Value = get(current));
             return field;
         }
         Control Column(params Control[] rows) => Ui.Column(6, rows);
@@ -133,6 +200,7 @@ public static class CameraRawDialog
         balanceLabel.Width = LabelWidth;
         balance = Ui.Combo(new[] { "Custom", "Auto" }, initial.WhiteBalance == CameraRawWhiteBalance.Auto ? "Auto" : "Custom", c => c, choice =>
         {
+            if (refreshing) return;
             if (choice != "Auto") { Update(current with { WhiteBalance = CameraRawWhiteBalance.Custom }); return; }
             // Auto balances the average color of the original layer; the sliders show what it chose.
             var solved = CameraRawPixels.AutoBalance(original);
@@ -140,6 +208,7 @@ public static class CameraRawDialog
             temperature.Value = current.Temperature;
             tint.Value = current.Tint;
         }, 120);
+        refreshFields.Add(() => balance.SelectedIndex = current.WhiteBalance == CameraRawWhiteBalance.Auto ? 1 : 0);
         ToolTip.SetTip(balance, "Auto balances the average color; Custom follows Temperature and Tint. Click the thumbnail to set them from one pixel.");
         Group(CameraRawGroup.Color, "Color", Column(
             Ui.Row(8, balanceLabel, balance), temperature, tint,
@@ -157,6 +226,7 @@ public static class CameraRawDialog
             var hue = Slider("Hue", s => s.Grading.Wheels[index].Hue, 0, 360, (s, v) => s with { Grading = s.Grading.WithWheel(index, s.Grading.Wheels[index] with { Hue = v }) }, tip: "Around the color wheel", track: Controls.SliderTracks.Spectrum(180));
             hue.Changed += v => saturation.Track = Controls.SliderTracks.Saturation(v);
             saturation = Slider("Saturation", s => s.Grading.Wheels[index].Saturation, 0, 100, (s, v) => s with { Grading = s.Grading.WithWheel(index, s.Grading.Wheels[index] with { Saturation = v }) }, tip: "How strongly the tint takes; 0 leaves this wheel off", track: Controls.SliderTracks.Saturation(initial.Grading.Wheels[i].Hue));
+            refreshFields.Add(() => saturation.Track = Controls.SliderTracks.Saturation(current.Grading.Wheels[index].Hue));
             wheelRows.Add(hue);
             wheelRows.Add(saturation);
             wheelRows.Add(Slider("Luminance", s => s.Grading.Wheels[index].Luminance, -100, 100, (s, v) => s with { Grading = s.Grading.WithWheel(index, s.Grading.Wheels[index] with { Luminance = v }) }, track: Controls.SliderTracks.Lightness));
@@ -181,13 +251,13 @@ public static class CameraRawDialog
             Slider("Dehaze", s => s.Dehaze, -100, 100, (s, v) => s with { Dehaze = v }, tip: "Clears haze when raised, adds it when lowered"),
             Heading("Glow"),
             Slider("Glow", s => s.Glow, 0, 100, (s, v) => s with { Glow = v }, tip: "Spreads a glow from the bright areas"),
-            StyleRow("Style", Ui.Combo(glowStyles, initial.GlowStyle, v => StyleName(v), v => Update(current with { GlowStyle = v }), 140)),
+            StyleRow("Style", Combo(glowStyles, s => s.GlowStyle, v => StyleName(v), v => Update(current with { GlowStyle = v }), 140)),
             Slider("Range", s => s.GlowRange, -100, 100, (s, v) => s with { GlowRange = v }, tip: "How bright an area must be to glow; idle until Glow is raised"),
             Slider("Spread", s => s.GlowSpread, -100, 100, (s, v) => s with { GlowSpread = v }, tip: "How far the glow reaches; idle until Glow is raised"),
             Slider("Warmth", s => s.GlowWarmth, -100, 100, (s, v) => s with { GlowWarmth = v }, tip: "Cool to warm; Halation stays red", track: Controls.SliderTracks.Temperature),
             Heading("Vignette"),
             Slider("Amount", s => s.VignetteAmount, -100, 100, (s, v) => s with { VignetteAmount = v }, tip: "Darkens or lightens the edges; the center does not change"),
-            StyleRow("Style", Ui.Combo(vignetteStyles, initial.VignetteStyle, v => StyleName(v), v => Update(current with { VignetteStyle = v }), 140)),
+            StyleRow("Style", Combo(vignetteStyles, s => s.VignetteStyle, v => StyleName(v), v => Update(current with { VignetteStyle = v }), 140)),
             Slider("Midpoint", s => s.VignetteMidpoint, 0, 100, (s, v) => s with { VignetteMidpoint = v }),
             Slider("Roundness", s => s.VignetteRoundness, -100, 100, (s, v) => s with { VignetteRoundness = v }),
             Slider("Feather", s => s.VignetteFeather, 0, 100, (s, v) => s with { VignetteFeather = v }),
@@ -208,13 +278,14 @@ public static class CameraRawDialog
             return curves;
         }
         curveEditor.Curves = ToEditor(initial.Curve);
+        refreshFields.Add(() => curveEditor.Curves = ToEditor(current.Curve));
         curveEditor.Changed += curves =>
         {
             CurvePoint[] Points(int channel) => curves.Channels[channel].Select(p => new CurvePoint(p.X / 255, p.Y / 255)).ToArray();
             Update(current with { Curve = current.Curve with { Rgb = Points(0), Red = Points(1), Green = Points(2), Blue = Points(3) } });
         };
         var channelPicker = Ui.Combo(channels, "RGB", c => c, c => curveEditor.Channel = Array.IndexOf(channels, c), 100);
-        var resetCurve = Ui.TextButton(L10n.Text("Reset"), () => { Update(current with { Curve = new CameraRawCurve() }); curveEditor.Curves = ToEditor(current.Curve); });
+        var resetCurve = Ui.TextButton(L10n.Text("Reset"), () => { Update(current with { Curve = new CameraRawCurve() }); RefreshControls(); });
         resetCurve.MinWidth = 0;
         Group(CameraRawGroup.Curve, "Curve", Column(
             Heading("Parametric"),
@@ -231,8 +302,11 @@ public static class CameraRawDialog
         var mixerTabs = new[] { "Hue", "Saturation", "Luminance" };
         var mixerTab = 0;
         var mixerRows = new StackPanel { Spacing = 6 };
+        var mixerRefresh = new List<Action>();
         void BuildMixer()
         {
+            foreach (var refresh in mixerRefresh) refreshFields.Remove(refresh);
+            mixerRefresh.Clear();
             mixerRows.Children.Clear();
             for (var family = 0; family < 8; family++)
             {
@@ -241,6 +315,7 @@ public static class CameraRawDialog
                 var centre = CameraRawMixer.Centers[family];
                 var track = t switch { 0 => Controls.SliderTracks.Hue(centre), 1 => Controls.SliderTracks.Saturation(centre), _ => Controls.SliderTracks.Luminance(centre) };
                 mixerRows.Children.Add(Slider(CameraRawMixer.Names[family], s => s.Mixer.Get(t, f), -100, 100, (s, v) => s with { Mixer = s.Mixer.With(t, f, v) }, track: track));
+                mixerRefresh.Add(refreshFields[^1]);
             }
         }
         BuildMixer();
@@ -265,10 +340,9 @@ public static class CameraRawDialog
             Slider("Smoothness", s => s.Detail.NoiseColorSmoothness, 0, 100, (s, v) => s with { Detail = s.Detail with { NoiseColorSmoothness = v } })));
 
         // Optics.
-        var o = initial.Optics;
         Group(CameraRawGroup.Optics, "Optics", Column(
-            Ui.Check("Remove Chromatic Aberration", o.RemoveChromaticAberration, v => Update(current with { Optics = current.Optics with { RemoveChromaticAberration = v } })),
-            Ui.Check("Enable Lens Profile Corrections", o.EnableLensProfile, v => Update(current with { Optics = current.Optics with { EnableLensProfile = v } })),
+            Check("Remove Chromatic Aberration", s => s.Optics.RemoveChromaticAberration, (s, v) => s with { Optics = s.Optics with { RemoveChromaticAberration = v } }),
+            Check("Enable Lens Profile Corrections", s => s.Optics.EnableLensProfile, (s, v) => s with { Optics = s.Optics with { EnableLensProfile = v } }),
             Slider("Distortion", s => s.Optics.ProfileDistortion, 0, 100, (s, v) => s with { Optics = s.Optics with { ProfileDistortion = v } }, tip: "Profile strength; a rendered layer carries no lens data, so this scales a generic correction"),
             Slider("Vignetting", s => s.Optics.ProfileVignetting, 0, 100, (s, v) => s with { Optics = s.Optics with { ProfileVignetting = v } }),
             Heading("Manual"),
@@ -289,7 +363,7 @@ public static class CameraRawDialog
         var processes = Enumerable.Range(1, 6).ToArray();
         var processSummary = new TextBlock { Text = CameraRawCalibration.ProcessSummary(c.Process), Foreground = Palette.Secondary, TextWrapping = TextWrapping.Wrap, MaxWidth = 310, FontSize = 11 };
         Group(CameraRawGroup.Calibration, "Calibration", Column(
-            StyleRow("Process", Ui.Combo(processes, c.Process, p => $"Version {p}", p => { Update(current with { Calibration = current.Calibration with { Process = p } }); processSummary.Text = CameraRawCalibration.ProcessSummary(p); }, 130)),
+            StyleRow("Process", Combo(processes, s => s.Calibration.Process, p => $"Version {p}", p => { Update(current with { Calibration = current.Calibration with { Process = p } }); processSummary.Text = CameraRawCalibration.ProcessSummary(p); }, 130)),
             processSummary,
             Slider("Shadow Tint", s => s.Calibration.ShadowTint, -100, 100, (s, v) => s with { Calibration = s.Calibration with { ShadowTint = v } }, track: Controls.SliderTracks.Tint, tip: "Green to magenta in the shadows"),
             Heading("Red Primary"),
@@ -301,9 +375,10 @@ public static class CameraRawDialog
             Heading("Blue Primary"),
             Slider("Hue", s => s.Calibration.BlueHue, -100, 100, (s, v) => s with { Calibration = s.Calibration with { BlueHue = v } }, track: Controls.SliderTracks.Hue(240)),
             Slider("Saturation", s => s.Calibration.BlueSaturation, -100, 100, (s, v) => s with { Calibration = s.Calibration with { BlueSaturation = v } }, track: Controls.SliderTracks.Saturation(240))));
+        refreshFields.Add(() => processSummary.Text = CameraRawCalibration.ProcessSummary(current.Calibration.Process));
 
         var scroll = new ScrollViewer { Content = groups, MaxHeight = 520, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Padding = new Thickness(0, 0, 8, 0) };
-        var head = Ui.Column(6, histogram, Ui.Row(0, preview), readout);
+        var head = Ui.Column(6, scopeChoice, histogram, vectorscope, Ui.Row(0, preview), readout);
         histogram.HorizontalAlignment = preview.HorizontalAlignment = HorizontalAlignment.Left;
         // Save Look: the grade's color stages as a .cube any editor can load. What reads neighbours or the position
         // (Effects, Detail, Optics) cannot go into a table and is named in the file and in the note beside the button.
@@ -314,7 +389,7 @@ public static class CameraRawDialog
         {
             var grade = Rendered();
             if (saveLookPath == null || LookBake.ColorOnly(grade).IsIdentity || await saveLookPath() is not { } path) return;
-            var leftOut = LookBake.LeftOutOf(grade).Select(GroupName).ToList();
+            var leftOut = LookBake.LeftOutNames(grade).Select(L10n.Text).ToList();
             try
             {
                 var comment = leftOut.Count > 0 ? $"Saved from Composa's Camera Raw Filter without {string.Join(", ", leftOut)}, which a table cannot hold" : "Saved from Composa's Camera Raw Filter";
@@ -327,15 +402,18 @@ public static class CameraRawDialog
             }
         });
         saveLook.IsEnabled = !LookBake.ColorOnly(Rendered()).IsIdentity;
-        ToolTip.SetTip(saveLook, "Saves the grade as a .cube lookup table for other editors. Effects, Detail and Optics change pixels by their neighbours or their place and are left out.");
+        ToolTip.SetTip(saveLook, L10n.Text("Saves a .cube color lookup. Adaptive Contrast, Highlights and Shadows, plus Effects, Detail and Optics, are left out because they depend on the picture."));
         var footer = Ui.Row(8, saveLook, saved);
         footer.IsVisible = saveLookPath != null;
         var body = Ui.Column(10, head, Ui.Separator(false), scroll, footer);
         body.Width = 360;
-        var dialog = new DialogWindow("Camera Raw Filter", body);
+        var viewport = new ScrollViewer { Content = body, MaxHeight = Math.Clamp(owner.Bounds.Height - 140, 320, 980), HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+        var dialog = new DialogWindow("Camera Raw Filter", viewport);
         dialog.Opened += (_, _) => { timer.Stop(); timer.Start(); };
         var accepted = await dialog.Ask(owner);
+        closed = true;
         timer.Stop();
+        if (renderFinished != null) await renderFinished.Task;
         return accepted ? Rendered() : null;
     }
 }

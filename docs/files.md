@@ -4,14 +4,15 @@
 
 File > Open (Ctrl+O) opens one or more files. Each project opens in its own tab. Each image becomes a new, unsaved document with a single layer named after the file. A file that is already open just becomes the active tab. File > Open Recent lists the last twelve files you opened or saved.
 
-Files can also be dropped onto the window. Dropped projects open in tabs. Dropped images are placed as layers into the document you are working on, centered where you dropped them if that is inside the canvas; with no document open, or when projects are dropped at the same time, images open as documents instead.
+Files can also be dropped onto the window. Dropped projects open in tabs. Dropped images are placed as layers into the document you are working on, centered where you dropped them if that is inside the canvas; with no document open, over the tab bar, or when projects are dropped at the same time, images open as documents instead. Pasting an image on the welcome screen creates a canvas for it.
 
 ### What opens
 
 - **Composa projects**: `.cmps` files, with all their layers.
 - **Images**: PNG, JPEG, WebP, BMP, GIF and ICO, plus HEIC, HEIF, AVIF and TIFF when ImageMagick is available. The orientation stored by a camera is honoured.
 - **SVG**: drawn at the size the file declares. The result is pixels; it does not stay a vector drawing.
-- **Photoshop**: `.psd` and `.psb` files, 8-bit RGB. See [Photoshop files](#photoshop-files).
+- **HDR**: OpenEXR and Radiance RGBE (`.exr`, `.hdr`). Native EXR decoding handles uncompressed/ZIPS/ZIP scanlines; other layouts require an HDRI-enabled ImageMagick, bundled on Windows.
+- **Photoshop**: `.psd` and `.psb` files, 8/16-bit RGB and CMYK. Embedded ICC profiles are used for conversion. See [Photoshop files](#photoshop-files).
 - **GIMP**: `.xcf` and `.xcf.gz` files from GIMP 2.10, 3.0 and 3.2, in any precision. See [GIMP files](#gimp-files).
 - **Camera RAW**: DNG, CR2, CR3, NEF, ARW, RAF, ORF, RW2, PEF and most other RAW formats, when ImageMagick is available. See [Camera RAW files](#camera-raw-files).
 
@@ -27,6 +28,8 @@ File > Save (Ctrl+S) writes the project; the first time it asks where. File > Sa
 
 A project is a `.cmps` file. It keeps the canvas size and resolution, every layer with its pixels, transform, mask, effects, live text and shape settings, adjustment layers with their settings, folders, the guides and which layer was active. It is a zip archive with a description and one image per layer, so nothing in it is secret.
 
+Project format 7 keeps 16-bit sources as PNG and floating-point sources as EXR, together with the editing preview's changes. Older project versions still open. A layer's context menu converts between 8 and 16 bits; reducing depth is undoable but loses precision in the committed result.
+
 Saving happens in the background. The document as it is when you press Save goes to disk while you keep working, and the status bar shows "Saving" with the file name until it is done. Only the state that was saved counts as saved: an edit you make meanwhile leaves the document modified. Closing a document or quitting waits for a save still in progress, so a file is never cut short.
 
 Projects saved by the macOS app cannot be opened; Composa has its own format.
@@ -38,6 +41,8 @@ Exporting flattens the document to a single image and leaves the project as it i
 - **File > Export PNG** (Ctrl+Shift+E): lossless, with transparency.
 - **File > Export JPEG** (Ctrl+Alt+Shift+S): shows a preview with a quality slider from 1 to 100, the image size and the resulting file size, and composites transparent areas over white. The quality you choose is remembered.
 - **File > Export WebP**: uses the quality last chosen for JPEG.
+- **File > Export As**: choose dimensions and PNG/JPEG/WebP/TIFF/PDF, 16-bit PNG/TIFF or HDR EXR. Preview shows the encoded size and, for JPEG/WebP, the compression result. PDF contains one page sized from the document's DPI.
+- **CMYK export**: in Export As, choose JPEG, TIFF or PDF and enable CMYK. The output contains the print profile chosen with View > CMYK Profile (Coated FOGRA39 by default). Transparent areas become paper white. View > Proof Colors (Ctrl+Y) and Gamut Warning (Ctrl+Shift+Y) preview the print conversion without changing RGB document pixels. The profile choice is saved in Settings. These conversions require ImageMagick.
 - **Save Look…** in the [Camera Raw Filter](camera-raw.md) writes that grade's color stages as a `.cube` in the same way.
 - **File > Export Look as .cube**: bakes the document's adjustment layers into one 3D lookup table, at 17, 33 or 65 points, that any editor with a Color Lookup can load, so a look built here from Curves, Hue/Saturation and a Gradient Map can go to DaVinci Resolve or Photoshop. Only what changes a color by its color alone can go into a table: a layer with a mask, a clipped layer, a layer inside a folder, and Grain, Add Noise and the blurs are left out, and the dialog lists them before anything is written. The table is written at the layers' opacities, bottom to top, and reads back in Composa's own Color Lookup as the same look.
 
@@ -59,7 +64,7 @@ What does not: text that mixes fonts or colors arrives as pixels, GIMP 3's layer
 
 ## Camera RAW files
 
-A RAW file opens through a "Develop" dialog with Exposure (in EV, from -3 to 3), Temperature and Tint, and a Reset button. Import develops the whole frame with those settings and opens it as a document. For finer control afterwards, use the [Camera Raw Filter](camera-raw.md).
+A RAW file opens through a "Develop" dialog with Exposure (in EV, from -3 to 3), Temperature, Tint, luminance/chroma noise reduction, highlight recovery, manual radial lens correction and Reset. Import develops the whole frame with those settings, retaining 16-bit data. Continue in Camera Raw opens the [Camera Raw Filter](camera-raw.md) for finer control afterwards. Development uses LibRaw's decoded image rather than sensor data; lens correction does not supply automatic camera-specific profiles.
 
 ## Closing and quitting
 

@@ -10,6 +10,7 @@ using Avalonia.VisualTree;
 using Composa.Editing;
 using Composa.Filters;
 using Composa.Model;
+using Composa.Rendering;
 using SkiaSharp;
 using BlendMode = Composa.Model.BlendMode;
 using TextAlignment = Avalonia.Media.TextAlignment;
@@ -125,10 +126,16 @@ public sealed class LayersPanel : UserControl
         var effectsButton = Ui.IconButton(Icons.Effects, "Layer effects: stroke, drop shadow, color overlay, inner shadow, outer glow, inner glow", () => { });
         effectsButton.Click += (_, _) => { if (session?.ActiveLayer is { Pixels: not null }) effectsMenu.Open(effectsButton); };
 
+        var maskButton = Ui.IconButton(Icons.Mask, "Add layer mask (Alt: invert selection or hide all)", () => { if (session?.ActiveLayer is { } layer) session.AddMask(layer); });
+        maskButton.AddHandler(PointerPressedEvent, (_, e) =>
+        {
+            if (e.GetCurrentPoint(maskButton).Properties.IsLeftButtonPressed && e.KeyModifiers.HasFlag(KeyModifiers.Alt) && session?.ActiveLayer is { } layer)
+            { session.AddMask(layer, hideAll: true); e.Handled = true; }
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         var footer = Ui.Row(2,
             Ui.IconButton(Icons.Plus, "New layer (Ctrl+Shift+N)", () => session?.AddBlankLayer()),
             Ui.IconButton(Icons.Folder, "Group selected layers (Ctrl+G)", () => session?.GroupSelectedLayers()),
-            Ui.IconButton(Icons.Mask, "Add layer mask (Alt: hide all)", () => { if (session?.ActiveLayer is { } layer) session.AddMask(layer); }),
+            maskButton,
             effectsButton,
             adjustButton,
             Ui.IconButton(Icons.Trash, "Delete layer, mask or effect", () => DeleteLayerOrMask()));
@@ -149,6 +156,25 @@ public sealed class LayersPanel : UserControl
         list.Children.Add(rows);
         list.Children.Add(dropLine);
         var scroll = new ScrollViewer { Content = list, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
+        Point? panFrom = null;
+        scroll.AddHandler(PointerPressedEvent, (_, e) =>
+        {
+            if (!e.GetCurrentPoint(scroll).Properties.IsMiddleButtonPressed) return;
+            panFrom = e.GetPosition(scroll); e.Pointer.Capture(scroll); e.Handled = true;
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        scroll.AddHandler(PointerMovedEvent, (_, e) =>
+        {
+            if (panFrom is not { } last) return;
+            var next = e.GetPosition(scroll);
+            scroll.Offset = new Vector(scroll.Offset.X, Math.Clamp(scroll.Offset.Y + last.Y - next.Y, 0, Math.Max(0, scroll.Extent.Height - scroll.Viewport.Height)));
+            panFrom = next; e.Handled = true;
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        scroll.AddHandler(PointerReleasedEvent, (_, e) =>
+        {
+            if (panFrom == null) return;
+            panFrom = null; e.Pointer.Capture(null); e.Handled = true;
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        scroll.PointerCaptureLost += (_, _) => panFrom = null;
         scroll.PointerPressed += (_, e) => { if (e.Source == scroll || e.Source == list) Focus(); };
 
         var layout = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto,Auto"), Background = Palette.Panel };
@@ -225,6 +251,8 @@ public sealed class LayersPanel : UserControl
         updating = false;
         if (session == null) return;
         AddRows(session.Document.Layers, 0, parentVisible: true);
+        if (active != null && rowFor.TryGetValue(active.Id, out var selected))
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => selected.BringIntoView(), Avalonia.Threading.DispatcherPriority.Loaded);
     }
 
     private void AddRows(List<Layer> layers, int depth, bool parentVisible)
@@ -277,7 +305,11 @@ public sealed class LayersPanel : UserControl
         {
             var pixelThumb = Thumb(new Image { Source = Thumbnail(layer.Pixels), Stretch = Stretch.Uniform }, selected && layer.Id == current.ActiveLayer?.Id && !current.IsEditingMask);
             // The row's own press handler (which bubbles next) selects the layer and then applies this target.
-            pixelThumb.PointerPressed += (_, _) => thumbnailTarget = false;
+            pixelThumb.PointerPressed += (_, _) =>
+            {
+                if (current.SoloMaskLayerId == layer.Id) current.ToggleSoloMask(layer);
+                thumbnailTarget = false;
+            };
             content.Children.Add(pixelThumb);
         }
         if (layer.Mask != null)
@@ -285,10 +317,11 @@ public sealed class LayersPanel : UserControl
             var maskThumb = Thumb(new Image { Source = Thumbnail(layer.Mask), Stretch = Stretch.Uniform, Opacity = layer.MaskEnabled ? 1 : 0.35 },
                 layer.Id == current.ActiveLayer?.Id && current.IsEditingMask);
             maskThumb.PointerPressed += (_, _) => thumbnailTarget = true;
-            ToolTip.SetTip(maskThumb, "Layer mask: click to paint on it, Shift-click to disable, Ctrl-click to load as selection");
+            ToolTip.SetTip(maskThumb, L10n.Text("Layer mask: click to paint, Alt-click to view alone, Shift-click to disable, Ctrl-click to select"));
             maskThumb.AddHandler(PointerPressedEvent, (_, e) =>
             {
-                if (e.KeyModifiers.HasFlag(KeyModifiers.Shift)) { current.SetMaskEnabled(layer, !layer.MaskEnabled); e.Handled = true; }
+                if (e.KeyModifiers.HasFlag(KeyModifiers.Alt)) { current.ToggleSoloMask(layer); e.Handled = true; }
+                else if (e.KeyModifiers.HasFlag(KeyModifiers.Shift)) { current.SetMaskEnabled(layer, !layer.MaskEnabled); e.Handled = true; }
                 else if (e.KeyModifiers.HasFlag(KeyModifiers.Control)) { current.SelectLayerMask(layer); e.Handled = true; }
             }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
             content.Children.Add(maskThumb);
@@ -318,6 +351,8 @@ public sealed class LayersPanel : UserControl
             name.MaxWidth = 150;
             if (layer.IsLive) name.FontStyle = FontStyle.Italic;
             content.Children.Add(name);
+            if (layer.Pixels is { } pixels && DeepPixels.Source(pixels) is { } wide)
+                content.Children.Add(Ui.Label(DeepPixels.IsHdr(wide) ? "HDR" : L10n.Text("16-bit"), Palette.Secondary, 10));
         }
 
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*") };
@@ -490,6 +525,12 @@ public sealed class LayersPanel : UserControl
         if (layer.IsAdjustment) Add("Edit Adjustment…", () => EditAdjustmentRequested?.Invoke(layer));
         if (layer.Text != null) Add("Edit Text…", () => EditTextRequested?.Invoke(layer));
         if (layer.IsLive) Add("Rasterize Layer", () => current.RasterizeShape(layer));
+        if (!layer.IsLive && layer.Pixels is { } raster)
+        {
+            var wide = DeepPixels.Source(raster);
+            Add("Convert Layer to 8-bit", () => current.ConvertLayerDepth(layer, false), wide != null);
+            Add("Convert Layer to 16-bit", () => current.ConvertLayerDepth(layer, true), wide == null || DeepPixels.IsHdr(wide));
+        }
         menu.Items.Add(new Separator());
 
         Add(layer.Clipped ? "Release Clipping Mask" : "Create Clipping Mask", () => current.ToggleClippingMask(layer), current.CanClip(layer));
@@ -499,7 +540,7 @@ public sealed class LayersPanel : UserControl
         Add(current.MergeTitle, current.MergeLayers, current.CanMerge);
         menu.Items.Add(new Separator());
 
-        var addMask = new MenuItem { Header = "Add Mask", IsEnabled = layer.Mask == null };
+        var addMask = new MenuItem { Header = L10n.Text("Add Mask"), IsEnabled = layer.Mask == null };
         Add("Reveal All (White)", () => current.AddMask(layer), parent: addMask);
         Add("Hide All (Black)", () => current.AddMask(layer, hideAll: true), parent: addMask);
         menu.Items.Add(addMask);

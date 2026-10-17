@@ -30,8 +30,8 @@
   </developer>
 
   <launchable type="desktop-id">composa.desktop</launchable>
-  <url type="homepage">https://github.com/dvdstelt/Composa</url>
-  <url type="bugtracker">https://github.com/dvdstelt/Composa/issues</url>
+  <url type="homepage">https://github.com/bianzuilun/Composa</url>
+  <url type="bugtracker">https://github.com/bianzuilun/Composa/issues</url>
 
   <provides>
     <binary>composa</binary>
@@ -50,6 +50,11 @@
     added along with the CHANGELOG.md section when a release is cut; see RELEASING.md.
   -->
   <releases>
+    <release version="1.5.3" date="2026-10-18">
+      <description>
+        <p>Editing updates from Compositor 1.4.1 through 1.5.3: 16-bit and HDR sources, EXR and 16-bit exports, ICC print proofing and CMYK exports, measured Camera Raw color with shader previews, improved RAW development, texture-aware healing, Progressive Blur, Scanlines and workspace improvements. Simplified Chinese and Japanese localization is retained.</p>
+      </description>
+    </release>
     <release version="1.5.0-beta.2" date="2026-10-17" type="development">
       <description>
         <p>Complete Simplified Chinese and Japanese left-toolbar tool groups and tooltips, with translated tool-option labels, detection choices and text controls.</p>

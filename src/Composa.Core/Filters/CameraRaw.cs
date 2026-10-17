@@ -38,18 +38,28 @@ public sealed record CameraRawCurve
     [JsonIgnore] public bool Adjusts => Shadows != 0 || Darks != 0 || Lights != 0 || Highlights != 0 || RefineSaturation != 0
         || !IsLinear(Rgb) || !IsLinear(Red) || !IsLinear(Green) || !IsLinear(Blue);
 
-    /// <summary>Lifts or lowers the region a tone belongs to. Dividers are fractions of the tonal range.</summary>
+    [JsonIgnore] public bool HasMeasuredDividers => ShadowSplit == 25 && DarkSplit == 50 && LightSplit == 75 && RefineSaturation == 0;
+
+    /// <summary>Monotone gamma bends joined by the same smooth curve as the point editor.</summary>
     public double Parametric(double tone)
     {
-        double shadow = ShadowSplit / 100, dark = DarkSplit / 100, light = LightSplit / 100;
-        var (amount, low, high) = tone < shadow ? (Shadows, 0, shadow) : tone < dark ? (Darks, shadow, dark) : tone < light ? (Lights, dark, light) : (Highlights, light, 1);
-        var span = Math.Max(0.02, high - low);
-        var weight = 1 - Math.Abs(tone - (low + high) / 2) / (span / 2);
-        return Math.Clamp(tone + amount / 100 * Math.Max(0, weight) * 0.22, 0, 1);
+        if (Shadows == 0 && Darks == 0 && Lights == 0 && Highlights == 0) return tone;
+        static double Bend(double value, double lower, double low, double upper, double high)
+        {
+            if (value < lower && lower > 0) return lower * Math.Pow(value / lower, Math.Pow(2, -low / 100 * 1.66));
+            if (value > upper && upper < 1) return 1 - (1 - upper) * Math.Pow((1 - value) / (1 - upper), Math.Pow(2, high / 100 * 1.66));
+            return value;
+        }
+        var anchors = Enumerable.Range(0, 33).Select(index =>
+        {
+            var x = index / 32.0;
+            return new CurvePoint(x, Bend(Bend(x, ShadowSplit / 100, Shadows, LightSplit / 100, Highlights), DarkSplit / 100, Darks, DarkSplit / 100, Lights));
+        }).ToArray();
+        return Point(tone, anchors);
     }
 
     /// <summary>The 256-entry table of the parametric sliders followed by the RGB point curve.</summary>
-    public float[] LumaTable() => Enumerable.Range(0, 256).Select(i => (float)Point(Parametric(i / 255.0), Rgb)).ToArray();
+    public float[] LumaTable(bool parametricAlreadyApplied = false) => Enumerable.Range(0, 256).Select(i => (float)Point(parametricAlreadyApplied ? i / 255.0 : Parametric(i / 255.0), Rgb)).ToArray();
 
     public float[] ChannelTable(CurvePoint[] points) => Enumerable.Range(0, 256).Select(i => (float)Point(i / 255.0, points)).ToArray();
 
@@ -364,6 +374,23 @@ public sealed record CameraRawSettings
         _ => this with { Calibration = new CameraRawCalibration() }
     };
 
+    /// <summary>Resets a group completely, including controls whose amounts are currently zero.</summary>
+    public CameraRawSettings ResetGroup(CameraRawGroup group)
+    {
+        var cleared = Without(group);
+        return group switch
+        {
+            CameraRawGroup.Color => cleared with { WhiteBalance = CameraRawWhiteBalance.Custom },
+            CameraRawGroup.Effects => cleared with
+            {
+                GlowStyle = default, GlowRange = 0, GlowSpread = 0, GlowWarmth = 0,
+                VignetteStyle = default, VignetteMidpoint = 50, VignetteRoundness = 0, VignetteFeather = 50, VignetteHighlights = 0,
+                GrainSize = 25, GrainRoughness = 50
+            },
+            _ => cleared
+        };
+    }
+
     /// <summary>Camera Raw's 0…100 grain size in the pixel scale the Grain adjustment uses.</summary>
     [JsonIgnore] public double GrainKernelSize => 0.5 + GrainSize / 100 * 19.5;
 
@@ -396,22 +423,13 @@ public sealed record CameraRawSettings
     internal static double Clamp(double value, double min, double max, double fallback) => double.IsFinite(value) ? Math.Clamp(value, min, max) : fallback;
 
     /// <summary>
-    /// The Temperature and Tint that bring one linear-light color to neutral, using the same gains the pixel loop
-    /// multiplies. Null when a channel is missing or the cast cannot be expressed on those two axes.
+    /// The Temperature and Tint that bring one linear-light color closest to neutral using the measured white-balance tables.
     /// </summary>
     public static (double Temperature, double Tint)? Neutralize(double linearRed, double linearGreen, double linearBlue)
     {
-        if (linearRed <= 1e-4 || linearGreen <= 1e-4 || linearBlue <= 1e-4) return null;
-        double a1 = TemperatureGain * linearRed, b1 = TintRedBlue * linearRed + TintGreen * linearGreen, c1 = linearGreen - linearRed;
-        double a2 = -TemperatureGain * linearBlue, b2 = TintRedBlue * linearBlue + TintGreen * linearGreen, c2 = linearGreen - linearBlue;
-        var determinant = a1 * b2 - a2 * b1;
-        if (Math.Abs(determinant) < 1e-8) return null;
-        double warm = (c1 * b2 - c2 * b1) / determinant, magenta = (a1 * c2 - a2 * c1) / determinant;
-        if (!double.IsFinite(warm) || !double.IsFinite(magenta)) return null;
-        return (warm * 100, magenta * 100);
+        return NeutralizeSrgb(CameraRawPixels.LinearToSrgb(linearRed), CameraRawPixels.LinearToSrgb(linearGreen), CameraRawPixels.LinearToSrgb(linearBlue));
     }
 
     /// <summary>The same for a straight sRGB color, 0…1 per channel.</summary>
-    public static (double Temperature, double Tint)? NeutralizeSrgb(double red, double green, double blue) =>
-        Neutralize(CameraRawPixels.SrgbToLinear(red), CameraRawPixels.SrgbToLinear(green), CameraRawPixels.SrgbToLinear(blue));
+    public static (double Temperature, double Tint)? NeutralizeSrgb(double red, double green, double blue) => CameraRawTables.Neutralize(red, green, blue);
 }

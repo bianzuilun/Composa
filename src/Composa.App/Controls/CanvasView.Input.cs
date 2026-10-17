@@ -29,6 +29,7 @@ public sealed partial class CanvasView
     private bool temporaryMove;
     /// <summary>Ctrl is held over the canvas with another tool, so the cursor promises a move.</summary>
     private bool controlHover;
+    private bool zoomOutHover;
     private readonly List<SKPoint> polygon = [];
     private SKRect? cropRect;
     private SKRect cropStart;
@@ -121,6 +122,9 @@ public sealed partial class CanvasView
 
     private void UpdateCursor()
     {
+        if (drag == Drag.Pan) { Cursor = ToolCursors.ClosedHand; return; }
+        if (session?.Tool == Tool.Zoom && !spaceDown && !temporaryMove && !controlHover)
+        { Cursor = zoomOutHover ? ToolCursors.ZoomOut : ToolCursors.ZoomIn; return; }
         var type = StandardCursorType.Arrow;
         if (session != null)
         {
@@ -159,6 +163,11 @@ public sealed partial class CanvasView
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed && NavigateAt(e.GetPosition(this), begin: true)) { e.Pointer.Capture(this); e.Handled = true; return; }
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed && FilterPointPressed?.Invoke(ToDocument(e.GetPosition(this))) == true)
+        {
+            filterPointDragging = true; e.Pointer.Capture(this); e.Handled = true; InvalidateVisual(); return;
+        }
         Focus();
         if (session == null || drag != Drag.None && !(drag == Drag.Lasso && session.LassoKind == LassoKind.Polygonal)) return;
         var point = e.GetCurrentPoint(this);
@@ -168,6 +177,10 @@ public sealed partial class CanvasView
         dragModifiers = e.KeyModifiers;
         e.Pointer.Capture(this);
 
+        if (point.Properties.IsMiddleButtonPressed && e.KeyModifiers.HasFlag(KeyModifiers.Control))
+        {
+            drag = Drag.ZoomScrub; scrubZoom = zoom; UpdateCursor(); return;
+        }
         if (point.Properties.IsMiddleButtonPressed || spaceDown || (session.Tool == Tool.Hand && point.Properties.IsLeftButtonPressed))
         {
             drag = Drag.Pan;
@@ -299,6 +312,8 @@ public sealed partial class CanvasView
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
+        if (navigatorDragging) { NavigateAt(e.GetPosition(this), begin: false); e.Handled = true; return; }
+        if (filterPointDragging) { FilterPointMoved?.Invoke(ToDocument(e.GetPosition(this))); e.Handled = true; InvalidateVisual(); return; }
         var position = e.GetPosition(this);
         var delta = position - cursorScreen;
         cursorScreen = position;
@@ -309,6 +324,7 @@ public sealed partial class CanvasView
         var shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
         var alt = e.KeyModifiers.HasFlag(KeyModifiers.Alt);
         snapTo = currentDocument;
+        if (zoomOutHover != alt) { zoomOutHover = alt; UpdateCursor(); }
 
         switch (drag)
         {
@@ -359,6 +375,8 @@ public sealed partial class CanvasView
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
+        if (navigatorDragging) { navigatorDragging = false; e.Pointer.Capture(null); e.Handled = true; return; }
+        if (filterPointDragging) { filterPointDragging = false; FilterPointReleased?.Invoke(); e.Pointer.Capture(null); e.Handled = true; return; }
         // Only the button that started a drag ends it; a stray right or middle click mid-stroke changes nothing.
         if (session == null) return;
         if (drag != Drag.None && e.InitialPressMouseButton != dragButton)
@@ -432,7 +450,7 @@ public sealed partial class CanvasView
                 else session.AddShape(MarqueeRect(shift, alt));
                 break;
             case Drag.ZoomScrub:
-                if (!moved) ZoomTo(alt ? zoom / 1.5 : zoom * 1.5, pressScreen);
+                if (!moved && dragButton == MouseButton.Left) ZoomTo(alt ? zoom / 1.5 : zoom * 1.5, pressScreen);
                 break;
             case Drag.TextBox: FinishTextBoxDrag(moved); break;
             case Drag.Guide: FinishGuideDrag(e.GetPosition(this)); break;
@@ -444,6 +462,8 @@ public sealed partial class CanvasView
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
     {
         base.OnPointerCaptureLost(e);
+        navigatorDragging = false;
+        if (filterPointDragging) { filterPointDragging = false; FilterPointReleased?.Invoke(); }
         if (recapture)
         {
             recapture = false;
@@ -754,6 +774,8 @@ public sealed partial class CanvasView
     /// </summary>
     public void ModifierKeyChanged(Key key, KeyModifiers modifiers, bool down)
     {
+        var zoomOut = key is Key.LeftAlt or Key.RightAlt ? down : modifiers.HasFlag(KeyModifiers.Alt);
+        if (zoomOutHover != zoomOut) { zoomOutHover = zoomOut; UpdateCursor(); }
         if (drag != Drag.None)
         {
             // The pointer need not move while Shift or Alt changes, so the drag takes the change from the key and redraws.
@@ -813,7 +835,7 @@ public sealed partial class CanvasView
             // that covers the canvas contains every press, and keeping it would hide the layer painted on top.
             var hit = LayerAt(pressDocument);
             if (hit != null && !session.Document.SelectedLayerIds.Contains(hit.Id)
-                && (control || clicks >= 2 || (AutoSelect && (handle == TransformHandle.None || IsAbove(hit, session.ActiveLayer)))))
+                && (clicks >= 2 || ((AutoSelect != control) && (handle == TransformHandle.None || IsAbove(hit, session.ActiveLayer)))))
                 session.SelectLayer(hit.Id, extend: dragModifiers.HasFlag(KeyModifiers.Shift));
             handle = TransformHandle.Move;
         }
@@ -849,7 +871,7 @@ public sealed partial class CanvasView
                 break;
             default:
                 if (distortCorner >= 0) edit.DistortCorner(distortCorner, currentDocument);
-                else edit.Resize(handle, currentDocument, free: shift, fromCenter: alt);
+                else edit.Resize(handle, control ? currentDocument : SnapResizePoint(edit, currentDocument, shift, alt), free: shift, fromCenter: alt);
                 break;
         }
         ToolStateChanged?.Invoke();
@@ -867,6 +889,31 @@ public sealed partial class CanvasView
         dx = snappedX; dy = snappedY;
         if (snapX is { } x) guides.Add((new SKPoint(x, -100000), new SKPoint(x, 100000)));
         if (snapY is { } y) guides.Add((new SKPoint(-100000, y), new SKPoint(100000, y)));
+    }
+
+    private SKPoint SnapResizePoint(TransformEdit edit, SKPoint point, bool free, bool centered)
+    {
+        if (session == null || !session.View.Snap || Math.Abs(edit.StartRotation % 180) > .001) return point;
+        var (_, snapX, snapY) = session.SnapPoint(point, (float)(6 / UnitsPerPixel), edit.Layers.Select(l => l.Id).ToHashSet());
+        var left = handle is TransformHandle.Left or TransformHandle.TopLeft or TransformHandle.BottomLeft;
+        var right = handle is TransformHandle.Right or TransformHandle.TopRight or TransformHandle.BottomRight;
+        var top = handle is TransformHandle.Top or TransformHandle.TopLeft or TransformHandle.TopRight;
+        var bottom = handle is TransformHandle.Bottom or TransformHandle.BottomLeft or TransformHandle.BottomRight;
+        if (!left && !right) snapX = null;
+        if (!top && !bottom) snapY = null;
+        if (!free && (left || right) && (top || bottom))
+        {
+            if (snapX != null && snapY != null)
+            { if (Math.Abs(snapX.Value - point.X) <= Math.Abs(snapY.Value - point.Y)) snapY = null; else snapX = null; }
+            var box = edit.StartFrame;
+            var anchor = centered ? new SKPoint(box.MidX, box.MidY) : new SKPoint(left ? box.Right : box.Left, top ? box.Bottom : box.Top);
+            var aspect = box.Width / Math.Max(1, box.Height);
+            if (snapX is { } x) point.Y = anchor.Y + (top ? -1 : 1) * Math.Abs(x - anchor.X) / aspect;
+            else if (snapY is { } y) point.X = anchor.X + (left ? -1 : 1) * Math.Abs(y - anchor.Y) * aspect;
+        }
+        if (snapX is { } sx) { point.X = sx; guides.Add((new SKPoint(sx, -100000), new SKPoint(sx, 100000))); }
+        if (snapY is { } sy) { point.Y = sy; guides.Add((new SKPoint(-100000, sy), new SKPoint(100000, sy))); }
+        return point;
     }
 
     // ---- Keyboard -----------------------------------------------------------------------------------------------

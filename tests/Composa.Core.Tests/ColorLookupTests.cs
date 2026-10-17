@@ -481,13 +481,13 @@ public class ColorLookupTests
 
         MemoryStream Tampered(Action<System.IO.Compression.ZipArchive> change)
         {
-            var copy = new MemoryStream(bytes.ToArray());
+            var copy = new MemoryStream(); copy.Write(bytes); copy.Position = 0;
             using (var zip = new System.IO.Compression.ZipArchive(copy, System.IO.Compression.ZipArchiveMode.Update, leaveOpen: true)) change(zip);
             copy.Position = 0;
             return copy;
         }
 
-        // What an older Composa says about this file is the message it has always had, now with 6 as its own ceiling.
+        // A future project version is refused using the current format ceiling.
         var newer = Tampered(zip =>
         {
             var entry = zip.GetEntry("manifest.json")!;
@@ -634,10 +634,13 @@ public class ColorLookupTests
     {
         var grade = new CameraRawSettings { Exposure = 0.4, Contrast = 20, Temperature = 15, Saturation = 25, Texture = 40, VignetteAmount = -30, GrainAmount = 20 }
             with { Detail = new CameraRawDetail { SharpenAmount = 50 }, Calibration = new CameraRawCalibration { BlueSaturation = 20 } };
-        Assert.Equal([CameraRawGroup.Effects, CameraRawGroup.Detail], LookBake.LeftOutOf(grade));
+        Assert.Equal([CameraRawGroup.Light, CameraRawGroup.Effects, CameraRawGroup.Detail], LookBake.LeftOutOf(grade));
+        Assert.Equal(new[] { "Contrast", "Effects", "Detail" }, LookBake.LeftOutNames(grade));
         var colorOnly = LookBake.ColorOnly(grade);
         Assert.True(colorOnly.Adjusts(CameraRawGroup.Light) && colorOnly.Adjusts(CameraRawGroup.Calibration));
         Assert.False(colorOnly.Adjusts(CameraRawGroup.Effects) || colorOnly.Adjusts(CameraRawGroup.Detail));
+        Assert.Equal(0, colorOnly.Contrast);
+        Assert.True(LookBake.ColorOnly(new CameraRawSettings { Contrast = 20, Highlights = -30, Shadows = 50 }).IsIdentity);
         var lattice = LookBake.Bake(grade, 33, "Graded");
         Assert.Equal(("Graded", 33), (lattice.Title, lattice.Size));
 

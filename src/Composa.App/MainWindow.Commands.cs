@@ -79,6 +79,9 @@ public sealed partial class MainWindow
             Item("Export PNG…", () => _ = Export(ExportFormat.Png), Key.E, ctrl | shift),
             Item("Export JPEG…", () => _ = Export(ExportFormat.Jpeg), Key.S, ctrl | shift | alt),
             Item("Export WebP…", () => _ = Export(ExportFormat.Webp)),
+            Item("Export TIFF…", () => _ = Export(ExportFormat.Tiff)),
+            Item("Export PDF…", () => _ = Export(ExportFormat.Pdf)),
+            Item("Export As…", () => _ = ExportAs(), Key.W, ctrl | shift | alt),
             Item("Export Look as .cube…", () => _ = ExportLook()),
             Line(),
             Item("Close Project", () => _ = CloseSession(session!), Key.W, ctrl),
@@ -86,12 +89,11 @@ public sealed partial class MainWindow
 
         undoItem = Item("Undo", () => session!.Undo(), Key.Z, ctrl, () => session!.CanUndo);
         redoItem = Item("Redo", () => session!.Redo(), Key.Z, ctrl | shift, () => session!.CanRedo);
-        commands.Add(new Shortcut("Redo (Ctrl+Y)", "Redo", "Menus", new KeyGesture(Key.Y, ctrl), () => session!.Redo(), () => HasDocument && session!.CanRedo, hidden: true));
         Top("_Edit", undoItem, redoItem, Line(),
             Item("Cut", () => _ = Cut(), Key.X, ctrl, () => session!.CanCopy),
             Item("Copy", () => _ = Copy(merged: false), Key.C, ctrl, () => session!.CanCopy),
             Item("Copy Merged", () => _ = Copy(merged: true), Key.C, ctrl | shift),
-            Item("Paste", () => _ = Paste(), Key.V, ctrl),
+            Item("Paste", () => _ = Paste(), Key.V, ctrl, needsDocument: false),
             Sub("Paste Special",
                 Item("Paste in Place", () => _ = Paste(PasteKind.InPlace), Key.V, ctrl | shift),
                 Item("Paste Into", () => _ = Paste(PasteKind.Into), Key.V, ctrl | alt | shift, () => session!.Selection != null)),
@@ -145,7 +147,7 @@ public sealed partial class MainWindow
             Item("Flip Canvas Horizontal", () => session!.FlipCanvas(true)),
             Item("Flip Canvas Vertical", () => session!.FlipCanvas(false)));
 
-        Top("F_ilter", Enum.GetValues<FilterKind>().Where(kind => kind != FilterKind.RemoveBackground).Select(kind => (object)Item(FilterSettings.DisplayName(kind) + "…", () => _ = Filter(kind), enabled: () => session!.CanEditPixels)).ToArray());
+        Top("F_ilter", new object[] { Item("Last Filter", RepeatLastFilter, Key.F, ctrl | alt, () => lastAppliedFilter != null && session!.CanEditPixels), Line() }.Concat(Enum.GetValues<FilterKind>().Where(kind => kind != FilterKind.RemoveBackground).Select(kind => (object)Item(FilterSettings.DisplayName(kind) + "…", () => _ = Filter(kind), enabled: () => session!.CanEditPixels))).ToArray());
 
         mergeItem = Item("Merge Down", () => session!.MergeLayers(), Key.E, ctrl, () => session!.CanMerge);
         clipItem = Item("Create Clipping Mask", () => session!.ToggleClippingMask(session.ActiveLayer!), Key.G, ctrl | alt, () => session!.ActiveLayer is { } l && session.CanClip(l));
@@ -200,7 +202,17 @@ public sealed partial class MainWindow
             viewToggles.Add((item, get));
             return item;
         }
+        var proofColors = Item("Proof Colors", () => _ = ToggleProof(), Key.Y, ctrl);
+        proofColors.ToggleType = MenuItemToggleType.CheckBox; viewToggles.Add((proofColors, v => v.ProofColors));
+        var gamutWarning = Item("Gamut Warning", () => _ = ToggleProof(gamut: true), Key.Y, ctrl | shift);
+        gamutWarning.ToggleType = MenuItemToggleType.CheckBox; viewToggles.Add((gamutWarning, v => v.GamutWarning));
         Top("_View",
+            Item("Search Commands…", () => _ = SearchCommands(), Key.F, ctrl, needsDocument: false),
+            Item("Toggle Fullscreen", ToggleCanvasOnly, Key.F, needsDocument: false),
+            Line(),
+            ViewToggle("Navigator (300% and above)", v => v.ShowNavigator, v => v with { ShowNavigator = !v.ShowNavigator }),
+            proofColors, gamutWarning,
+            Item("CMYK Profile…", () => _ = ChooseCmykProfile(), needsDocument: false),
             Item("Fit Canvas", canvas.Fit, Key.D0, ctrl),
             Item("Actual Pixels", () => canvas.ZoomTo(1), Key.D1, ctrl),
             Item("Zoom In", canvas.ZoomIn, Key.OemPlus, ctrl),
@@ -347,6 +359,13 @@ public sealed partial class MainWindow
             shortcut.Gesture = gesture;
             if (shortcut.Item != null) shortcut.Item.InputGesture = gesture;
         }
+        // Existing user bindings take priority when an update introduces a new command's default gesture.
+        foreach (var group in AllShortcuts.Where(s => s.Gesture != null).GroupBy(s => s.Gesture!.ToString()))
+        {
+            if (!group.Any(s => settings.Shortcuts.ContainsKey(s.Id))) continue;
+            foreach (var shortcut in group.Where(s => !settings.Shortcuts.ContainsKey(s.Id)))
+            { shortcut.Gesture = null; if (shortcut.Item != null) shortcut.Item.InputGesture = null; }
+        }
     }
 
     private async Task ShowShortcuts()
@@ -388,6 +407,7 @@ public sealed partial class MainWindow
 
     private void Execute(Shortcut command)
     {
+        if (editingInteractiveFilter) return;
         if (command.Enabled?.Invoke() == false || canvas.IsDragging) return;
         problem = note = null;
         try { command.Run(); }
@@ -424,6 +444,7 @@ public sealed partial class MainWindow
 
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
+        if (e.Key == Key.Escape && canvasOnly) { ToggleCanvasOnly(); e.Handled = true; return; }
         var focused = FocusManager?.GetFocusedElement();
         if (SwallowAlt(e)) return;
         if (focused is TextBox)
@@ -488,7 +509,12 @@ public sealed partial class MainWindow
     private async Task NewCanvas()
     {
         var result = await CanvasDialogs.NewCanvas(this, session?.Background ?? SKColors.White, await ClipboardImageSize());
-        if (result != null) AddSession(EditorSession.NewCanvas(result.Width, result.Height, result.Background));
+        if (result != null)
+        {
+            var created = EditorSession.NewCanvas(result.Width, result.Height, result.Background);
+            created.Document.Resolution = result.Resolution;
+            AddSession(created);
+        }
     }
 
     private async Task Open()
@@ -502,7 +528,16 @@ public sealed partial class MainWindow
     {
         foreach (var path in paths)
         {
-            try { await OpenPath(path); }
+            try
+            {
+                if (!Directory.Exists(path)) { await OpenPath(path); continue; }
+                var files = ImportPaths.Expand([path]).ToArray();
+                if (files.Length == 0) continue;
+                if (await OpenPath(files[0]) is not { } folderSession) continue;
+                await PlacePaths(files.Skip(1), null);
+                folderSession.RevealAll();
+                canvas.Fit();
+            }
             catch (Exception error) { _ = Prompts.Alert(this, "Couldn't open " + Path.GetFileName(path), error.Message); }
         }
     }
@@ -559,7 +594,7 @@ public sealed partial class MainWindow
     public async Task PlacePaths(IEnumerable<string> paths, SKPoint? at)
     {
         if (session == null) return;
-        foreach (var path in paths)
+        foreach (var path in ImportPaths.Expand(paths))
         {
             try
             {
@@ -612,14 +647,40 @@ public sealed partial class MainWindow
     {
         var raw = await Busy(() => Task.Run(() => RawImporter.Decode(path)));
         if (await RawDevelopDialog.Show(this, Path.GetFileName(path), raw) is not { } settings) return null;
-        return await Busy(() => Task.Run(() => raw.Develop(settings)));
+        var developed = await Busy(() => Task.Run(() => raw.Develop(settings)));
+        if (!settings.OpenCameraRaw) return developed;
+        using var small = await Task.Run(() => raw.Develop(settings, 560));
+        SKBitmap? shown = null;
+        try
+        {
+            var grade = await CameraRawDialog.Show(this, new CameraRawSettings(), small, value =>
+            {
+                var next = ImageFilters.Run(small, new FilterSettings { Kind = FilterKind.CameraRaw, CameraRaw = value, CameraRawScale = small.Width / (double)raw.Width }).Result;
+                shown?.Dispose(); shown = next;
+            }, () => shown ?? small);
+            if (grade == null) { developed.Dispose(); return null; }
+            if (grade.IsIdentity) return developed;
+            try { return await Busy(() => Task.Run(() => ImageFilters.Run(developed, new FilterSettings { Kind = FilterKind.CameraRaw, CameraRaw = grade }).Result)); }
+            finally { developed.Dispose(); }
+        }
+        catch { developed.Dispose(); throw; }
+        finally { shown?.Dispose(); }
     }
 
     /// <summary>Reads a Photoshop file and, when anything has to be converted, asks before going on. Null means the user declined.</summary>
     private async Task<PsdImport?> ImportPhotoshop(string path, long pixelBudget)
     {
         var import = await Task.Run(() => PsdImport.Load(path, pixelBudget));
-        if (import.Conversions.Count == 0 || await ImportConversionDialog.Confirm(this, Path.GetFileName(path), "Photoshop", import.Conversions)) return import;
+        if (import.Conversions.Count == 0 || await ImportConversionDialog.Confirm(this, Path.GetFileName(path), "Photoshop", import.Conversions))
+        {
+            if (import.CmykProfile is { Length: >= 128 } profile && profile.AsSpan(16, 4).SequenceEqual("CMYK"u8))
+            {
+                settings.CmykProfile = profile; settings.CmykProfileName = Path.GetFileNameWithoutExtension(path) + " ICC"; settings.Save();
+                colorProof = null; canvas.SetColorProof(null);
+                if (session?.View is { } view && (view.ProofColors || view.GamutWarning)) _ = EnsureColorProof();
+            }
+            return import;
+        }
         import.Discard();
         return null;
     }
@@ -640,7 +701,9 @@ public sealed partial class MainWindow
         var projects = paths.Where(p => Path.GetExtension(p).Equals(ProjectFile.Extension, StringComparison.OrdinalIgnoreCase)).ToList();
         var images = paths.Except(projects).ToList();
         _ = OpenPaths(projects);
-        if (session == null || projects.Count > 0) _ = OpenPaths(images);
+        var tabPosition = e.GetPosition(tabs);
+        var onTabs = tabPosition.Y >= 0 && tabPosition.Y <= tabs.Bounds.Height;
+        if (session == null || projects.Count > 0 || onTabs) _ = OpenPaths(images);
         else
         {
             var position = e.GetPosition(canvas);
@@ -717,7 +780,7 @@ public sealed partial class MainWindow
             if (await CanvasDialogs.JpegQuality(this, jpegQuality, preview) is not { } quality) return;
             jpegQuality = quality;
         }
-        var extension = format switch { ExportFormat.Jpeg => "jpg", ExportFormat.Webp => "webp", _ => "png" };
+        var extension = format switch { ExportFormat.Jpeg => "jpg", ExportFormat.Webp => "webp", ExportFormat.Tiff => "tiff", ExportFormat.Pdf => "pdf", _ => "png" };
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = "Export " + extension.ToUpperInvariant(), SuggestedFileName = session.Title + "." + extension, DefaultExtension = extension,
@@ -729,7 +792,7 @@ public sealed partial class MainWindow
             Busy(() =>
             {
                 using var flat = session.Flatten();
-                ImageFiles.Save(flat, path, format, format == ExportFormat.Png ? 100 : jpegQuality);
+                ImageFiles.Save(flat, path, format, format == ExportFormat.Png ? 100 : jpegQuality, session.Document.Resolution);
             });
         }
         catch (Exception error) { await Prompts.Alert(this, "Couldn't export", error.Message); }
@@ -826,7 +889,6 @@ public sealed partial class MainWindow
 
     private async Task Paste(PasteKind kind = PasteKind.Normal)
     {
-        if (session == null) return;
         ClipboardImage? external = null;
         try
         {
@@ -842,11 +904,18 @@ public sealed partial class MainWindow
             }
         }
         catch { /* Fall back to the in-app clipboard. */ }
+        if (session == null)
+        {
+            var image = external ?? EditorSession.Clipboard;
+            if (image == null) { ShowProblem("The clipboard has no image."); return; }
+            AddSession(EditorSession.NewCanvas(image.Pixels.Width, image.Pixels.Height, null));
+        }
+        var destination = session!;
         var pasted = kind switch
         {
-            PasteKind.InPlace => session.PasteInPlace(external),
-            PasteKind.Into => session.PasteInto(external),
-            _ => session.Paste(external)
+            PasteKind.InPlace => destination.PasteInPlace(external),
+            PasteKind.Into => destination.PasteInto(external),
+            _ => destination.Paste(external)
         };
         if (pasted == null) ShowProblem("The clipboard has no image.");
         else SelectTool(Tool.Move);
@@ -975,6 +1044,13 @@ public sealed partial class MainWindow
 
     /// <summary>The last Camera Raw grade, so the panel opens where it was left; a hidden group is absent from it.</summary>
     private CameraRawSettings lastCameraRaw = new();
+    private FilterSettings? lastAppliedFilter;
+    private bool editingInteractiveFilter;
+    private void RepeatLastFilter()
+    {
+        if (session == null || lastAppliedFilter == null || !session.CanEditPixels) return;
+        Busy(() => session.ApplyFilter(lastAppliedFilter));
+    }
 
     private async Task Filter(FilterKind kind)
     {
@@ -985,15 +1061,45 @@ public sealed partial class MainWindow
         {
             var original = target.PreviewOriginal!;
             var seed = (uint)Random.Shared.Next();
-            var grade = await CameraRawDialog.Show(this, lastCameraRaw, original,
-                settings => Busy(() => target.PreviewFilter(new FilterSettings { Kind = kind, CameraRaw = settings, Seed = seed })),
-                () => target.ActiveLayer is { } layer ? (target.IsEditingMask ? layer.Mask : layer.Pixels) : null,
-                () => PickLookSavePath(target.Title), target.Title);
+            CameraRawSettings? grade;
+            try
+            {
+                grade = await CameraRawDialog.Show(this, lastCameraRaw, original, _ => { },
+                    () => canvas.CameraRawScopePreview ?? (target.ActiveLayer is { } layer ? (target.IsEditingMask ? layer.Mask : layer.Pixels) : null),
+                    () => PickLookSavePath(target.Title), target.Title, async settings =>
+                    {
+                        if (canvas.TryCameraRawPreview(target, original, settings)) return;
+                        canvas.ClearCameraRawPreview();
+                        await target.PreviewFilterAsync(new FilterSettings { Kind = kind, CameraRaw = settings, Seed = seed });
+                    });
+            }
+            finally { canvas.ClearCameraRawPreview(); }
             if (grade == null) { target.CancelPreview(); return; }
             lastCameraRaw = grade;
             if (grade.IsIdentity) { target.CancelPreview(); return; }
-            target.PreviewFilter(new FilterSettings { Kind = kind, CameraRaw = grade, Seed = seed });
+            await target.PreviewFilterAsync(new FilterSettings { Kind = kind, CameraRaw = grade, Seed = seed });
             target.CommitPreview();
+            lastAppliedFilter = new FilterSettings { Kind = kind, CameraRaw = grade, Seed = seed };
+            return;
+        }
+        if (kind == FilterKind.ProgressiveBlur)
+        {
+            var area = target.ActiveLayer!.Bounds;
+            FilterSettings? progressive;
+            var enabled = workspaceChrome.Select(control => (Control: control, control.IsEnabled)).ToArray();
+            editingInteractiveFilter = true;
+            try
+            {
+                foreach (var entry in enabled) entry.Control.IsEnabled = false;
+                progressive = await ProgressiveBlurDialog.Show(this, canvas, area, settings => Busy(() => target.PreviewFilter(settings)));
+            }
+            finally
+            {
+                editingInteractiveFilter = false;
+                foreach (var entry in enabled) entry.Control.IsEnabled = entry.IsEnabled;
+            }
+            if (progressive == null || progressive.IsIdentity) target.CancelPreview();
+            else { target.PreviewFilter(progressive); target.CommitPreview(); lastAppliedFilter = progressive; }
             return;
         }
         if (kind == FilterKind.RemoveBackground) { await RemoveBackground(target); return; }
@@ -1001,7 +1107,7 @@ public sealed partial class MainWindow
         var result = await AdjustmentDialogs.EditFilter(this, initial, settings => Busy(() => target.PreviewFilter(settings)));
         // A filter left at nothing (a vignette of zero) closes as Cancel does, without an undo step.
         if (result == null || result.IsIdentity) target.CancelPreview();
-        else { target.PreviewFilter(result); target.CommitPreview(); }
+        else { target.PreviewFilter(result); target.CommitPreview(); lastAppliedFilter = result; }
     }
 
     /// <summary>

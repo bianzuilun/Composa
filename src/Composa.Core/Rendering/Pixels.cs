@@ -73,17 +73,17 @@ public static class Pixels
         if (source.RowBytes != copy.RowBytes)
         {
             for (var y = 0; y < height; y++) Buffer.MemoryCopy(from + y * (long)source.RowBytes, to + y * (long)copy.RowBytes, copy.RowBytes, Math.Min(source.RowBytes, copy.RowBytes));
-            return copy;
+            return DeepPixels.CopyLink(source, copy);
         }
         long stride = source.RowBytes;
-        if (stride * height < 4_000_000) { Buffer.MemoryCopy(from, to, stride * height, stride * height); return copy; }
+        if (stride * height < 4_000_000) { Buffer.MemoryCopy(from, to, stride * height, stride * height); return DeepPixels.CopyLink(source, copy); }
         Parallel.For(0, (int)((height + ChunkRows - 1) / ChunkRows), chunk =>
         {
             var offset = chunk * ChunkRows * stride;
             var bytes = Math.Min(ChunkRows, height - (long)chunk * ChunkRows) * stride;
             Buffer.MemoryCopy(from + offset, to + offset, bytes, bytes);
         });
-        return copy;
+        return DeepPixels.CopyLink(source, copy);
     }
 
     /// <summary>Copies one bitmap's pixels over another's of the same size and format, then drops what was cached for it.</summary>
@@ -179,9 +179,10 @@ public static class Pixels
         if (scale >= 0.5f) return;
         foreach (var layer in document.AllLayers())
         {
-            foreach (var bitmap in new[] { layer.Pixels, layer.Mask })
+            foreach (var original in new[] { layer.Pixels, layer.Mask })
             {
-                if (bitmap == null || IsLive(bitmap)) continue;
+                if (original == null || IsLive(original)) continue;
+                var bitmap = DeepPixels.Source(original) ?? original;
                 var layerScale = scale * (layer.Pixels != null ? Math.Sqrt(Math.Abs(layer.Transform.Width * layer.Transform.Height) / Math.Max(1.0, (double)layer.Pixels.Width * layer.Pixels.Height)) : 1);
                 var level = layerScale >= 0.5 ? 0 : (int)Math.Floor(Math.Log2(1 / layerScale));
                 if (level > 0) Level(bitmap, ref level);
@@ -194,6 +195,14 @@ public static class Pixels
     {
         int width = Math.Max(1, source.Width / 2), height = Math.Max(1, source.Height / 2), bpp = source.BytesPerPixel;
         var half = new SKBitmap(source.Info.WithSize(width, height));
+        if (DeepPixels.IsWide(source))
+        {
+            using var canvas = new SKCanvas(half);
+            canvas.Clear(SKColors.Transparent);
+            using var image = SKImage.FromBitmap(source);
+            canvas.DrawImage(image, new SKRect(0, 0, width, height), new SKSamplingOptions(SKFilterMode.Linear));
+            return half;
+        }
         byte* from = (byte*)source.GetPixels(), to = (byte*)half.GetPixels();
         int fromStride = source.RowBytes, toStride = half.RowBytes;
         int lastX = source.Width - 1, lastY = source.Height - 1;

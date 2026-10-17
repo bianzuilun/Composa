@@ -52,8 +52,9 @@ public class CameraRawTests
         Assert.True(Graded(dark, new CameraRawSettings { Contrast = 80 }).Red < 40 && Graded(bright, new CameraRawSettings { Contrast = 80 }).Red > 220);
         Assert.True(Graded(bright, new CameraRawSettings { Highlights = -100 }).Red < 200);
         AssertColor(dark, Graded(dark, new CameraRawSettings { Highlights = -100 }), 3);           // Highlights leave the shadows alone.
-        Assert.True(Graded(dark, new CameraRawSettings { Shadows = 100 }).Red > 60);
-        AssertColor(bright, Graded(bright, new CameraRawSettings { Shadows = 100 }), 3);
+        // v1.5.2's measured Shadows barely lifts a uniformly dark picture; the old formula over-lifted it.
+        AssertColor(new SKColor(42, 42, 42), Graded(dark, new CameraRawSettings { Shadows = 100 }), 1);
+        AssertColor(new SKColor(224, 224, 224), Graded(bright, new CameraRawSettings { Shadows = 100 }), 1);
         Assert.True(Graded(bright, new CameraRawSettings { Whites = 100 }).Red > 240);
         Assert.True(Graded(dark, new CameraRawSettings { Blacks = -100 }).Red < 20);
     }
@@ -101,8 +102,8 @@ public class CameraRawTests
         ColorMath.RgbToHsv(shifted.Red / 255.0, shifted.Green / 255.0, shifted.Blue / 255.0, out var hue, out _, out _);
         Assert.InRange(hue, 15, 45);                                        // Reds turned toward orange...
         AssertColor(blue, Graded(blue, new CameraRawSettings { Mixer = new CameraRawMixer().With(0, 0, 100) }), 3); // ...blues untouched.
-        // A pure red also belongs a quarter to the Oranges, whose untouched slider tempers the Reds' -100 a little.
-        Assert.True(Saturation(Graded(red, new CameraRawSettings { Mixer = new CameraRawMixer().With(1, 0, -100) })) < Saturation(red) * 0.35);
+        // Independently sampled from upstream's measured Reds saturation table, rather than the old overlapping HSL formula.
+        AssertColor(new SKColor(146, 109, 109), Graded(red, new CameraRawSettings { Mixer = new CameraRawMixer().With(1, 0, -100) }), 2);
 
         var graded = Graded(dark, new CameraRawSettings { Grading = new CameraRawGrading { Shadows = new CameraRawWheel { Hue = 210, Saturation = 100 } } });
         Assert.True(graded.Blue > graded.Red + 10, $"{graded} shadows should be cooled");
@@ -151,7 +152,8 @@ public class CameraRawTests
         var turned = Graded(new SKColor(200, 60, 60), new CameraRawSettings { Calibration = new CameraRawCalibration { RedHue = 100 } });
         Assert.True(turned.Green > 70, $"{turned} should have turned toward orange");
         var gentle = Graded(new SKColor(200, 60, 60), new CameraRawSettings { Calibration = new CameraRawCalibration { RedHue = 100, Process = 1 } });
-        Assert.True(gentle.Green < turned.Green, "an earlier process moves the sliders less far");
+        // v1.4.9's measured primary tables are independent of Process; Process still scales Shadow Tint.
+        AssertColor(turned, gentle, 0);
     }
 
     [Fact]

@@ -90,6 +90,13 @@ public sealed partial class EditorSession
                 if (layer.Pixels is { } pixels)
                 {
                     var t = layer.Transform;
+                    if (Math.Abs(sx - sy) > 1e-6 && (t.Rotation != 0 || t.Distort != null || layer.Text is { IsBox: false }))
+                    {
+                        // The quad expresses shear as well as scale. Keeping source pixels avoids baking effects a
+                        // second time and keeps text, shapes, masks and high precision sources editable.
+                        layer.Transform = LayerTransform.FromQuad(t.Corners(pixels.Width, pixels.Height).Select(scale.MapPoint).ToArray());
+                        continue;
+                    }
                     if (t.IsPureTranslation(pixels.Width, pixels.Height))
                     {
                         // Unscaled layers are resampled so they stay paintable at full resolution.
@@ -109,37 +116,10 @@ public sealed partial class EditorSession
                         }
                         else
                         {
-                            layer.Text = null; // Stretched unevenly, text can no longer be redrawn from its settings.
                             layer.Pixels = enhanced?.For(layer) ?? Resample(pixels, w, h, mode);
                         }
                         if (layer.Mask != null) layer.Mask = Resample(layer.Mask, w, h);
                         layer.Transform = LayerTransform.Identity(w, h) with { X = Math.Round(t.X * sx), Y = Math.Round(t.Y * sy) };
-                    }
-                    else if (Math.Abs(sx - sy) > 1e-6 && (t.Rotation != 0 || t.Distort != null))
-                    {
-                        // Stretching a turned layer unevenly shears it, which a layer's placement cannot express, so
-                        // the layer is drawn out at its current placement and those pixels are resampled instead.
-                        var bounds = Geometry.RoundOut(layer.Bounds);
-                        var plain = layer.Clone();
-                        plain.Visible = true; plain.Opacity = 1; plain.Blend = BlendMode.Normal; plain.Clipped = false; plain.Mask = null;
-                        using var drawn = DocumentRenderer.RenderLayers(document, [plain], bounds);
-                        int w = Math.Max(1, (int)Math.Round(bounds.Width * sx)), h = Math.Max(1, (int)Math.Round(bounds.Height * sy));
-                        if (layer.Mask != null)
-                        {
-                            using var maskDrawn = Pixels.NewMask(bounds.Width, bounds.Height);
-                            using (var canvas = new SKCanvas(maskDrawn))
-                            {
-                                canvas.Translate(-bounds.Left, -bounds.Top);
-                                var maskMatrix = DocumentRenderer.MaskMatrix(layer);
-                                canvas.Concat(in maskMatrix);
-                                canvas.DrawImage(Pixels.ImageOf(layer.Mask), 0, 0, new SKSamplingOptions(SKFilterMode.Linear));
-                            }
-                            layer.Mask = Resample(maskDrawn, w, h);
-                        }
-                        layer.Pixels = Resample(drawn, w, h, mode);
-                        layer.Shape = null;
-                        layer.Text = null;
-                        layer.Transform = LayerTransform.Identity(w, h) with { X = Math.Round(bounds.Left * sx), Y = Math.Round(bounds.Top * sy) };
                     }
                     else
                     {
@@ -173,6 +153,11 @@ public sealed partial class EditorSession
             ? new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear)
             : new SKSamplingOptions(SKCubicResampler.CatmullRom);
         if (!source.ScalePixels(result, sampling)) throw new InvalidOperationException("The image could not be resampled.");
+        DeepPixels.PreserveDraw(source, result, (drawing, wide) =>
+        {
+            using var image = SKImage.FromBitmap(wide);
+            drawing.DrawImage(image, new SKRect(0, 0, width, height), sampling);
+        });
         return result;
     }
 

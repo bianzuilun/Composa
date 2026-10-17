@@ -10,7 +10,7 @@ namespace Composa.Filters;
 /// premultiplied bytes back, as the macOS app's does. <c>scale</c> is picture pixels per layer pixel, so radii given
 /// in layer pixels land the same on a reduced preview.
 /// </summary>
-public static unsafe class CameraRawPixels
+public static unsafe partial class CameraRawPixels
 {
     /// <summary>A new bitmap with the grade applied; the source is left as it is.</summary>
     public static SKBitmap Apply(SKBitmap source, CameraRawSettings settings, double scale = 1, uint seed = 0)
@@ -21,13 +21,7 @@ public static unsafe class CameraRawPixels
         int width = result.Width, height = result.Height, stride = result.RowBytes;
         var pixels = (byte*)result.GetPixels();
         if (scale <= 0) scale = 1;
-        if (s.Calibration.Adjusts) Calibration(pixels, width, height, stride, s.Calibration);
-        if (s.AdjustsLight || s.AdjustsColor)
-        {
-            var gains = s.Gains;
-            Basic(pixels, width, height, stride, gains.Red, gains.Green, gains.Blue, s.Exposure, s.Contrast, s.Highlights, s.Shadows, s.Whites, s.Blacks, s.Vibrance, s.Saturation);
-        }
-        if (s.Curve.Adjusts || s.Mixer.Adjusts || s.Grading.Adjusts) CurveColor(pixels, width, height, stride, s.Curve, s.Mixer, s.Grading);
+        ApplyMeasuredColor(source, result, s, scale);
         if (s.Texture != 0 || s.Clarity != 0 || s.Dehaze != 0 || s.Glow > 0 || s.VignetteAmount != 0)
             Effects(pixels, width, height, stride, s.Texture, s.Clarity, s.Dehaze, s.Glow, s.GlowStyle, s.GlowRange, s.GlowSpread, s.GlowWarmth,
                 s.VignetteAmount, s.VignetteMidpoint, s.VignetteRoundness, s.VignetteFeather, s.VignetteHighlights, s.VignetteStyle, scale);

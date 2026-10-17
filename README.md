@@ -67,10 +67,11 @@ Composa is developed on Linux, on X11 and Wayland (through XWayland), and that i
 - Canvas Size, Image Size, and quarter-turn rotation of the canvas or of single layers
 - Smooth downsampling when zoomed out, crisp pixels and a pixel grid when zoomed in
 - Open PNG, JPEG, WebP, BMP and GIF (and HEIC, AVIF, TIFF and SVG through ImageMagick when it is installed); drop files onto the window; paste images from other apps. An SVG placed into a document is drawn to fit the canvas, so a small icon comes in sharp
-- Open camera RAW files (Canon, Nikon, Sony, Fujifilm, DNG and more) through ImageMagick when it is installed: a develop step with exposure, temperature and tint and a live preview comes first, working on a 16-bit decode, so you choose what to keep before the image becomes an 8-bit layer
+- Open camera RAW files (Canon, Nikon, Sony, Fujifilm, DNG and more) through ImageMagick: develop exposure, white balance, noise reduction, highlight recovery and manual radial lens correction while retaining 16-bit data, then optionally continue in Camera Raw
+- Retain 16-bit PNG/TIFF/HEIF sources and import OpenEXR/Radiance HDR; convert layer depth from the Layers context menu. View > Proof Colors and Gamut Warning preview a saved CMYK ICC print profile without changing the RGB document
 - Open GIMP files, `.xcf` from 2.10 through 3.2: layers, folders, masks, opacity, blend modes, guides and every precision come in, with the same report of conversions before anything is applied
 - Open Photoshop files, `.psd` and Large Document `.psb`: layers, folders, masks, clipping, opacity, blend modes, solid fill shapes, adjustments and simple horizontal text come in editable, and a report lists everything that has to be converted before anything is applied; dropped onto an open document, a Photoshop file arrives inside a folder
-- Export PNG, JPEG (with a live preview of the compression and the file size) and WebP; Copy Merged
+- Export PNG, JPEG (with a live preview of the compression and the file size) and WebP; Export As adds sized previews, TIFF, one-page PDF, 16-bit PNG/TIFF and HDR EXR, plus CMYK JPEG/TIFF/PDF with an embedded print profile; Copy Merged
 - Undo history limited by memory, not by a fixed step count
 - Tools that come in groups open beside their toolbar button when it is held or right-clicked, as in Photoshop: the marquees, the lassos, Magic Wand and Object Selection, Brush and Eraser, the Smear modes and the shapes
 - Tool settings stick between launches: Auto Select, the transform controls, the pixel grid, rulers, guides, the grid and its settings, Snap and the Snap To options keep what you last set them to
@@ -98,7 +99,7 @@ The tools create a document, list and describe the open ones, place an image fil
 
 ## Differences from the macOS app
 
-- Projects are saved as `.cmps` files: a zip archive with a JSON manifest and one PNG per layer and mask. Projects saved by the macOS app (`.comp` packages) cannot be opened.
+- Projects are saved as `.cmps` files: a zip archive with a JSON manifest, PNG layers/masks and EXR for floating-point sources. Format 7 preserves native precision and still reads older projects. Projects saved by the macOS app (`.comp` packages) cannot be opened.
 - Remove Background, Select > Subject and the Magic tool's Object mode find the subject with a segmentation model run on your own machine (U²-Net lite for any subject, MODNet for people), where the macOS app uses Apple's Vision framework; the plain-backdrop method, exact on product shots, remains as a choice and as the fallback.
 - HEIC, AVIF, TIFF, SVG and camera RAW open through ImageMagick, because Skia does not decode them itself. The Windows build includes it; on Linux they open when ImageMagick (`magick` or `convert`) is installed. SVG files are drawn by ImageMagick's librsvg rather than by macOS's own renderer, so an SVG that leans on features librsvg lacks may look different.
 - A mask always moves and scales with its layer; it cannot be unlinked and transformed on its own.
@@ -107,9 +108,10 @@ The tools create a document, list and describe the open ones, place an image fil
 - Double-clicking a slider types an exact value; a Reset button then appears on its left. The macOS app resets on double-click and types in a separate field.
 - Point text grows from the edge its alignment reads from (right-aligned text grows leftward); the macOS app keeps the top-left corner.
 - Layer effects are drawn on the CPU from a cached image; while a brush stroke is in progress they follow the pixels the stroke started from and catch up when it ends.
-- Photoshop files are opened, never written. Horizontal text with one style stays editable; vertical, sheared or unevenly scaled text, smart objects and paths other than solid rectangles and ellipses arrive as pixels, layer effects are dropped, and adjustments other than Levels, Curves, Hue/Saturation, Brightness/Contrast, Exposure, Black & White, Color Balance and Invert are skipped; every such change is listed before the import goes ahead. Only 8-bit RGB `.psd` and `.psb` files open (no CMYK or 16-bit).
+- Photoshop files are opened, never written. Horizontal text with one style stays editable; vertical, sheared or unevenly scaled text, smart objects and paths other than solid rectangles and ellipses arrive as pixels, layer effects are dropped, and unsupported adjustments are skipped; every such change is listed before the import goes ahead. Both 8/16-bit RGB and CMYK `.psd` and `.psb` files open, with embedded profiles used for color conversion.
 - Camera RAW files open only through ImageMagick's LibRaw delegate. The develop step applies exposure and white balance to the 16-bit decoded frame rather than to the sensor data, as Apple's RAW pipeline does on macOS, so its temperature and tint are relative to the camera's reading and there is no tone Boost control.
-- The Camera Raw Filter has no Geometry group (Upright and guided lines), no vectorscope, no Option-drag clipping views, no point colors and no sharpening-mask overlay; its white-balance eyedropper works on the thumbnail in the panel rather than on the canvas, because the panel is a dialog. The filter renders on the full layer while you drag, so a very large layer answers more slowly than the macOS preview does.
+- The Camera Raw Filter has histogram/vectorscope views, measured color tables and regional Shadows. Eligible single-layer color grades use a Skia shader preview; other grades use asynchronous full-resolution CPU rendering. There is no Geometry group (Upright and guided lines), Option-drag clipping view, point colors or sharpening-mask overlay; white balance is sampled from the dialog thumbnail. RAW radial lens correction is manual, without Apple's automatic camera profiles.
+- Native EXR decoding covers uncompressed/ZIPS/ZIP scanlines. Other EXR layouts need an HDRI-enabled ImageMagick, bundled on Windows; integer-only decoders are refused to avoid clipping highlights. See the [1.5.3 compatibility audit](docs/compatibility/compositor-1.5.3-audit.md) for the upstream mapping and remaining platform differences.
 - Layer masks always move with their layer, so the layer menu has no Link Mask item.
 - A project changed on disk by another program while it is open is not reloaded; the macOS app watches its project folder and reloads it. Composa's projects are single files that nothing else edits.
 - The transform bar's angle field has no dial; the dials sit beside the angle fields in the effects and blur dialogs.
@@ -119,7 +121,7 @@ Beyond the macOS app, this version adds Ctrl-drag to move a layer with any tool,
 
 ## Download
 
-Every release publishes these on the [releases page](https://github.com/dvdstelt/Composa/releases), for x86-64 and arm64. None of them needs .NET installed.
+Every release publishes these on this fork's [releases page](https://github.com/bianzuilun/Composa/releases), for x86-64 and arm64. None of them needs .NET installed.
 
 | Format | For | Notes |
 | --- | --- | --- |
@@ -180,7 +182,7 @@ Composa checks once a day whether a newer version has been released, and shows a
 
 Download fetches the release's file for the way your copy was installed and the processor it runs on (the `.deb`, `.rpm`, AppImage or tarball, the Windows installer or zip) into your Downloads folder, and checks it against the release's `sha256sums.txt` before offering it. Show in Folder then opens the file manager with it selected, and Install, where there is an installer, hands it over: on Windows Composa quits, asking about unsaved work, and starts the setup; a `.deb` or `.rpm` opens in your software installer, with the `sudo apt install` or `sudo dnf install` command beside it to copy. A downloaded AppImage is made executable. Nothing is downloaded until you press Download, nothing starts until you press Install, and Composa never replaces its own files. The Windows builds are unsigned, so SmartScreen may warn when the setup starts, as it does for a setup downloaded from the releases page. More in [Settings and updates](docs/settings-and-updates.md#updates).
 
-The check is a single anonymous `GET` to `https://api.github.com/repos/dvdstelt/Composa/releases/latest`. It sends no version number, no identifier, no machine details and no telemetry of any kind, and GitHub sees only what any visitor to that URL would show. If the request fails, nothing is reported and nothing is retried until the next day. A download sends the same and nothing more.
+The check is a single anonymous `GET` to `https://api.github.com/repos/bianzuilun/Composa/releases/latest`. It sends no version number, no identifier, no machine details and no telemetry of any kind, and GitHub sees only what any visitor to that URL would show. If the request fails, nothing is reported and nothing is retried until the next day. A download sends the same and nothing more.
 
 Turn it off under **Help > Check for Updates Automatically**, or set `COMPOSA_DISABLE_UPDATE_CHECK=1`, which is there so a distribution packager can switch it off without patching code. **Help > Check for Updates** still works when the automatic check is off.
 

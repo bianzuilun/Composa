@@ -4,7 +4,7 @@ using SkiaSharp;
 
 namespace Composa.Filters;
 
-public enum FilterKind { GaussianBlur, MotionBlur, AddNoise, Sharpen, Vignette, BloomGlow, Dither, TonalContrast, LensCorrection, CameraRaw, RemoveBackground, Painterly }
+public enum FilterKind { GaussianBlur, MotionBlur, AddNoise, Sharpen, Vignette, BloomGlow, Dither, TonalContrast, LensCorrection, CameraRaw, RemoveBackground, Painterly, ProgressiveBlur, Scanlines }
 
 /// <summary>Settings for the destructive Filter menu commands. Unused values are ignored by each kind.</summary>
 public sealed record FilterSettings
@@ -60,6 +60,12 @@ public sealed record FilterSettings
     public uint Seed { get; init; } = 1;
     /// <summary>Set for layers that fill the canvas: a blur then continues their edge colors instead of fading into transparency.</summary>
     public bool ClampEdges { get; init; }
+    public bool PreserveTransparency { get; init; }
+    public double ProgressiveFrom { get; init; }
+    public double ProgressiveTo { get; init; } = 20;
+    public SKPoint? ProgressiveStart { get; init; }
+    public SKPoint? ProgressiveEnd { get; init; }
+    public ScanlinesSettings Scanlines { get; init; } = new();
 
     /// <summary>True when the filter would change nothing, so OK can close as Cancel does, without an undo step.</summary>
     public bool IsIdentity => Kind switch
@@ -69,6 +75,7 @@ public sealed record FilterSettings
         FilterKind.TonalContrast => TonalAmount <= 0 || (TonalShadows == 0 && TonalMidtones == 0 && TonalHighlights == 0),
         FilterKind.LensCorrection => Distortion == 0,
         FilterKind.CameraRaw => CameraRaw.IsIdentity,
+        FilterKind.ProgressiveBlur => ProgressiveFrom <= 0 && ProgressiveTo <= 0,
         FilterKind.Sharpen or FilterKind.AddNoise => Amount <= 0,
         _ => false
     };
@@ -79,6 +86,8 @@ public sealed record FilterSettings
     public static string DisplayName(FilterKind kind) => kind switch
     {
         FilterKind.GaussianBlur => "Gaussian Blur",
+        FilterKind.ProgressiveBlur => "Progressive Blur",
+        FilterKind.Scanlines => "Scanlines",
         FilterKind.MotionBlur => "Motion Blur",
         FilterKind.AddNoise => "Add Noise",
         FilterKind.BloomGlow => "Bloom / Glow",
@@ -100,8 +109,19 @@ public static unsafe class ImageFilters
     /// </summary>
     public static (SKBitmap Result, int GrowX, int GrowY) Run(SKBitmap source, FilterSettings settings)
     {
+        if (DeepPixels.Source(source) is { } wide) return DeepFilters.Run(wide, settings);
+        if (DeepPixels.IsWide(source)) throw new ArgumentException("Pass the editing preview of a high precision image.");
         switch (settings.Kind)
         {
+            case FilterKind.Scanlines:
+                return (ScanlinesPixels.Apply(source, settings.Scanlines), 0, 0);
+            case FilterKind.ProgressiveBlur:
+                return (SpatialBlur.Progressive(source, settings), 0, 0);
+            case FilterKind.GaussianBlur when settings.PreserveTransparency:
+            {
+                var (blurred, x, y) = Run(source, settings with { PreserveTransparency = false });
+                using (blurred) return (SpatialBlur.RestoreAlpha(source, blurred, x, y), 0, 0);
+            }
             case FilterKind.GaussianBlur when settings.ClampEdges && HasOpaqueBorder(source):
             {
                 // A picture that is solid right up to its edges (a photo, a filled background) blurs as if its edge
@@ -172,6 +192,11 @@ public static unsafe class ImageFilters
     /// <summary>Softens a bitmap in place with a Gaussian of <paramref name="sigma"/>, its edges continued outward so nothing fades into transparency.</summary>
     public static void BlurInPlace(SKBitmap bitmap, float sigma)
     {
+        if (DeepPixels.IsWide(bitmap))
+        {
+            using var blurred = FloatBlur.Gaussian(bitmap, sigma, clamp: true);
+            DeepPixels.CopyWide(blurred, bitmap); return;
+        }
         sigma = Math.Max(0.1f, sigma);
         using var filter = SKImageFilter.CreateBlur(sigma, sigma, SKShaderTileMode.Clamp);
         using var source = Pixels.Clone(bitmap);

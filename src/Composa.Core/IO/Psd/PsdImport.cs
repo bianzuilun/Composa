@@ -18,6 +18,8 @@ public sealed class PsdImport
     /// <summary>Root layers, bottom to top, with folders holding their children. Meant to be placed once.</summary>
     public List<Layer> Layers { get; }
     public IReadOnlyList<ImportConversion> Conversions { get; }
+    /// <summary>The embedded CMYK profile, available for print proofing after import.</summary>
+    public byte[]? CmykProfile { get; private set; }
 
     private PsdImport(int width, int height, double resolution, List<Layer> layers, List<ImportConversion> conversions)
     {
@@ -47,7 +49,12 @@ public sealed class PsdImport
     public static PsdImport Load(byte[] data, long pixelBudget)
     {
         var file = PsdReader.Read(data, pixelBudget);
-        try { return Build(file, pixelBudget); }
+        try
+        {
+            var import = Build(file, pixelBudget);
+            if (file.ColorMode == 4) import.CmykProfile = file.ColorProfile;
+            return import;
+        }
         catch
         {
             foreach (var layer in file.Layers) { layer.Image?.Dispose(); layer.MaskImage?.Dispose(); }

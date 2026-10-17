@@ -1,10 +1,12 @@
 # Camera Raw Filter
 
-Filter > Camera Raw Filter opens a grading panel for the active layer, modelled on the one in Adobe's Camera Raw. It works on any pixel layer, not only on developed RAW files. At the top sit a histogram of the graded layer, a thumbnail that works as a white-balance eyedropper (click a pixel that should be neutral), and a readout of the red, green and blue values under the pointer.
+Filter > Camera Raw Filter opens a grading panel for the active layer, modelled on the one in Adobe's Camera Raw. It works on any pixel layer, not only on developed RAW files. At the top sit a histogram or vectorscope of the graded layer, a thumbnail that works as a white-balance eyedropper (click a pixel that should be neutral), and a readout of the red, green and blue values under the pointer.
 
-The groups below can be opened and closed. A group that has changes shows an eye, which switches the group off and on without clearing its sliders, so you can compare with and without it. OK applies the grade as it is shown, and the last grade is remembered for the rest of the session. Every slider can be reset to a fresh grade's value.
+The groups below can be opened and closed. A group that has changes shows an eye, which switches the group off and on without clearing its sliders, so you can compare with and without it. Each group also has Reset. OK applies the grade as it is shown, and the last grade is remembered for the rest of the session. Every slider can be reset to a fresh grade's value.
 
-Save Look… at the bottom of the panel writes the grade as a `.cube` lookup table, at 33 points, that any editor with a Color Lookup can load, Composa's own included, so a grade made here can go to Lightroom or DaVinci Resolve. A table can only change a color by its color, so Light, Color, Color Grading, Curve, Color Mixer and Calibration go in; Effects, Detail and Optics change pixels by their neighbours or their place and are left out, and the panel and the file say so. The button is disabled while nothing that a table can hold is set, and saving leaves the panel open.
+Color stages use measured tables pinned to Compositor 1.5.3, with a regional adaptive Shadows pass. Color-only grades on a single raster layer without masks, selections, effects or proofing can preview through a Skia shader (GPU-backed when the host provides it). Other cases render asynchronously on the CPU. Histogram and vectorscope sampling is bounded so scope work does not grow with every image pixel.
+
+Save Look… at the bottom of the panel writes the grade's color-only stages as a `.cube` lookup table, at 33 points, that other editors and Composa's Color Lookup can load. Adaptive Contrast, Highlights and Shadows, plus Effects, Detail and Optics, depend on the image, its neighbours or position and are left out; the panel and file list them. The button is disabled while nothing that a table can hold is set, and saving leaves the panel open.
 
 ## Light
 

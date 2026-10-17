@@ -22,9 +22,10 @@ public static class ProjectFile
     /// The format version new saves write, and the highest one <see cref="Read"/> accepts. 1 was the first release,
     /// 2 added guides, 3 added the Gaussian Blur, Motion Blur and Add Noise adjustment layers and the Inner Glow effect,
     /// 4 added letters in their own colors (<see cref="TextStyle.ColorRuns"/>), 5 letters in their own faces
-    /// (<see cref="TextStyle.FontRuns"/>), 6 the Color Lookup adjustment, whose lattice is a <c>lookups/</c> entry.
+    /// (<see cref="TextStyle.FontRuns"/>), 6 the Color Lookup adjustment, whose lattice is a <c>lookups/</c> entry,
+    /// 7 high precision source images, stored as 16-bit PNG rather than their editing previews.
     /// </summary>
-    public const int Version = 6;
+    public const int Version = 7;
 
     private static readonly JsonSerializerOptions Json = new()
     {
@@ -89,9 +90,11 @@ public static class ProjectFile
         string Store(SKBitmap bitmap, string name)
         {
             if (written.TryGetValue(bitmap, out var existing)) return existing;
+            var hdr = DeepPixels.Source(bitmap) is { } source && DeepPixels.IsHdr(source);
+            if (hdr) name = Path.ChangeExtension(name, ".exr");
             var entry = zip.CreateEntry("images/" + name, CompressionLevel.NoCompression);
             using var output = entry.Open();
-            var bytes = bitmap.ColorType == SKColorType.Alpha8 ? EncodeMask(bitmap) : ImageFiles.Encode(bitmap, ExportFormat.Png);
+            var bytes = bitmap.ColorType == SKColorType.Alpha8 ? EncodeMask(bitmap) : ImageFiles.Encode(bitmap, hdr ? ExportFormat.Exr : DeepPixels.HasSource(bitmap) ? ExportFormat.Png16 : ExportFormat.Png);
             output.Write(bytes);
             return written[bitmap] = name;
         }

@@ -14,6 +14,7 @@ on:
       - 'scripts/**'
       - 'packaging/**'
       - 'src/Composa.Core/Models/**' # The model files the packages carry.
+      - 'src/Composa.Core/CameraRawData/**' # Measured color data embedded in every package.
       - '.github/workflows/**'
       - '**/*.csproj'
       - '**/*.props'

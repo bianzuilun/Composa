@@ -14,7 +14,7 @@
 
 #define AppName "Composa"
 #define AppExe "composa.exe"
-#define AppUrl "https://github.com/dvdstelt/Composa"
+#define AppUrl "https://github.com/bianzuilun/Composa"
 
 [Setup]
 ; The AppId identifies the installation to Windows across upgrades and uninstalls. Never change it,

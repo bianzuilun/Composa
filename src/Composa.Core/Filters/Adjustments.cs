@@ -56,6 +56,8 @@ public abstract record Adjustment
         if (IsIdentity) return;
         area = Model.Geometry.Intersect(area, new SKRectI(0, 0, bitmap.Width, bitmap.Height));
         if (area.IsEmpty) return;
+        if (DeepAdjustments.ApplyPreview(this, bitmap, area, originX, originY, step, parallel)) return;
+        if (Rendering.DeepPixels.IsWide(bitmap)) { DeepAdjustments.Apply(this, bitmap, area, originX, originY, step, parallel); return; }
         // Settings are immutable, so the per-pixel operation (often a lookup table) is built once per instance.
         var op = step > 1.01 && CreateOp(step) is { } reduced ? reduced : Ops.GetValue(this, static adjustment => adjustment.CreateOp());
         var pixels = (byte*)bitmap.GetPixels();
@@ -415,6 +417,7 @@ public sealed record GaussianBlurAdjustment : Adjustment
     public override void Apply(SKBitmap bitmap, SKRectI area, double originX = 0, double originY = 0, double step = 1, bool parallel = true)
     {
         if (IsIdentity) return;
+        if (DeepAdjustments.ApplyPreview(this, bitmap, area, originX, originY, step, parallel)) return;
         ImageFilters.BlurInPlace(bitmap, (float)(Math.Clamp(Radius, MinRadius, MaxRadius) / Math.Max(step, 1e-6)));
     }
 }
@@ -436,6 +439,8 @@ public sealed record MotionBlurAdjustment : Adjustment
     public override void Apply(SKBitmap bitmap, SKRectI area, double originX = 0, double originY = 0, double step = 1, bool parallel = true)
     {
         if (IsIdentity) return;
+        if (DeepAdjustments.ApplyPreview(this, bitmap, area, originX, originY, step, parallel)) return;
+        if (Rendering.DeepPixels.IsWide(bitmap)) { DeepAdjustments.Apply(this, bitmap, area, originX, originY, step, parallel); return; }
         var distance = Math.Clamp(Distance, MinDistance, MaxDistance) / Math.Max(step, 1e-6);
         if (distance < 1) return;
         using var blurred = ImageFilters.MotionBlur(bitmap, distance, Math.Clamp(Angle, -90, 90), clamp: true).Result;

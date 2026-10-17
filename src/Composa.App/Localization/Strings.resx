@@ -891,4 +891,214 @@
   <data name="Option.AlignRight" xml:space="preserve">
     <value>Align right</value>
   </data>
+  <data name="Port.CommandSearch" xml:space="preserve">
+    <value>Search Commands</value>
+  </data>
+  <data name="Port.CommandPlaceholder" xml:space="preserve">
+    <value>Search commands and tools</value>
+  </data>
+  <data name="Port.Run" xml:space="preserve">
+    <value>Run</value>
+  </data>
+  <data name="Port.Fullscreen" xml:space="preserve">
+    <value>Toggle Fullscreen</value>
+  </data>
+  <data name="Port.LastFilter" xml:space="preserve">
+    <value>Last Filter</value>
+  </data>
+  <data name="Port.Fill" xml:space="preserve">
+    <value>Fill</value>
+  </data>
+  <data name="Port.SmoothCorners" xml:space="preserve">
+    <value>Smooth Corners</value>
+  </data>
+  <data name="Port.PreserveAlpha" xml:space="preserve">
+    <value>Preserve Transparency</value>
+  </data>
+  <data name="Port.ProgressiveBlur" xml:space="preserve">
+    <value>Progressive Blur</value>
+  </data>
+  <data name="Port.From" xml:space="preserve">
+    <value>From</value>
+  </data>
+  <data name="Port.To" xml:space="preserve">
+    <value>To</value>
+  </data>
+  <data name="Port.PointHelp" xml:space="preserve">
+    <value>Drag either endpoint on the canvas to position the blur.</value>
+  </data>
+  <data name="Port.Scanlines" xml:space="preserve">
+    <value>Scanlines</value>
+  </data>
+  <data name="Port.Spacing" xml:space="preserve">
+    <value>Line Spacing</value>
+  </data>
+  <data name="Port.Thickness" xml:space="preserve">
+    <value>Thickness</value>
+  </data>
+  <data name="Port.Glow" xml:space="preserve">
+    <value>Glow</value>
+  </data>
+  <data name="Port.Dots" xml:space="preserve">
+    <value>Dots</value>
+  </data>
+  <data name="Port.Wobble" xml:space="preserve">
+    <value>Wobble</value>
+  </data>
+  <data name="Port.Displace" xml:space="preserve">
+    <value>Displace</value>
+  </data>
+  <data name="Port.Smoothness" xml:space="preserve">
+    <value>Smoothness</value>
+  </data>
+  <data name="Port.Threshold" xml:space="preserve">
+    <value>Threshold</value>
+  </data>
+  <data name="Port.Split" xml:space="preserve">
+    <value>Color Split</value>
+  </data>
+  <data name="Port.Density" xml:space="preserve">
+    <value>Density</value>
+  </data>
+  <data name="Port.Contrast" xml:space="preserve">
+    <value>Contrast</value>
+  </data>
+  <data name="Port.BlackLevel" xml:space="preserve">
+    <value>Black Level</value>
+  </data>
+  <data name="Port.Colors" xml:space="preserve">
+    <value>Colors</value>
+  </data>
+  <data name="Port.Mono" xml:space="preserve">
+    <value>Black and White</value>
+  </data>
+  <data name="Port.TwoColors" xml:space="preserve">
+    <value>Two Colors</value>
+  </data>
+  <data name="Port.OriginalColors" xml:space="preserve">
+    <value>Original Colors</value>
+  </data>
+  <data name="Port.DarkColor" xml:space="preserve">
+    <value>Dark Color</value>
+  </data>
+  <data name="Port.LightColor" xml:space="preserve">
+    <value>Light Color</value>
+  </data>
+  <data name="Port.Pixels" xml:space="preserve">
+    <value>Pixels</value>
+  </data>
+  <data name="Port.Inches" xml:space="preserve">
+    <value>Inches</value>
+  </data>
+  <data name="Port.Centimeters" xml:space="preserve">
+    <value>Centimeters</value>
+  </data>
+  <data name="Port.Millimeters" xml:space="preserve">
+    <value>Millimeters</value>
+  </data>
+  <data name="Port.ExportAs" xml:space="preserve">
+    <value>Export As</value>
+  </data>
+  <data name="Port.Export" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="Port.ExportTiff" xml:space="preserve">
+    <value>Export TIFF</value>
+  </data>
+  <data name="Port.ExportPdf" xml:space="preserve">
+    <value>Export PDF</value>
+  </data>
+  <data name="Port.Proportions" xml:space="preserve">
+    <value>Keep proportions</value>
+  </data>
+  <data name="Port.Quality" xml:space="preserve">
+    <value>Quality</value>
+  </data>
+  <data name="Port.ExportBudget" xml:space="preserve">
+    <value>The export exceeds the supported pixel budget.</value>
+  </data>
+  <data name="Port.Navigator" xml:space="preserve">
+    <value>Navigator (300% and above)</value>
+  </data>
+  <data name="Port.AllDocuments" xml:space="preserve">
+    <value>All documents</value>
+  </data>
+  <data name="Port.AddMaskHint" xml:space="preserve">
+    <value>Add layer mask (Alt: invert selection or hide all)</value>
+  </data>
+  <data name="Port.MaskHint" xml:space="preserve">
+    <value>Layer mask: click to paint, Alt-click to view alone, Shift-click to disable, Ctrl-click to select</value>
+  </data>
+  <data name="Port.SaveLookAdaptive" xml:space="preserve">
+    <value>Saves a .cube color lookup. Adaptive Contrast, Highlights and Shadows, plus Effects, Detail and Optics, are left out because they depend on the picture.</value>
+  </data>
+  <data name="Port.Depth8" xml:space="preserve">
+    <value>Convert Layer to 8-bit</value>
+  </data>
+  <data name="Port.Depth16" xml:space="preserve">
+    <value>Convert Layer to 16-bit</value>
+  </data>
+  <data name="Port.Png16" xml:space="preserve">
+    <value>PNG (16-bit)</value>
+  </data>
+  <data name="Port.Tiff16" xml:space="preserve">
+    <value>TIFF (16-bit)</value>
+  </data>
+  <data name="Port.RawLumaNoise" xml:space="preserve">
+    <value>Luminance Noise Reduction</value>
+  </data>
+  <data name="Port.RawColorNoise" xml:space="preserve">
+    <value>Color Noise Reduction</value>
+  </data>
+  <data name="Port.HighlightRecovery" xml:space="preserve">
+    <value>Highlight Recovery</value>
+  </data>
+  <data name="Port.LensDistortion" xml:space="preserve">
+    <value>Lens Distortion</value>
+  </data>
+  <data name="Port.ContinueRaw" xml:space="preserve">
+    <value>Continue in Camera Raw</value>
+  </data>
+  <data name="Port.BlurRadius" xml:space="preserve">
+    <value>Blur Radius</value>
+  </data>
+  <data name="Port.Cmyk" xml:space="preserve">
+    <value>CMYK (JPEG, TIFF and PDF)</value>
+  </data>
+  <data name="Port.Proof" xml:space="preserve">
+    <value>Proof Colors</value>
+  </data>
+  <data name="Port.Gamut" xml:space="preserve">
+    <value>Gamut Warning</value>
+  </data>
+  <data name="Port.CmykProfile" xml:space="preserve">
+    <value>CMYK Profile</value>
+  </data>
+  <data name="Port.CmykValid" xml:space="preserve">
+    <value>Choose a valid CMYK ICC profile.</value>
+  </data>
+  <data name="Port.ShortcutDelete" xml:space="preserve">
+    <value>Click a shortcut, then press its new key combination; Escape stops recording and Backspace or Delete clears it. Brush size and hardness ([ ] and { }), the opacity digits, Space to pan and the modifier-and-mouse gestures are fixed.</value>
+  </data>
+  <data name="Port.RawDimensions" xml:space="preserve">
+    <value>{0} × {1} pixels, developed at 16 bits per channel</value>
+  </data>
+  <data name="Port.RawTitle" xml:space="preserve">
+    <value>Develop {0}</value>
+  </data>
+  <data name="Port.RawBalanceNote" xml:space="preserve">
+    <value>Cooler to warmer, and green to magenta, away from the camera's own white balance.</value>
+  </data>
+  <data name="Port.WhatsNew" xml:space="preserve">
+    <value>What's New</value>
+  </data>
+  <data name="Port.Histogram" xml:space="preserve">
+    <value>Histogram</value>
+  </data>
+  <data name="Port.Vectorscope" xml:space="preserve">
+    <value>Vectorscope</value>
+  </data>
+  <data name="Port.SixteenBit" xml:space="preserve">
+    <value>16-bit</value>
+  </data>
 </root>
