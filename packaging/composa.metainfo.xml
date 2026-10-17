@@ -50,6 +50,11 @@
     added along with the CHANGELOG.md section when a release is cut; see RELEASING.md.
   -->
   <releases>
+    <release version="1.5.0-beta.2" date="2026-10-17" type="development">
+      <description>
+        <p>Complete Simplified Chinese and Japanese left-toolbar tool groups and tooltips, with translated tool-option labels, detection choices and text controls.</p>
+      </description>
+    </release>
     <release version="1.5.0-beta.1" date="2026-10-17" type="development">
       <description>
         <p>Initial Simplified Chinese and Japanese interface localization, a saved language preference applied after restart, and translated README guides. Unmigrated interface text remains in English.</p>
