@@ -73,6 +73,21 @@ jobs:
         with:
           global-json-file: global.json
 
+      # Temporary bootstrap for validating the large port on a host without a local SDK.
+      - name: Export isolated development SDK
+        if: github.head_ref == 'codex/compositor-153-port'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile "$env:RUNNER_TEMP/install-sdk.ps1"
+          & "$env:RUNNER_TEMP/install-sdk.ps1" -Version 10.0.100 -InstallDir "$env:RUNNER_TEMP/port-sdk" -NoPath
+          Compress-Archive -Path "$env:RUNNER_TEMP/port-sdk/*" -DestinationPath "$env:RUNNER_TEMP/port-sdk.zip"
+      - uses: actions/upload-artifact@v4
+        if: github.head_ref == 'codex/compositor-153-port'
+        with:
+          name: port-development-sdk
+          path: ${{ runner.temp }}/port-sdk.zip
+          if-no-files-found: error
+
       - name: Fetch the subject model that is not in git
         shell: bash
         run: scripts/models/fetch.sh
