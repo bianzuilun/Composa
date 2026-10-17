@@ -40,11 +40,12 @@ public sealed partial class CanvasView
             var rect = drag == Drag.Shape ? MarqueeRect(shift, alt) : drag == Drag.ObjectBox ? MarqueeRect(false, false) : MarqueeRect(ConstrainsMarquee(dragModifiers), false);
             var ellipse = drag == Drag.Marquee ? session.MarqueeKind == MarqueeKind.Ellipse : drag == Drag.Shape && session.ShapeKind == Model.ShapeKind.Ellipse;
             var radius = drag == Drag.Shape && session.ShapeKind == Model.ShapeKind.RoundedRectangle ? (float)session.ShapeCornerRadius : 0;
+            var smoothCorners = drag == Drag.Shape && session.ShapeSmoothCorners;
             var fill = drag == Drag.Shape ? session.Foreground : (SKColor?)null;
             steps.Add(canvas =>
             {
                 using var path = new SKPath();
-                if (ellipse) path.AddOval(rect); else if (radius > 0) path.AddRoundRect(rect, radius, radius); else path.AddRect(rect);
+                if (ellipse) path.AddOval(rect); else if (radius > 0) { using var corners = Composa.Rendering.ShapePaths.Rectangle(rect, radius, smoothCorners); path.AddPath(corners); } else path.AddRect(rect);
                 if (fill is { } color)
                 {
                     using var mapped = new SKPath();

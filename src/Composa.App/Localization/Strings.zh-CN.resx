@@ -891,4 +891,109 @@
   <data name="Option.AlignRight" xml:space="preserve">
     <value>右对齐</value>
   </data>
+  <data name="Port.CommandSearch" xml:space="preserve">
+    <value>搜索命令</value>
+  </data>
+  <data name="Port.CommandPlaceholder" xml:space="preserve">
+    <value>搜索命令和工具</value>
+  </data>
+  <data name="Port.Run" xml:space="preserve">
+    <value>执行</value>
+  </data>
+  <data name="Port.Fullscreen" xml:space="preserve">
+    <value>切换全屏画布</value>
+  </data>
+  <data name="Port.LastFilter" xml:space="preserve">
+    <value>重复上次滤镜</value>
+  </data>
+  <data name="Port.Fill" xml:space="preserve">
+    <value>填充</value>
+  </data>
+  <data name="Port.SmoothCorners" xml:space="preserve">
+    <value>连续圆角</value>
+  </data>
+  <data name="Port.PreserveAlpha" xml:space="preserve">
+    <value>保持透明度</value>
+  </data>
+  <data name="Port.ProgressiveBlur" xml:space="preserve">
+    <value>渐进模糊</value>
+  </data>
+  <data name="Port.From" xml:space="preserve">
+    <value>起点模糊半径</value>
+  </data>
+  <data name="Port.To" xml:space="preserve">
+    <value>终点模糊半径</value>
+  </data>
+  <data name="Port.PointHelp" xml:space="preserve">
+    <value>在画布上拖动任一端点，调整模糊方向和范围。</value>
+  </data>
+  <data name="Port.Scanlines" xml:space="preserve">
+    <value>扫描线</value>
+  </data>
+  <data name="Port.Spacing" xml:space="preserve">
+    <value>扫描线间距</value>
+  </data>
+  <data name="Port.Thickness" xml:space="preserve">
+    <value>线宽</value>
+  </data>
+  <data name="Port.Glow" xml:space="preserve">
+    <value>辉光</value>
+  </data>
+  <data name="Port.Dots" xml:space="preserve">
+    <value>圆点</value>
+  </data>
+  <data name="Port.Wobble" xml:space="preserve">
+    <value>波动</value>
+  </data>
+  <data name="Port.Displace" xml:space="preserve">
+    <value>位移</value>
+  </data>
+  <data name="Port.Smoothness" xml:space="preserve">
+    <value>平滑度</value>
+  </data>
+  <data name="Port.Threshold" xml:space="preserve">
+    <value>阈值</value>
+  </data>
+  <data name="Port.Split" xml:space="preserve">
+    <value>色彩分离</value>
+  </data>
+  <data name="Port.Density" xml:space="preserve">
+    <value>密度</value>
+  </data>
+  <data name="Port.Contrast" xml:space="preserve">
+    <value>对比度</value>
+  </data>
+  <data name="Port.BlackLevel" xml:space="preserve">
+    <value>黑电平</value>
+  </data>
+  <data name="Port.Colors" xml:space="preserve">
+    <value>颜色模式</value>
+  </data>
+  <data name="Port.Mono" xml:space="preserve">
+    <value>黑白</value>
+  </data>
+  <data name="Port.TwoColors" xml:space="preserve">
+    <value>双色</value>
+  </data>
+  <data name="Port.OriginalColors" xml:space="preserve">
+    <value>原图颜色</value>
+  </data>
+  <data name="Port.DarkColor" xml:space="preserve">
+    <value>暗部颜色</value>
+  </data>
+  <data name="Port.LightColor" xml:space="preserve">
+    <value>亮部颜色</value>
+  </data>
+  <data name="Port.Pixels" xml:space="preserve">
+    <value>像素</value>
+  </data>
+  <data name="Port.Inches" xml:space="preserve">
+    <value>英寸</value>
+  </data>
+  <data name="Port.Centimeters" xml:space="preserve">
+    <value>厘米</value>
+  </data>
+  <data name="Port.Millimeters" xml:space="preserve">
+    <value>毫米</value>
+  </data>
 </root>

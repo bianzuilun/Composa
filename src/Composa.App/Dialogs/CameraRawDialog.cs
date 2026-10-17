@@ -81,6 +81,7 @@ public static class CameraRawDialog
             if (balance != null) balance.SelectedIndex = 0;
         };
 
+        var refreshFields = new List<Action>();
         var groups = new StackPanel { Spacing = 6 };
         Expander Group(CameraRawGroup group, string title, Control body, bool open = false)
         {
@@ -94,9 +95,19 @@ public static class CameraRawDialog
                 timer.Start();
             };
             eyes[group] = eye;
-            var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Width = 288 };
+            var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"), Width = 288 };
             header.Children.Add(Ui.Label(title, weight: FontWeight.SemiBold));
-            Grid.SetColumn(eye, 1);
+            var resetGroup = Ui.TextButton(L10n.Text("Reset"), () =>
+            {
+                Update(current.Without(group));
+                hidden.Remove(group);
+                eye.Content = Icons.Create(Icons.Eye, 13, Palette.Secondary);
+                foreach (var refresh in refreshFields) refresh();
+            });
+            resetGroup.MinWidth = 0;
+            Grid.SetColumn(resetGroup, 1);
+            header.Children.Add(resetGroup);
+            Grid.SetColumn(eye, 2);
             header.Children.Add(eye);
             body.Margin = new Thickness(8, 6, 0, 4);
             var expander = new Expander { Header = header, Content = body, IsExpanded = open, HorizontalAlignment = HorizontalAlignment.Stretch, Padding = new Thickness(0) };
@@ -110,6 +121,7 @@ public static class CameraRawDialog
             var field = Ui.SliderField(label, get(current), min, max, v => Update(set(current, v)), step, format, FieldWidth, track, get(defaults));
             // The field's own tip explains its gestures; what the slider adjusts goes above that.
             if (tip != null) ToolTip.SetTip(field, Ui.Column(6, Ui.Label(tip), (Control)ToolTip.GetTip(field)!));
+            refreshFields.Add(() => field.Value = get(current));
             return field;
         }
         Control Column(params Control[] rows) => Ui.Column(6, rows);
@@ -208,6 +220,7 @@ public static class CameraRawDialog
             return curves;
         }
         curveEditor.Curves = ToEditor(initial.Curve);
+        refreshFields.Add(() => curveEditor.Curves = ToEditor(current.Curve));
         curveEditor.Changed += curves =>
         {
             CurvePoint[] Points(int channel) => curves.Channels[channel].Select(p => new CurvePoint(p.X / 255, p.Y / 255)).ToArray();

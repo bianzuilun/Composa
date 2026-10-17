@@ -115,7 +115,10 @@ public static class Prompts
     }
 }
 
-public sealed record NewCanvasResult(int Width, int Height, SKColor? Background);
+public sealed record NewCanvasResult(int Width, int Height, SKColor? Background)
+{
+    public int Resolution { get; init; } = 72;
+}
 
 public static class CanvasDialogs
 {
@@ -146,15 +149,17 @@ public static class CanvasDialogs
         var custom = Array.FindIndex(presets, p => p.W == 0);
         int width = clipboardSize?.W ?? 1920, height = clipboardSize?.H ?? 1080;
         var fill = 0;
-        var widthBox = Ui.Number(width, 1, DocumentLimits.MaxSide, v => width = (int)v, width: 120);
-        var heightBox = Ui.Number(height, 1, DocumentLimits.MaxSide, v => height = (int)v, width: 120);
+        var unit = CanvasUnit.Pixels;
+        var resolution = 72;
+        var widthBox = Ui.Number(width, 0.01, DocumentLimits.MaxSide, v => width = CanvasUnits.ToPixels(v, unit, resolution), step: 0.01, format: "0.##", width: 120);
+        var heightBox = Ui.Number(height, 0.01, DocumentLimits.MaxSide, v => height = CanvasUnits.ToPixels(v, unit, resolution), step: 0.01, format: "0.##", width: 120);
         var applying = false;
         ComboBox preset = null!;
         preset = Ui.Combo(presets, presets.FirstOrDefault(p => p.W == width && p.H == height, presets[custom]), PresetLabel, p =>
         {
             if (p.W == 0 || applying) return;
             applying = true;
-            widthBox.Value = p.W; heightBox.Value = p.H;
+            widthBox.Value = (decimal)CanvasUnits.FromPixels(p.W, unit, resolution); heightBox.Value = (decimal)CanvasUnits.FromPixels(p.H, unit, resolution);
             applying = false;
         }, 220);
         // A typed size shows the preset it matches, or Custom.
@@ -168,10 +173,25 @@ public static class CanvasDialogs
         }
         widthBox.ValueChanged += FollowSize;
         heightBox.ValueChanged += FollowSize;
-        var background = Ui.Combo(new[] { "Transparent", "White", "Background color" }, "Transparent", s => s, s => fill = s == "White" ? 1 : s == "Transparent" ? 0 : 2, 220);
-        var grid = Form(("Preset", preset), ("Width", Ui.Row(6, widthBox, Ui.Label("px", Palette.Secondary))), ("Height", Ui.Row(6, heightBox, Ui.Label("px", Palette.Secondary))), ("Background", background));
+        var background = Ui.Combo(new[] { "Transparent", "White", "Black", "Background color" }, "Transparent", L10n.Text, s => fill = s == "White" ? 1 : s == "Transparent" ? 0 : s == "Black" ? 3 : 2, 220);
+        var units = Ui.Combo(Enum.GetValues<CanvasUnit>(), unit, value => L10n.Text(value.ToString()), value =>
+        {
+            var pixelWidth = width; var pixelHeight = height;
+            unit = value; applying = true;
+            widthBox.Value = (decimal)CanvasUnits.FromPixels(pixelWidth, unit, resolution);
+            heightBox.Value = (decimal)CanvasUnits.FromPixels(pixelHeight, unit, resolution);
+            width = pixelWidth; height = pixelHeight; applying = false;
+        }, 220);
+        var dpi = Ui.Combo(new[] { 72, 300 }, resolution, value => value + " ppi", value =>
+        {
+            resolution = value;
+            width = CanvasUnits.ToPixels((double)(widthBox.Value ?? 1), unit, resolution);
+            height = CanvasUnits.ToPixels((double)(heightBox.Value ?? 1), unit, resolution);
+        }, 220);
+        var grid = Form(("Preset", preset), ("Width", widthBox), ("Height", heightBox), ("Units", units), ("Resolution", dpi), ("Background", background));
         if (!await new DialogWindow("New Canvas", grid, "Create").Ask(owner)) return null;
-        return new NewCanvasResult(width, height, fill == 0 ? null : fill == 1 ? SKColors.White : backgroundColor);
+        if (!DocumentLimits.FitsSurface(width, height)) throw new InvalidOperationException("The canvas exceeds the supported pixel budget.");
+        return new NewCanvasResult(width, height, fill == 0 ? null : fill == 1 ? SKColors.White : fill == 3 ? SKColors.Black : backgroundColor) { Resolution = resolution };
     }
 
     public static async Task<(int Width, int Height, Anchor Anchor)?> CanvasSize(Window owner, int currentWidth, int currentHeight)

@@ -159,6 +159,10 @@ public sealed partial class CanvasView
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed && FilterPointPressed?.Invoke(ToDocument(e.GetPosition(this))) == true)
+        {
+            filterPointDragging = true; e.Pointer.Capture(this); e.Handled = true; InvalidateVisual(); return;
+        }
         Focus();
         if (session == null || drag != Drag.None && !(drag == Drag.Lasso && session.LassoKind == LassoKind.Polygonal)) return;
         var point = e.GetCurrentPoint(this);
@@ -299,6 +303,7 @@ public sealed partial class CanvasView
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
+        if (filterPointDragging) { FilterPointMoved?.Invoke(ToDocument(e.GetPosition(this))); e.Handled = true; InvalidateVisual(); return; }
         var position = e.GetPosition(this);
         var delta = position - cursorScreen;
         cursorScreen = position;
@@ -359,6 +364,7 @@ public sealed partial class CanvasView
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
+        if (filterPointDragging) { filterPointDragging = false; FilterPointReleased?.Invoke(); e.Pointer.Capture(null); e.Handled = true; return; }
         // Only the button that started a drag ends it; a stray right or middle click mid-stroke changes nothing.
         if (session == null) return;
         if (drag != Drag.None && e.InitialPressMouseButton != dragButton)

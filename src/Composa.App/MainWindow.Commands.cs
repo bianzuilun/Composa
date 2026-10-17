@@ -91,7 +91,7 @@ public sealed partial class MainWindow
             Item("Cut", () => _ = Cut(), Key.X, ctrl, () => session!.CanCopy),
             Item("Copy", () => _ = Copy(merged: false), Key.C, ctrl, () => session!.CanCopy),
             Item("Copy Merged", () => _ = Copy(merged: true), Key.C, ctrl | shift),
-            Item("Paste", () => _ = Paste(), Key.V, ctrl),
+            Item("Paste", () => _ = Paste(), Key.V, ctrl, needsDocument: false),
             Sub("Paste Special",
                 Item("Paste in Place", () => _ = Paste(PasteKind.InPlace), Key.V, ctrl | shift),
                 Item("Paste Into", () => _ = Paste(PasteKind.Into), Key.V, ctrl | alt | shift, () => session!.Selection != null)),
@@ -145,7 +145,7 @@ public sealed partial class MainWindow
             Item("Flip Canvas Horizontal", () => session!.FlipCanvas(true)),
             Item("Flip Canvas Vertical", () => session!.FlipCanvas(false)));
 
-        Top("F_ilter", Enum.GetValues<FilterKind>().Where(kind => kind != FilterKind.RemoveBackground).Select(kind => (object)Item(FilterSettings.DisplayName(kind) + "…", () => _ = Filter(kind), enabled: () => session!.CanEditPixels)).ToArray());
+        Top("F_ilter", new object[] { Item("Last Filter", RepeatLastFilter, Key.F, ctrl | alt, () => lastAppliedFilter != null && session!.CanEditPixels), Line() }.Concat(Enum.GetValues<FilterKind>().Where(kind => kind != FilterKind.RemoveBackground).Select(kind => (object)Item(FilterSettings.DisplayName(kind) + "…", () => _ = Filter(kind), enabled: () => session!.CanEditPixels))).ToArray());
 
         mergeItem = Item("Merge Down", () => session!.MergeLayers(), Key.E, ctrl, () => session!.CanMerge);
         clipItem = Item("Create Clipping Mask", () => session!.ToggleClippingMask(session.ActiveLayer!), Key.G, ctrl | alt, () => session!.ActiveLayer is { } l && session.CanClip(l));
@@ -201,6 +201,9 @@ public sealed partial class MainWindow
             return item;
         }
         Top("_View",
+            Item("Search Commands…", () => _ = SearchCommands(), Key.F, ctrl, needsDocument: false),
+            Item("Toggle Fullscreen", ToggleCanvasOnly, Key.F, needsDocument: false),
+            Line(),
             Item("Fit Canvas", canvas.Fit, Key.D0, ctrl),
             Item("Actual Pixels", () => canvas.ZoomTo(1), Key.D1, ctrl),
             Item("Zoom In", canvas.ZoomIn, Key.OemPlus, ctrl),
@@ -388,6 +391,7 @@ public sealed partial class MainWindow
 
     private void Execute(Shortcut command)
     {
+        if (editingInteractiveFilter) return;
         if (command.Enabled?.Invoke() == false || canvas.IsDragging) return;
         problem = note = null;
         try { command.Run(); }
@@ -424,6 +428,7 @@ public sealed partial class MainWindow
 
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
+        if (e.Key == Key.Escape && canvasOnly) { ToggleCanvasOnly(); e.Handled = true; return; }
         var focused = FocusManager?.GetFocusedElement();
         if (SwallowAlt(e)) return;
         if (focused is TextBox)
@@ -488,7 +493,12 @@ public sealed partial class MainWindow
     private async Task NewCanvas()
     {
         var result = await CanvasDialogs.NewCanvas(this, session?.Background ?? SKColors.White, await ClipboardImageSize());
-        if (result != null) AddSession(EditorSession.NewCanvas(result.Width, result.Height, result.Background));
+        if (result != null)
+        {
+            var created = EditorSession.NewCanvas(result.Width, result.Height, result.Background);
+            created.Document.Resolution = result.Resolution;
+            AddSession(created);
+        }
     }
 
     private async Task Open()
@@ -502,7 +512,16 @@ public sealed partial class MainWindow
     {
         foreach (var path in paths)
         {
-            try { await OpenPath(path); }
+            try
+            {
+                if (!Directory.Exists(path)) { await OpenPath(path); continue; }
+                var files = ImportPaths.Expand([path]).ToArray();
+                if (files.Length == 0) continue;
+                if (await OpenPath(files[0]) is not { } folderSession) continue;
+                await PlacePaths(files.Skip(1), null);
+                folderSession.RevealAll();
+                canvas.Fit();
+            }
             catch (Exception error) { _ = Prompts.Alert(this, "Couldn't open " + Path.GetFileName(path), error.Message); }
         }
     }
@@ -559,7 +578,7 @@ public sealed partial class MainWindow
     public async Task PlacePaths(IEnumerable<string> paths, SKPoint? at)
     {
         if (session == null) return;
-        foreach (var path in paths)
+        foreach (var path in ImportPaths.Expand(paths))
         {
             try
             {
@@ -640,7 +659,9 @@ public sealed partial class MainWindow
         var projects = paths.Where(p => Path.GetExtension(p).Equals(ProjectFile.Extension, StringComparison.OrdinalIgnoreCase)).ToList();
         var images = paths.Except(projects).ToList();
         _ = OpenPaths(projects);
-        if (session == null || projects.Count > 0) _ = OpenPaths(images);
+        var tabPosition = e.GetPosition(tabs);
+        var onTabs = tabPosition.Y >= 0 && tabPosition.Y <= tabs.Bounds.Height;
+        if (session == null || projects.Count > 0 || onTabs) _ = OpenPaths(images);
         else
         {
             var position = e.GetPosition(canvas);
@@ -826,7 +847,6 @@ public sealed partial class MainWindow
 
     private async Task Paste(PasteKind kind = PasteKind.Normal)
     {
-        if (session == null) return;
         ClipboardImage? external = null;
         try
         {
@@ -842,6 +862,12 @@ public sealed partial class MainWindow
             }
         }
         catch { /* Fall back to the in-app clipboard. */ }
+        if (session == null)
+        {
+            var image = external ?? EditorSession.Clipboard;
+            if (image == null) { ShowProblem("The clipboard has no image."); return; }
+            AddSession(EditorSession.NewCanvas(image.Pixels.Width, image.Pixels.Height, null));
+        }
         var pasted = kind switch
         {
             PasteKind.InPlace => session.PasteInPlace(external),
@@ -975,6 +1001,13 @@ public sealed partial class MainWindow
 
     /// <summary>The last Camera Raw grade, so the panel opens where it was left; a hidden group is absent from it.</summary>
     private CameraRawSettings lastCameraRaw = new();
+    private FilterSettings? lastAppliedFilter;
+    private bool editingInteractiveFilter;
+    private void RepeatLastFilter()
+    {
+        if (session == null || lastAppliedFilter == null || !session.CanEditPixels) return;
+        Busy(() => session.ApplyFilter(lastAppliedFilter));
+    }
 
     private async Task Filter(FilterKind kind)
     {
@@ -994,6 +1027,27 @@ public sealed partial class MainWindow
             if (grade.IsIdentity) { target.CancelPreview(); return; }
             target.PreviewFilter(new FilterSettings { Kind = kind, CameraRaw = grade, Seed = seed });
             target.CommitPreview();
+            lastAppliedFilter = new FilterSettings { Kind = kind, CameraRaw = grade, Seed = seed };
+            return;
+        }
+        if (kind == FilterKind.ProgressiveBlur)
+        {
+            var area = target.ActiveLayer!.Bounds;
+            FilterSettings? progressive;
+            var enabled = workspaceChrome.Select(control => (Control: control, control.IsEnabled)).ToArray();
+            editingInteractiveFilter = true;
+            try
+            {
+                foreach (var entry in enabled) entry.Control.IsEnabled = false;
+                progressive = await ProgressiveBlurDialog.Show(this, canvas, area, settings => Busy(() => target.PreviewFilter(settings)));
+            }
+            finally
+            {
+                editingInteractiveFilter = false;
+                foreach (var entry in enabled) entry.Control.IsEnabled = entry.IsEnabled;
+            }
+            if (progressive == null || progressive.IsIdentity) target.CancelPreview();
+            else { target.PreviewFilter(progressive); target.CommitPreview(); lastAppliedFilter = progressive; }
             return;
         }
         if (kind == FilterKind.RemoveBackground) { await RemoveBackground(target); return; }
@@ -1001,7 +1055,7 @@ public sealed partial class MainWindow
         var result = await AdjustmentDialogs.EditFilter(this, initial, settings => Busy(() => target.PreviewFilter(settings)));
         // A filter left at nothing (a vignette of zero) closes as Cancel does, without an undo step.
         if (result == null || result.IsIdentity) target.CancelPreview();
-        else { target.PreviewFilter(result); target.CommitPreview(); }
+        else { target.PreviewFilter(result); target.CommitPreview(); lastAppliedFilter = result; }
     }
 
     /// <summary>

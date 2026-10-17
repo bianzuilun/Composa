@@ -270,6 +270,14 @@ public sealed partial class EditorSession
             var scale = Math.Sqrt(Math.Abs(matrix.ScaleX * matrix.ScaleY - matrix.SkewX * matrix.SkewY));
             if (scale > 1e-6 && Math.Abs(scale - 1) > 1e-3)
                 settings = settings with { Radius = settings.Radius / scale, BloomRadius = settings.BloomRadius / scale, TonalRadius = settings.TonalRadius / scale, CameraRawScale = 1 / scale, Painterly = settings.Painterly with { BrushSize = settings.Painterly.BrushSize / scale } };
+            if (settings.Kind == FilterKind.ProgressiveBlur && matrix.TryInvert(out var inverseBlur))
+                settings = settings with
+                {
+                    ProgressiveStart = settings.ProgressiveStart is { } start ? inverseBlur.MapPoint(start) : null,
+                    ProgressiveEnd = settings.ProgressiveEnd is { } end ? inverseBlur.MapPoint(end) : null,
+                    ProgressiveFrom = settings.ProgressiveFrom / Math.Max(scale, 1e-6),
+                    ProgressiveTo = settings.ProgressiveTo / Math.Max(scale, 1e-6)
+                };
             // A floating layer's blur spreads past its edges; one that fills the canvas has nothing to spread into.
             var bounds = target.Pixels != null ? target.Bounds : new SKRect(0, 0, document.Width, document.Height);
             settings = settings with { ClampEdges = bounds.Left <= 0.5f && bounds.Top <= 0.5f && bounds.Right >= document.Width - 0.5f && bounds.Bottom >= document.Height - 0.5f };
@@ -475,7 +483,7 @@ public sealed partial class EditorSession
             case ShapeKind.Ellipse: canvas.DrawOval(rect, paint); break;
             case ShapeKind.RoundedRectangle:
                 var radius = (float)Math.Min(style.CornerRadius, Math.Min(width, height) / 2.0);
-                canvas.DrawRoundRect(rect, radius, radius, paint);
+                using (var path = ShapePaths.Rectangle(rect, radius, style.SmoothCorners)) canvas.DrawPath(path, paint);
                 break;
             default: canvas.DrawRect(rect, paint); break;
         }
@@ -486,7 +494,7 @@ public sealed partial class EditorSession
     /// <summary>Adds the Shape tool's current shape in the foreground color.</summary>
     public Layer? AddShape(SKRect rect) =>
         ShapeKind == ShapeKind.Line ? AddLine(new SKPoint(rect.Left, rect.Top), new SKPoint(rect.Right, rect.Bottom))
-                                    : AddShape(new ShapeStyle(ShapeKind, (uint)Foreground, ShapeCornerRadius), rect);
+                                    : AddShape(new ShapeStyle(ShapeKind, (uint)Foreground, ShapeCornerRadius) { SmoothCorners = ShapeSmoothCorners }, rect);
 
     /// <summary>Adds a live rectangle, rounded rectangle or ellipse filling <paramref name="rect"/>, whatever the tool is set to.</summary>
     public Layer? AddShape(ShapeStyle style, SKRect rect)

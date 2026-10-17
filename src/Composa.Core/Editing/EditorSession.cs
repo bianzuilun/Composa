@@ -109,6 +109,7 @@ public sealed partial class EditorSession
     };
     public ShapeKind ShapeKind { get; set; } = ShapeKind.Rectangle;
     public double ShapeCornerRadius { get; set; } = 24;
+    public bool ShapeSmoothCorners { get; set; }
     /// <summary>A Line shape's thickness in document pixels.</summary>
     public double ShapeLineWidth { get; set; } = 4;
     /// <summary>The settings new text starts with; the color follows the foreground color.</summary>

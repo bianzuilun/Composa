@@ -213,7 +213,8 @@ public static class SelectionMask
         Pixels.Invalidate(small);
         using var traced = Outline(small);
         var result = new SKPath();
-        traced.Transform(SKMatrix.CreateScale(block, block), result);
+        var scale = SKMatrix.CreateScale(block, block);
+        traced.Transform(in scale, result);
         return result;
     }
 

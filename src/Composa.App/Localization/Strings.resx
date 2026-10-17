@@ -891,4 +891,109 @@
   <data name="Option.AlignRight" xml:space="preserve">
     <value>Align right</value>
   </data>
+  <data name="Port.CommandSearch" xml:space="preserve">
+    <value>Search Commands</value>
+  </data>
+  <data name="Port.CommandPlaceholder" xml:space="preserve">
+    <value>Search commands and tools</value>
+  </data>
+  <data name="Port.Run" xml:space="preserve">
+    <value>Run</value>
+  </data>
+  <data name="Port.Fullscreen" xml:space="preserve">
+    <value>Toggle Fullscreen</value>
+  </data>
+  <data name="Port.LastFilter" xml:space="preserve">
+    <value>Last Filter</value>
+  </data>
+  <data name="Port.Fill" xml:space="preserve">
+    <value>Fill</value>
+  </data>
+  <data name="Port.SmoothCorners" xml:space="preserve">
+    <value>Smooth Corners</value>
+  </data>
+  <data name="Port.PreserveAlpha" xml:space="preserve">
+    <value>Preserve Transparency</value>
+  </data>
+  <data name="Port.ProgressiveBlur" xml:space="preserve">
+    <value>Progressive Blur</value>
+  </data>
+  <data name="Port.From" xml:space="preserve">
+    <value>From</value>
+  </data>
+  <data name="Port.To" xml:space="preserve">
+    <value>To</value>
+  </data>
+  <data name="Port.PointHelp" xml:space="preserve">
+    <value>Drag either endpoint on the canvas to position the blur.</value>
+  </data>
+  <data name="Port.Scanlines" xml:space="preserve">
+    <value>Scanlines</value>
+  </data>
+  <data name="Port.Spacing" xml:space="preserve">
+    <value>Line Spacing</value>
+  </data>
+  <data name="Port.Thickness" xml:space="preserve">
+    <value>Thickness</value>
+  </data>
+  <data name="Port.Glow" xml:space="preserve">
+    <value>Glow</value>
+  </data>
+  <data name="Port.Dots" xml:space="preserve">
+    <value>Dots</value>
+  </data>
+  <data name="Port.Wobble" xml:space="preserve">
+    <value>Wobble</value>
+  </data>
+  <data name="Port.Displace" xml:space="preserve">
+    <value>Displace</value>
+  </data>
+  <data name="Port.Smoothness" xml:space="preserve">
+    <value>Smoothness</value>
+  </data>
+  <data name="Port.Threshold" xml:space="preserve">
+    <value>Threshold</value>
+  </data>
+  <data name="Port.Split" xml:space="preserve">
+    <value>Color Split</value>
+  </data>
+  <data name="Port.Density" xml:space="preserve">
+    <value>Density</value>
+  </data>
+  <data name="Port.Contrast" xml:space="preserve">
+    <value>Contrast</value>
+  </data>
+  <data name="Port.BlackLevel" xml:space="preserve">
+    <value>Black Level</value>
+  </data>
+  <data name="Port.Colors" xml:space="preserve">
+    <value>Colors</value>
+  </data>
+  <data name="Port.Mono" xml:space="preserve">
+    <value>Black and White</value>
+  </data>
+  <data name="Port.TwoColors" xml:space="preserve">
+    <value>Two Colors</value>
+  </data>
+  <data name="Port.OriginalColors" xml:space="preserve">
+    <value>Original Colors</value>
+  </data>
+  <data name="Port.DarkColor" xml:space="preserve">
+    <value>Dark Color</value>
+  </data>
+  <data name="Port.LightColor" xml:space="preserve">
+    <value>Light Color</value>
+  </data>
+  <data name="Port.Pixels" xml:space="preserve">
+    <value>Pixels</value>
+  </data>
+  <data name="Port.Inches" xml:space="preserve">
+    <value>Inches</value>
+  </data>
+  <data name="Port.Centimeters" xml:space="preserve">
+    <value>Centimeters</value>
+  </data>
+  <data name="Port.Millimeters" xml:space="preserve">
+    <value>Millimeters</value>
+  </data>
 </root>

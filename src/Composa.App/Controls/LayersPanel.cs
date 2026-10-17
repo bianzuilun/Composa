@@ -149,6 +149,25 @@ public sealed class LayersPanel : UserControl
         list.Children.Add(rows);
         list.Children.Add(dropLine);
         var scroll = new ScrollViewer { Content = list, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
+        Point? panFrom = null;
+        scroll.AddHandler(PointerPressedEvent, (_, e) =>
+        {
+            if (!e.GetCurrentPoint(scroll).Properties.IsMiddleButtonPressed) return;
+            panFrom = e.GetPosition(scroll); e.Pointer.Capture(scroll); e.Handled = true;
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        scroll.AddHandler(PointerMovedEvent, (_, e) =>
+        {
+            if (panFrom is not { } last) return;
+            var next = e.GetPosition(scroll);
+            scroll.Offset = new Vector(scroll.Offset.X, Math.Clamp(scroll.Offset.Y + last.Y - next.Y, 0, Math.Max(0, scroll.Extent.Height - scroll.Viewport.Height)));
+            panFrom = next; e.Handled = true;
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        scroll.AddHandler(PointerReleasedEvent, (_, e) =>
+        {
+            if (panFrom == null) return;
+            panFrom = null; e.Pointer.Capture(null); e.Handled = true;
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        scroll.PointerCaptureLost += (_, _) => panFrom = null;
         scroll.PointerPressed += (_, e) => { if (e.Source == scroll || e.Source == list) Focus(); };
 
         var layout = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto,Auto"), Background = Palette.Panel };
@@ -225,6 +244,8 @@ public sealed class LayersPanel : UserControl
         updating = false;
         if (session == null) return;
         AddRows(session.Document.Layers, 0, parentVisible: true);
+        if (active != null && rowFor.TryGetValue(active.Id, out var selected))
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => selected.BringIntoView(), Avalonia.Threading.DispatcherPriority.Loaded);
     }
 
     private void AddRows(List<Layer> layers, int depth, bool parentVisible)

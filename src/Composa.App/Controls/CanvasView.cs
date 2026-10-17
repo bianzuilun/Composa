@@ -84,6 +84,11 @@ public sealed partial class CanvasView : Control
     /// <summary>Handles a box dragged with the Object Selection tool (document pixels and the selection mode), as <see cref="ObjectClick"/> handles a click.</summary>
     public Action<SKRectI, Composa.Selections.SelectionMode>? ObjectBox { get; set; }
     public double Zoom => zoom;
+    public Func<SKPoint, bool>? FilterPointPressed { get; set; }
+    public Action<SKPoint>? FilterPointMoved { get; set; }
+    public Action? FilterPointReleased { get; set; }
+    public Func<SKMatrix, Action<SKCanvas>>? FilterOverlay { get; set; }
+    private bool filterPointDragging;
 
     public EditorSession? Session
     {
@@ -281,6 +286,7 @@ public sealed partial class CanvasView : Control
         var documentRect = new SKRect(0, 0, session.Document.Width, session.Document.Height);
         var (cache, cacheSource, cacheTarget) = UpdateViewCache(view, size);
         var overlay = CaptureOverlay(view);
+        var filterOverlay = FilterOverlay?.Invoke(view);
         var rulers = CaptureRulers((float)Scaling);
         var grid = ShowPixelGrid && zoom >= 8;
         var nearest = zoom >= 1;
@@ -309,6 +315,7 @@ public sealed partial class CanvasView : Control
             if (grid) DrawPixelGrid(canvas, view, documentRect, new SKRect(0, 0, (float)size.Width, (float)size.Height));
             if (outline != null) DrawAnts(canvas, outline, view, phase, scaling);
             overlay?.Invoke(canvas);
+            filterOverlay?.Invoke(canvas);
             rulers?.Invoke(canvas);
         }));
     }

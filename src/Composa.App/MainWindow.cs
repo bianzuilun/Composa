@@ -73,7 +73,9 @@ public sealed partial class MainWindow : Window
 
         // The update notice sits under the menu, where it is visible without covering anything.
         var root = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,Auto,Auto,Auto,*,Auto,Auto") };
-        root.Children.Add(BuildMenu());
+        var mainMenu = BuildMenu();
+        root.Children.Add(mainMenu);
+        workspaceChrome.AddRange([mainMenu, tabs, optionsHost, dock, center.Children[0], center.Children[1], center.Children[3]]);
         AddRow(root, updateNotice, 1);
         AddRow(root, BuildTabBar(), 2);
         AddRow(root, optionsHost, 3);

@@ -103,7 +103,8 @@ public sealed partial class MainWindow
                 refreshOptions = () => gradientOpacity.Value = s.GradientOpacity * 100;
                 break;
             case Tool.Shape:
-                Add(Title(Chosen()));
+                Add(Ui.TextButton(L10n.Text("Fill"), () => _ = PickColor(foreground: true)), Title(Chosen()));
+                if (s.ShapeKind == ShapeKind.RoundedRectangle) Add(Ui.Check(L10n.Text("Smooth Corners"), s.ShapeSmoothCorners, v => s.ShapeSmoothCorners = v));
                 if (s.ShapeKind == ShapeKind.Line) Add(Ui.SliderField(L10n.Text("Width"), s.ShapeLineWidth, 1, 100, v => s.ShapeLineWidth = v));
                 else if (s.ShapeKind == ShapeKind.RoundedRectangle) Add(Ui.SliderField(L10n.Text("Corner radius"), s.ShapeCornerRadius, 0, 400, v => s.ShapeCornerRadius = v, width: 150));
                 Add(Ui.Label(L10n.Text(s.ShapeKind == ShapeKind.Line ? "Draws in the foreground color · Shift snaps to 45°" : "Fills with the foreground color"), Palette.Secondary));
