@@ -22,7 +22,7 @@ public static class LookDialogs
             foreach (var (name, why) in leftOut) rows.Add(Indented(Ui.Label($"{name} {why}", Palette.Secondary)));
         }
         var sizes = Ui.Combo(Filters.LookBake.Sizes, size, n => $"{n} points", n => size = n, 130);
-        var sizeRow = Ui.Row(8, Ui.Label("Size"), sizes);
+        var sizeRow = Ui.Row(8, Ui.Label(L10n.Text("Size")), sizes);
         sizeRow.Margin = new Avalonia.Thickness(0, 12, 0, 0);
         rows.Add(sizeRow);
         var body = new StackPanel { Spacing = 4, MaxWidth = 420 };

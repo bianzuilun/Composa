@@ -54,7 +54,7 @@ public static class RawDevelopDialog
         var exposure = Ui.SliderField("Exposure (EV)", settings.Exposure, -3, 3, v => Update(settings with { Exposure = v }), 0.05, "+0.00;-0.00;0.00", 400);
         var temperature = Ui.SliderField("Temperature", settings.Temperature, -100, 100, v => Update(settings with { Temperature = v }), 1, "0", 400);
         var tint = Ui.SliderField("Tint", settings.Tint, -100, 100, v => Update(settings with { Tint = v }), 1, "0", 400);
-        var reset = Ui.TextButton("Reset", () =>
+        var reset = Ui.TextButton(L10n.Text("Reset"), () =>
         {
             Update(new RawDevelopSettings());
             exposure.Value = 0; temperature.Value = 0; tint.Value = 0;

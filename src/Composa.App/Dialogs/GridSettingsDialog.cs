@@ -61,7 +61,7 @@ public static class GridSettingsDialog
             Change(picked is { } color && color != before.Color ? Custom(color) : before, grid);
         };
         styleBox = Ui.Combo(styles, appearance.Style, GridAppearance.DisplayName, s => { if (!updating) Change(appearance with { Style = s }, grid); }, 150);
-        opacityField = Ui.SliderField("Opacity", appearance.Opacity, GridAppearance.MinOpacity, GridAppearance.MaxOpacity,
+        opacityField = Ui.SliderField(L10n.Text("Opacity"), appearance.Opacity, GridAppearance.MinOpacity, GridAppearance.MaxOpacity,
             v => Change(appearance with { Opacity = (int)v }, grid), width: 204, reset: GridAppearance.DefaultOpacity);
         spacingBox = Ui.Number(grid.Spacing, LayoutGrid.MinSpacing, LayoutGrid.MaxSpacing, v => { if (!updating) Change(appearance, grid with { Spacing = (int)v }); }, width: 120);
         subdivisionsBox = Ui.Number(grid.Subdivisions, LayoutGrid.MinSubdivisions, LayoutGrid.MaxSubdivisions, v => { if (!updating) Change(appearance, grid with { Subdivisions = (int)v }); }, width: 120);

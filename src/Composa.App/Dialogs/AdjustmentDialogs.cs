@@ -48,7 +48,7 @@ public static class AdjustmentDialogs
             GaussianBlurAdjustment blur => Sliders(
                 ("Radius", blur.Radius, GaussianBlurAdjustment.MinRadius, GaussianBlurAdjustment.MaxRadius, 0.1, "0.0", v => Update(blur = blur with { Radius = v }), new GaussianBlurAdjustment().Radius)),
             MotionBlurAdjustment motion => Ui.Column(8,
-                Ui.AngleField("Angle", motion.Angle, -180, 180, v => Update(motion = motion with { Angle = v }), FieldWidth, Controls.AngleDialStyle.Line, new MotionBlurAdjustment().Angle),
+                Ui.AngleField(L10n.Text("Angle"), motion.Angle, -180, 180, v => Update(motion = motion with { Angle = v }), FieldWidth, Controls.AngleDialStyle.Line, new MotionBlurAdjustment().Angle),
                 Ui.SliderField("Distance", motion.Distance, MotionBlurAdjustment.MinDistance, 500, v => Update(motion = motion with { Distance = v }), 1, "0", FieldWidth, reset: new MotionBlurAdjustment().Distance)),
             AddNoiseAdjustment noise => NoiseEditor(noise, Update),
             GradientMapAdjustment map => GradientMapEditor(owner, map, foreground, background, Update),
@@ -57,7 +57,7 @@ public static class AdjustmentDialogs
             ColorLookupAdjustment lookup => ColorLookupEditor(owner, lookup, picture, pickFile, Update),
             _ => Ui.Label("This adjustment has no settings.", Palette.Secondary)
         };
-        var previewBox = Ui.Check("Preview", true, v => { preview = v; timer.Stop(); timer.Start(); });
+        var previewBox = Ui.Check(L10n.Text("Preview"), true, v => { preview = v; timer.Stop(); timer.Start(); });
         var dialog = new DialogWindow(initial.DisplayName, Ui.Column(12, body, previewBox));
         dialog.Opened += (_, _) => changed(current);
         var accepted = await dialog.Ask(owner);
@@ -120,7 +120,7 @@ public static class AdjustmentDialogs
             update(levels = LevelsAdjustment.Auto(histogram));
             Build();
         });
-        var reset = Ui.TextButton("Reset", () => { update(levels = new LevelsAdjustment()); Build(); });
+        var reset = Ui.TextButton(L10n.Text("Reset"), () => { update(levels = new LevelsAdjustment()); Build(); });
         Build();
         return Ui.Column(10, Ui.Row(10, Ui.Label("Channel", Palette.Secondary), picker, auto, reset), graph, rows);
     }
@@ -130,7 +130,7 @@ public static class AdjustmentDialogs
         var editor = new CurveEditor { Width = 300, Height = 300, Curves = curves, Histogram = histogram };
         editor.Changed += value => update(curves = value);
         var picker = Ui.Combo(Channels, "RGB", c => c, c => editor.Channel = Array.IndexOf(Channels, c));
-        var reset = Ui.TextButton("Reset", () => { editor.Curves = curves = new CurvesAdjustment(); update(curves); });
+        var reset = Ui.TextButton(L10n.Text("Reset"), () => { editor.Curves = curves = new CurvesAdjustment(); update(curves); });
         return Ui.Column(10, Ui.Row(10, Ui.Label("Channel", Palette.Secondary), picker, reset), editor,
             Ui.Label("Click to add a point, drag to move it, drag it off the graph to remove it.", Palette.Secondary));
     }
@@ -150,12 +150,12 @@ public static class AdjustmentDialogs
             // the range's color, or to the tint being picked. Reset is no shift; colorizing at zero is Photoshop's starting tint.
             var rangeHue = Math.Max(0, (int)range - 1) * 60.0;
             Controls.SliderField saturation = null!;
-            var hueField = Ui.SliderField("Hue", shift.Hue, colorizing ? 0 : -180, colorizing ? 360 : 180, v =>
+            var hueField = Ui.SliderField(L10n.Text("Hue"), shift.Hue, colorizing ? 0 : -180, colorizing ? 360 : 180, v =>
             {
                 Set(shift with { Hue = v });
                 if (colorizing) saturation.Track = Controls.SliderTracks.Saturation(v);
             }, 1, "0", FieldWidth, Controls.SliderTracks.Spectrum(colorizing ? 180 : rangeHue), reset: 0);
-            saturation = Ui.SliderField("Saturation", shift.Saturation, -100, 100, v => Set(shift with { Saturation = v }), 1, "0", FieldWidth,
+            saturation = Ui.SliderField(L10n.Text("Saturation"), shift.Saturation, -100, 100, v => Set(shift with { Saturation = v }), 1, "0", FieldWidth,
                 Controls.SliderTracks.Saturation(colorizing ? shift.Hue : rangeHue), reset: 0);
             rows.Children.Add(hueField);
             rows.Children.Add(saturation);
@@ -189,17 +189,17 @@ public static class AdjustmentDialogs
         }
         var tintRows = new StackPanel { Spacing = 8, IsVisible = bw.Tint, Margin = new Thickness(0, 4, 0, 0) };
         Controls.SliderField tintSaturation = null!;
-        tintRows.Children.Add(Ui.SliderField("Hue", bw.TintHue, 0, 360, v =>
+        tintRows.Children.Add(Ui.SliderField(L10n.Text("Hue"), bw.TintHue, 0, 360, v =>
         {
             update(bw = bw with { TintHue = v });
             tintSaturation.Track = Controls.SliderTracks.Saturation(v);
         }, 1, "0", FieldWidth, Controls.SliderTracks.Spectrum(180), reset: defaults.TintHue));
-        tintSaturation = Ui.SliderField("Saturation", bw.TintSaturation, 0, 100, v => update(bw = bw with { TintSaturation = v }), 1, "0", FieldWidth,
+        tintSaturation = Ui.SliderField(L10n.Text("Saturation"), bw.TintSaturation, 0, 100, v => update(bw = bw with { TintSaturation = v }), 1, "0", FieldWidth,
             Controls.SliderTracks.Saturation(bw.TintHue), reset: defaults.TintSaturation);
         tintRows.Children.Add(tintSaturation);
         var tint = Ui.Check("Tint", bw.Tint, v => { tintRows.IsVisible = v; update(bw = bw with { Tint = v }); });
         ToolTip.SetTip(tint, "Color the result while keeping its tones, for a sepia or a cyanotype");
-        var reset = Ui.TextButton("Reset", () =>
+        var reset = Ui.TextButton(L10n.Text("Reset"), () =>
         {
             update(bw = new BlackAndWhiteAdjustment { Tint = bw.Tint, TintHue = bw.TintHue, TintSaturation = bw.TintSaturation });
             for (var i = 0; i < ColorFamilies.Length; i++) ((Controls.SliderField)weights.Children[i]).Value = bw.Weights[i];
@@ -390,7 +390,7 @@ public static class AdjustmentDialogs
             case FilterKind.MotionBlur:
                 // The blur runs along a line, so its dial is a line rather than a light. It turns the full circle as Photoshop's field
                 // allows, although 200 blurs the same as 20, because a dial that turns half way feels stuck.
-                panel.Children.Add(Ui.AngleField("Angle", initial.Angle, -180, 180, v => Update(current with { Angle = v }), FieldWidth, Controls.AngleDialStyle.Line, initial.Angle));
+                panel.Children.Add(Ui.AngleField(L10n.Text("Angle"), initial.Angle, -180, 180, v => Update(current with { Angle = v }), FieldWidth, Controls.AngleDialStyle.Line, initial.Angle));
                 Slider("Distance", initial.Radius, 1, 500, v => current with { Radius = v });
                 break;
             case FilterKind.Sharpen:
@@ -414,7 +414,7 @@ public static class AdjustmentDialogs
                     Update(current with { VignetteColor = (uint)picked | 0xFF000000 });
                     PaintSwatch();
                 };
-                var colorLabel = Ui.Label("Color", Palette.Secondary);
+                var colorLabel = Ui.Label(L10n.Text("Color"), Palette.Secondary);
                 colorLabel.Width = 90;
                 panel.Children.Add(Ui.Row(8, colorLabel, swatch));
                 Slider("Amount", initial.VignetteAmount, 0, 100, v => current with { VignetteAmount = v });
@@ -505,7 +505,7 @@ public static class AdjustmentDialogs
                     if (d.IsHalftone)
                     {
                         DitherSlider("Cell Size", d.CellSize, DitherSettings.MinCellSize, DitherSettings.MaxCellSize, (v, dd) => dd with { CellSize = (int)Math.Round(v) }, defaults.CellSize);
-                        section.Children.Add(Ui.AngleField("Angle", d.Angle, -90, 90, v => Set(dd => dd with { Angle = v }), FieldWidth, Controls.AngleDialStyle.Line, defaults.Angle));
+                        section.Children.Add(Ui.AngleField(L10n.Text("Angle"), d.Angle, -90, 90, v => Set(dd => dd with { Angle = v }), FieldWidth, Controls.AngleDialStyle.Line, defaults.Angle));
                     }
                     if (d.Style == DitherStyle.Ascii)
                     {
@@ -558,7 +558,7 @@ public static class AdjustmentDialogs
             case FilterKind.RemoveBackground:
             {
                 var detects = new[] { Composa.Vision.SubjectDetect.Any, Composa.Vision.SubjectDetect.Person, Composa.Vision.SubjectDetect.Backdrop };
-                var tolerance = Ui.SliderField("Tolerance", initial.Amount, 1, 100, v => Update(current with { Amount = v }), 1, "0", FieldWidth, reset: initial.Amount);
+                var tolerance = Ui.SliderField(L10n.Text("Tolerance"), initial.Amount, 1, 100, v => Update(current with { Amount = v }), 1, "0", FieldWidth, reset: initial.Amount);
                 var note = new TextBlock { Foreground = Palette.Secondary, MaxWidth = 380, TextWrapping = TextWrapping.Wrap };
                 void Describe()
                 {

@@ -94,7 +94,7 @@ public sealed class SideDock : UserControl
     private Control Build(DockSection section, bool open)
     {
         var chevron = Icons.Create(open ? Icons.ChevronDown : Icons.ChevronRight, 12, Palette.Secondary);
-        var title = Ui.Label(section.Title, weight: FontWeight.SemiBold);
+        var title = Ui.Label(L10n.Text(section.Title), weight: FontWeight.SemiBold);
         var header = new Border
         {
             Background = Brushes.Transparent, Cursor = new Cursor(StandardCursorType.Hand), Padding = new Thickness(8, 8, 10, 6),

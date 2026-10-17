@@ -18,17 +18,17 @@ public class DialogWindow : Window
 
     public DialogWindow(string title, Control body, string okText = "OK", bool cancellable = true)
     {
-        Title = title;
+        Title = L10n.Text(title);
         SizeToContent = SizeToContent.WidthAndHeight;
         CanResize = false;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ShowInTaskbar = false;
-        ok = Ui.TextButton(okText, Accept, accent: true);
+        ok = Ui.TextButton(L10n.Text(okText), Accept, accent: true);
         ok.IsDefault = true;
         Buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 16, 0, 0) };
         if (cancellable)
         {
-            var cancel = Ui.TextButton("Cancel", Reject);
+            var cancel = Ui.TextButton(L10n.Text("Cancel"), Reject);
             cancel.IsCancel = true;
             Buttons.Children.Add(cancel);
         }
@@ -64,9 +64,9 @@ public static class Prompts
     /// <summary>Save / Don't Save / Cancel. Returns null for cancel.</summary>
     public static async Task<bool?> SaveChanges(Window owner, string name)
     {
-        var dialog = new DialogWindow("Unsaved Changes", new TextBlock { Text = $"Save changes to \"{name}\" before closing?", MaxWidth = 420, TextWrapping = TextWrapping.Wrap }, "Save");
+        var dialog = new DialogWindow("Unsaved Changes", new TextBlock { Text = L10n.Format("Dialog.SaveChanges", name), MaxWidth = 420, TextWrapping = TextWrapping.Wrap }, "Save");
         bool? result = null;
-        var discard = Ui.TextButton("Don't Save", () => { result = false; dialog.Close(false); });
+        var discard = Ui.TextButton(L10n.Text("Don't Save"), () => { result = false; dialog.Close(false); });
         ((StackPanel)((StackPanel)dialog.Content!).Children[1]).Children.Insert(0, discard);
         if (await dialog.Ask(owner)) return true;
         return result;
@@ -96,7 +96,7 @@ public static class Prompts
         var swatches = Ui.Row(0,
             new Border { Width = 60, Height = 28, Background = new SolidColorBrush(initial.ToAvalonia()) },
             new Border { Width = 60, Height = 28, [!Border.BackgroundProperty] = view.GetObservable(ColorView.ColorProperty).Select(c => (IBrush)new SolidColorBrush(c)).ToBinding() });
-        var body = Ui.Column(10, view, Ui.Row(10, Ui.Label("Before / After", Palette.Secondary), swatches));
+        var body = Ui.Column(10, view, Ui.Row(10, Ui.Label(L10n.Text("Before / After"), Palette.Secondary), swatches));
         return await new DialogWindow(title, body).Ask(owner) ? view.Color.ToSkia().WithAlpha(255) : null;
     }
 

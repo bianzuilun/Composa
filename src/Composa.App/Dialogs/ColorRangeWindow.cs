@@ -56,7 +56,7 @@ public sealed class ColorRangeWindow : DialogWindow
         var fuzziness = Ui.SliderField("Fuzziness", ColorRange.DefaultFuzziness, ColorRange.MinFuzziness, ColorRange.MaxFuzziness,
             v => session.SetColorRangeFuzziness((int)v), width: ColorRange.PreviewWidth, reset: ColorRange.DefaultFuzziness);
         ToolTip.SetTip(fuzziness, "How far a color may be from the picked ones and still be selected");
-        var invert = Ui.Check("Invert", false, v => session.SetColorRangeInvert(v));
+        var invert = Ui.Check(L10n.Text("Invert"), false, v => session.SetColorRangeInvert(v));
         ToolTip.SetTip(invert, "Select everything except those colors, such as all but a green screen");
         var body = Ui.Column(12, Ui.Row(6, buttons.Select(b => (Control)b.Button).ToArray()), frame, hint, fuzziness, invert);
 

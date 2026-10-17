@@ -58,7 +58,7 @@ public sealed class UpdateNotice : Border
         commandRow.Children.Add(hint);
         Grid.SetColumn(command, 1);
         commandRow.Children.Add(command);
-        copy = Ui.TextButton("Copy", () => _ = CopyCommand());
+        copy = Ui.TextButton(L10n.Text("Copy"), () => _ = CopyCommand());
         copy.Margin = new Thickness(8, 0, 0, 0);
         ToolTip.SetTip(copy, "Copy the command, for a software centre that will not install a downloaded package");
         Grid.SetColumn(copy, 2);

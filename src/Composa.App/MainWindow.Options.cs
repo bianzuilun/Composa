@@ -32,8 +32,8 @@ public sealed partial class MainWindow
                 break;
             case Tool.Brush or Tool.SpotHealing or Tool.CloneStamp or Tool.Smear:
                 Add(Title(s.Tool switch { Tool.SpotHealing => "Spot Healing", Tool.CloneStamp => "Clone Stamp", _ => Chosen() }));
-                var size = Ui.SliderField("Size", s.Brush.Size, 1, 500, v => s.Brush = s.Brush with { Size = v });
-                var hardness = Ui.SliderField("Hardness", s.Brush.Hardness * 100, 0, 100, v => s.Brush = s.Brush with { Hardness = v / 100 });
+                var size = Ui.SliderField(L10n.Text("Size"), s.Brush.Size, 1, 500, v => s.Brush = s.Brush with { Size = v });
+                var hardness = Ui.SliderField(L10n.Text("Hardness"), s.Brush.Hardness * 100, 0, 100, v => s.Brush = s.Brush with { Hardness = v / 100 });
                 Add(size, hardness);
                 Action<double>? setOpacity = null;
                 if (s.Tool != Tool.SpotHealing)
@@ -46,7 +46,7 @@ public sealed partial class MainWindow
                 if (s.Tool == Tool.Brush)
                 {
                     // Healing, cloning and smearing keep their own feel; only Paint and Erase trail the pointer.
-                    var smoothing = Ui.SliderField("Smoothing", s.Brush.Smoothing, 0, 100, v => s.Brush = s.Brush with { Smoothing = v });
+                    var smoothing = Ui.SliderField(L10n.Text("Smoothing"), s.Brush.Smoothing, 0, 100, v => s.Brush = s.Brush with { Smoothing = v });
                     setSmoothing = v => smoothing.Value = v;
                     Add(smoothing);
                 }
@@ -65,7 +65,7 @@ public sealed partial class MainWindow
                 if (s.Tool == Tool.Wand)
                 {
                     if (s.WandMode == WandMode.Wand)
-                        Add(Ui.SliderField("Tolerance", s.WandTolerance, 0, 255, v => s.WandTolerance = (int)v, width: 130), Ui.Check("Contiguous", s.WandContiguous, v => s.WandContiguous = v));
+                        Add(Ui.SliderField(L10n.Text("Tolerance"), s.WandTolerance, 0, 255, v => s.WandTolerance = (int)v, width: 130), Ui.Check("Contiguous", s.WandContiguous, v => s.WandContiguous = v));
                     else
                     {
                         var edge = Ui.Number(s.ObjectEdgeOffset, -10, 10, v => s.ObjectEdgeOffset = (int)v, 1, "0", 52);
@@ -77,7 +77,7 @@ public sealed partial class MainWindow
                     }
                     Add(Ui.Check("Sample all layers", s.SampleAllLayers, v => s.SampleAllLayers = v));
                 }
-                else Add(Ui.SliderField("Feather", s.Feather, 0, 100, v => s.Feather = v));
+                else Add(Ui.SliderField(L10n.Text("Feather"), s.Feather, 0, 100, v => s.Feather = v));
                 Add(Ui.Separator());
                 // Modify buttons with their amounts, as in the macOS tool bar; both need a selection.
                 Control Modify(string title, Func<int> get, Action<int> set, int max, Action apply)
@@ -98,13 +98,13 @@ public sealed partial class MainWindow
                 Add(Title("Gradient"),
                     Ui.Combo(new[] { "Linear", "Radial" }, s.GradientRadial ? "Radial" : "Linear", v => v, v => s.GradientRadial = v == "Radial", 90),
                     Ui.Check("Foreground to transparent", s.GradientToTransparent, v => { s.GradientToTransparent = v; UpdateStatus(); }));
-                var gradientOpacity = Ui.SliderField("Opacity", s.GradientOpacity * 100, 1, 100, v => s.GradientOpacity = v / 100);
+                var gradientOpacity = Ui.SliderField(L10n.Text("Opacity"), s.GradientOpacity * 100, 1, 100, v => s.GradientOpacity = v / 100);
                 Add(gradientOpacity);
                 refreshOptions = () => gradientOpacity.Value = s.GradientOpacity * 100;
                 break;
             case Tool.Shape:
                 Add(Title(Chosen()));
-                if (s.ShapeKind == ShapeKind.Line) Add(Ui.SliderField("Width", s.ShapeLineWidth, 1, 100, v => s.ShapeLineWidth = v));
+                if (s.ShapeKind == ShapeKind.Line) Add(Ui.SliderField(L10n.Text("Width"), s.ShapeLineWidth, 1, 100, v => s.ShapeLineWidth = v));
                 else if (s.ShapeKind == ShapeKind.RoundedRectangle) Add(Ui.SliderField("Corner radius", s.ShapeCornerRadius, 0, 400, v => s.ShapeCornerRadius = v, width: 150));
                 Add(Ui.Label(s.ShapeKind == ShapeKind.Line ? "Draws in the foreground color · Shift snaps to 45°" : "Fills with the foreground color", Palette.Secondary));
                 break;
@@ -118,8 +118,8 @@ public sealed partial class MainWindow
                 ToolTip.SetTip(ratio, "The shape the crop box keeps while you drag it");
                 Add(Ui.Row(6, Ui.Label("Ratio", Palette.Secondary), ratio));
                 var readout = Ui.Label("Drag on the canvas to choose the area to keep", Palette.Secondary);
-                var apply = Ui.TextButton("Apply", canvas.ApplyCrop, accent: true);
-                var cancel = Ui.TextButton("Cancel", canvas.CancelCrop);
+                var apply = Ui.TextButton(L10n.Text("Apply"), canvas.ApplyCrop, accent: true);
+                var cancel = Ui.TextButton(L10n.Text("Cancel"), canvas.CancelCrop);
                 Add(readout, apply, cancel, Ui.Separator(), Flat("Trim transparent edges", () => { if (!s.Trim()) ShowProblem("Nothing to trim: no edge is transparent."); else canvas.Fit(); }));
                 refreshOptions = () =>
                 {
@@ -204,8 +204,8 @@ public sealed partial class MainWindow
         var leading = Ui.Number(style.Leading, 0, 5000, v => Change(st => st with { Leading = v }), 1, "0", 58);
         ToolTip.SetTip(leading, "Leading: line height baseline to baseline, in pixels. 0 is Auto: 120% of the size");
         var done = Ui.TextButton("Done", () => { s.FinishText(); canvas.Focus(); RebuildOptions(); UpdateStatus(); }, accent: true);
-        var cancel = Ui.TextButton("Cancel", () => { s.CancelText(); canvas.Focus(); RebuildOptions(); UpdateStatus(); });
-        var edit = Ui.TextButton("Edit Text", () => { if (s.ActiveLayer is { Text: not null } layer) BeginTextEdit(layer); });
+        var cancel = Ui.TextButton(L10n.Text("Cancel"), () => { s.CancelText(); canvas.Focus(); RebuildOptions(); UpdateStatus(); });
+        var edit = Ui.TextButton(L10n.Text("Edit Text"), () => { if (s.ActiveLayer is { Text: not null } layer) BeginTextEdit(layer); });
         foreach (var button in new[] { done, cancel, edit }) button.MinWidth = 0;
         row.Children.AddRange([font, Ui.Row(4, size, Ui.Scrub(Ui.Label("px", Palette.Secondary), size)), bold, italic, swatch, alignRow,
             Ui.Row(5, Ui.Scrub(Ui.Label("Tracking", Palette.Secondary), tracking), tracking), Ui.Row(5, Ui.Scrub(Ui.Label("Leading", Palette.Secondary), leading), leading), Ui.Separator()]);
@@ -244,7 +244,7 @@ public sealed partial class MainWindow
     {
         var s = session!;
         var layer = s.ActiveLayer;
-        var autoSelect = Ui.Check("Auto Select", canvas.AutoSelect, v => { canvas.AutoSelect = v; RememberToolSettings(); });
+        var autoSelect = Ui.Check(L10n.Text("Auto Select"), canvas.AutoSelect, v => { canvas.AutoSelect = v; RememberToolSettings(); });
         ToolTip.SetTip(autoSelect, "Click a layer's pixels to select it. Off, a drag moves the current layer from anywhere; Ctrl-click still picks.");
         row.Children.Add(autoSelect);
         row.Children.Add(Ui.Check("Transform controls", canvas.ShowTransformControls, v => { canvas.ShowTransformControls = v; canvas.InvalidateVisual(); RememberToolSettings(); }));

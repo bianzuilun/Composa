@@ -41,7 +41,7 @@ public sealed partial class MainWindow
 
         MenuItem Top(string header, params object[] items)
         {
-            var top = new MenuItem { Header = header };
+            var top = new MenuItem { Header = L10n.Text(header) };
             foreach (var item in items) top.Items.Add(item);
             top.SubmenuOpened += (_, _) => RefreshMenuState();
             menu.Items.Add(top);
@@ -53,7 +53,7 @@ public sealed partial class MainWindow
             var guard = needsDocument ? () => HasDocument && (enabled?.Invoke() ?? true) : enabled;
             var command = new Shortcut(id ?? name.TrimEnd('…'), name.TrimEnd('…'), "Menus", gesture, run, guard);
             commands.Add(command);
-            var item = new MenuItem { Header = name, InputGesture = gesture };
+            var item = new MenuItem { Header = L10n.Text(name), InputGesture = gesture };
             item.Click += (_, _) => Execute(command);
             command.Item = item;
             menuItems.Add((item, command));
@@ -61,7 +61,7 @@ public sealed partial class MainWindow
         }
         MenuItem Sub(string header, params object[] items)
         {
-            var sub = new MenuItem { Header = header };
+            var sub = new MenuItem { Header = L10n.Text(header) };
             foreach (var item in items) sub.Items.Add(item);
             return sub;
         }
@@ -184,7 +184,7 @@ public sealed partial class MainWindow
             Item("Flip Layer Horizontal", () => session!.FlipLayers(true)),
             Item("Flip Layer Vertical", () => session!.FlipLayers(false)));
 
-        var grid = new MenuItem { Header = "Pixel Grid (800% and above)", ToggleType = MenuItemToggleType.CheckBox, IsChecked = canvas.ShowPixelGrid };
+        var grid = new MenuItem { Header = L10n.Text("Pixel Grid (800% and above)"), ToggleType = MenuItemToggleType.CheckBox, IsChecked = canvas.ShowPixelGrid };
         grid.Click += (_, _) => { canvas.ShowPixelGrid = !canvas.ShowPixelGrid; grid.IsChecked = canvas.ShowPixelGrid; canvas.InvalidateVisual(); RememberToolSettings(); };
         // View options are flags on the session, so a checkmark follows the current tab.
         MenuItem ViewToggle(string name, Func<ViewOptions, bool> get, Func<ViewOptions, ViewOptions> flip, Key key = Key.None, KeyModifiers modifiers = KeyModifiers.None, string? id = null)
@@ -231,7 +231,7 @@ public sealed partial class MainWindow
         // A build from a repository leaves updates to its package manager, so there is nothing to switch on there.
         var autoUpdates = new MenuItem
         {
-            Header = "Check for Updates Automatically",
+            Header = L10n.Text("Check for Updates Automatically"),
             ToggleType = MenuItemToggleType.CheckBox,
             IsChecked = settings.CheckForUpdates,
             IsEnabled = UpdateCheck.Channel == UpdateChannel.GitHub
@@ -244,7 +244,7 @@ public sealed partial class MainWindow
         };
 
         // The MCP server, through which an AI agent drives the editor. Off until switched on, and remembered.
-        var aiControl = new MenuItem { Header = "Allow AI Control", ToggleType = MenuItemToggleType.CheckBox, IsChecked = settings.AllowAiControl };
+        var aiControl = new MenuItem { Header = L10n.Text("Allow AI Control"), ToggleType = MenuItemToggleType.CheckBox, IsChecked = settings.AllowAiControl };
         aiControl.Click += async (_, _) => { await SetAiControl(!AiControl); aiControl.IsChecked = settings.AllowAiControl; };
 
         MenuItem PanelToggle(string title)
@@ -259,6 +259,7 @@ public sealed partial class MainWindow
         Top("_Help", Item("Keyboard Shortcuts…", () => _ = ShowShortcuts(), Key.F1, needsDocument: false),
             Item("Check for Updates…", () => _ = CheckForUpdatesNow(), needsDocument: false),
             autoUpdates,
+            BuildLanguageMenu(),
             Line(),
             aiControl,
             Line(),
@@ -379,10 +380,10 @@ public sealed partial class MainWindow
         foreach (var (item, isChecked) in viewToggles) item.IsChecked = session != null && isChecked(session.View);
         foreach (var (item, section) in panelToggles) item.IsChecked = dock.Section(section).State.Visible;
         if (session == null) return;
-        undoItem!.Header = session.History.CanUndo ? $"Undo {session.History.UndoName}" : "Undo";
-        redoItem!.Header = session.History.CanRedo ? $"Redo {session.History.RedoName}" : "Redo";
-        mergeItem!.Header = session.MergeTitle;
-        clipItem!.Header = session.ActiveLayer?.Clipped == true ? "Release Clipping Mask" : "Create Clipping Mask";
+        undoItem!.Header = session.History.CanUndo ? L10n.Format("Edit.UndoStep", L10n.Text(session.History.UndoName!)) : L10n.Get("Edit.Undo");
+        redoItem!.Header = session.History.CanRedo ? L10n.Format("Edit.RedoStep", L10n.Text(session.History.RedoName!)) : L10n.Get("Edit.Redo");
+        mergeItem!.Header = L10n.Text(session.MergeTitle);
+        clipItem!.Header = L10n.Text(session.ActiveLayer?.Clipped == true ? "Release Clipping Mask" : "Create Clipping Mask");
     }
 
     private void Execute(Shortcut command)
