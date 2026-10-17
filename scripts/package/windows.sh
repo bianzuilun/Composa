@@ -36,11 +36,11 @@ echo "Building Composa $VERSION for $RID"
 # Nothing manages a Windows install, so this build announces new releases itself.
 dotnet publish "$ROOT/src/Composa.App" -c Release -r "$RID" --self-contained true \
   -p:DebugType=none -p:UpdateChannel=github -o "$TREE"
-cp "$ROOT/LICENSE" "$ROOT/README.md" "$ROOT/CHANGELOG.md" "$TREE/"
+cp "$ROOT/LICENSE" "$ROOT/README.md" "$ROOT/README.zh-CN.md" "$ROOT/README.ja.md" "$ROOT/CHANGELOG.md" "$TREE/"
 
 # Bundling ImageMagick redistributes LGPL libraries, and the notices are what makes that allowed.
 # The project file adds them; this makes sure no change there can ship a build without them.
-for notice in THIRD-PARTY-NOTICES.txt ImageMagick-NOTICE.txt models/u2netp.onnx models/modnet.onnx models/realesr-general-x4v3.onnx; do
+for notice in THIRD-PARTY-NOTICES.txt ImageMagick-NOTICE.txt models/u2netp.onnx models/modnet.onnx models/realesr-general-x4v3.onnx zh-CN/composa.resources.dll ja/composa.resources.dll; do
   [ -f "$TREE/$notice" ] || { echo "windows.sh: $notice is missing from the published build." >&2; exit 1; }
 done
 

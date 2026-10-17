@@ -4,6 +4,14 @@ All notable changes to Composa are recorded here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+## [1.5.0-beta.1] - 2026-10-17
+
+### Added
+
+- Help > Language (restart required): follow the system, English, Simplified Chinese or Japanese. The preference is saved and applied on the next launch.
+- Initial Chinese and Japanese UI resources for the main menus, blend modes, common buttons, selected dialogs and tool options, and some history display names. Unmigrated strings remain in English; shortcut IDs, dock settings and user content are unchanged.
+- Simplified Chinese and Japanese README guides, included in the Windows downloads.
+
 ## [1.4.0] - 2026-10-03
 
 Models that run on your own machine, and the first features taken from Lolly: Select Subject, Object Selection and Remove Background find the subject of an ordinary photo, Image Size enlarges with invented detail, a Color Lookup adjustment with bundled film looks and a `.cube` export, and GIMP files open as layers.
