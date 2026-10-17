@@ -71,6 +71,7 @@ public sealed partial class EditorSession
         if (want == have || (long)want.Width * want.Height > DocumentLimits.MaxSurfacePixels) return;
         var grown = Pixels.NewColor(want.Width, want.Height);
         using (var canvas = new SKCanvas(grown)) canvas.DrawBitmap(pixels, have.Left - want.Left, have.Top - want.Top);
+        DeepPixels.PreserveDraw(pixels, grown, (drawing, wide) => drawing.DrawBitmap(wide, have.Left - want.Left, have.Top - want.Top));
         layer.Pixels = grown;
         if (layer.Mask is { } mask) layer.Mask = GrownMask(mask, want.Width, want.Height, have.Left - want.Left, have.Top - want.Top);
         layer.Transform = LayerTransform.Identity(want.Width, want.Height) with { X = want.Left, Y = want.Top };
@@ -117,6 +118,7 @@ public sealed partial class EditorSession
 
         var grown = Pixels.NewColor((int)width, (int)height);
         using (var canvas = new SKCanvas(grown)) canvas.DrawBitmap(pixels, left, top);
+        DeepPixels.PreserveDraw(pixels, grown, (drawing, wide) => drawing.DrawBitmap(wide, left, top));
         layer.Pixels = grown;
         if (layer.Mask is { } mask) layer.Mask = GrownMask(mask, (int)width, (int)height, left, top);
 
@@ -137,6 +139,7 @@ public sealed partial class EditorSession
     private static unsafe SKBitmap MixBySelection(SKBitmap original, SKBitmap modified, SKBitmap? selection)
     {
         if (selection == null) return modified;
+        var wide = original.ColorType == SKColorType.Rgba8888 ? DeepPixels.MixSelection(original, modified, selection) : null;
         var bpp = original.BytesPerPixel;
         byte* o = (byte*)original.GetPixels(), m = (byte*)modified.GetPixels(), s = (byte*)selection.GetPixels();
         int width = Math.Min(original.Width, selection.Width), height = Math.Min(original.Height, selection.Height);
@@ -154,6 +157,7 @@ public sealed partial class EditorSession
                 }
             }
         });
+        if (wide != null) DeepPixels.Attach(modified, wide);
         return modified;
     }
 
@@ -319,6 +323,8 @@ public sealed partial class EditorSession
             using (var canvas = new SKCanvas(cropped))
             using (var paint = new SKPaint { BlendMode = SKBlendMode.Src })
                 canvas.DrawBitmap(result, -growX, -growY, paint);
+            var offsetX = growX; var offsetY = growY;
+            DeepPixels.PreserveDraw(result, cropped, (drawing, wide) => drawing.DrawBitmap(wide, -offsetX, -offsetY));
             result.Dispose();
             result = cropped;
             growX = growY = 0;
@@ -441,7 +447,7 @@ public sealed partial class EditorSession
             end = new SKColor(0, 0, 0, Gray(Background));
         }
         var painted = Pixels.Clone(original);
-        using (var canvas = new SKCanvas(painted))
+        void Draw(SKCanvas canvas)
         {
             canvas.SetMatrix(in inverse);
             using var shader = GradientRadial
@@ -452,6 +458,8 @@ public sealed partial class EditorSession
             paint.Color = paint.Color.WithAlpha((byte)Math.Round(Math.Clamp(GradientOpacity, 0, 1) * 255));
             canvas.DrawPaint(paint);
         }
+        using (var canvas = new SKCanvas(painted)) Draw(canvas);
+        DeepPixels.PreserveDraw(original, painted, (canvas, source) => { canvas.DrawBitmap(source, 0, 0); Draw(canvas); });
         var selection = SelectionInTargetSpace(layer);
         var previous = Target(layer);
         SetTarget(layer, MixBySelection(original, painted, selection));
@@ -561,6 +569,13 @@ public sealed partial class EditorSession
             using var paint = new SKPaint { BlendMode = SKBlendMode.DstIn };
             canvas.DrawBitmap(document.Selection, -area.Left, -area.Top, paint);
         }
+        DeepPixels.PreserveDraw(source, pixels, (drawing, wide) =>
+        {
+            drawing.DrawBitmap(wide, sourceArea.Left - area.Left, sourceArea.Top - area.Top);
+            if (document.Selection == null) return;
+            using var paint = new SKPaint { BlendMode = SKBlendMode.DstIn };
+            drawing.DrawBitmap(document.Selection, -area.Left, -area.Top, paint);
+        });
         return new ClipboardImage(pixels, new SKPointI(area.Left, area.Top));
     }
 

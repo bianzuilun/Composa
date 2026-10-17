@@ -179,9 +179,10 @@ public static class Pixels
         if (scale >= 0.5f) return;
         foreach (var layer in document.AllLayers())
         {
-            foreach (var bitmap in new[] { layer.Pixels, layer.Mask })
+            foreach (var original in new[] { layer.Pixels, layer.Mask })
             {
-                if (bitmap == null || IsLive(bitmap)) continue;
+                if (original == null || IsLive(original)) continue;
+                var bitmap = DeepPixels.Source(original) ?? original;
                 var layerScale = scale * (layer.Pixels != null ? Math.Sqrt(Math.Abs(layer.Transform.Width * layer.Transform.Height) / Math.Max(1.0, (double)layer.Pixels.Width * layer.Pixels.Height)) : 1);
                 var level = layerScale >= 0.5 ? 0 : (int)Math.Floor(Math.Log2(1 / layerScale));
                 if (level > 0) Level(bitmap, ref level);
@@ -194,6 +195,14 @@ public static class Pixels
     {
         int width = Math.Max(1, source.Width / 2), height = Math.Max(1, source.Height / 2), bpp = source.BytesPerPixel;
         var half = new SKBitmap(source.Info.WithSize(width, height));
+        if (DeepPixels.IsWide(source))
+        {
+            using var canvas = new SKCanvas(half);
+            canvas.Clear(SKColors.Transparent);
+            using var image = SKImage.FromBitmap(source);
+            canvas.DrawImage(image, new SKRect(0, 0, width, height), new SKSamplingOptions(SKFilterMode.Linear));
+            return half;
+        }
         byte* from = (byte*)source.GetPixels(), to = (byte*)half.GetPixels();
         int fromStride = source.RowBytes, toStride = half.RowBytes;
         int lastX = source.Width - 1, lastY = source.Height - 1;

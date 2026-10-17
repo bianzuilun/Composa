@@ -4,12 +4,12 @@ using SkiaSharp;
 
 namespace Composa.IO;
 
-public enum ExportFormat { Png, Jpeg, Webp, Tiff, Pdf, Png16 }
+public enum ExportFormat { Png, Jpeg, Webp, Tiff, Pdf, Png16, Tiff16, Exr }
 
 public static class ImageFiles
 {
     /// <summary>What Open and Place accept. Photoshop files take the <c>Psd.PsdImport</c> route and SVG files <see cref="SvgImporter"/> rather than <see cref="Load(string)"/>.</summary>
-    public static readonly string[] ImportExtensions = [".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif", ".ico", ".heic", ".hif", ".heif", ".avif", ".tif", ".tiff", ".svg", ".psd", ".psb", ".xcf", ".xcf.gz"];
+    public static readonly string[] ImportExtensions = [".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif", ".ico", ".heic", ".hif", ".heif", ".avif", ".tif", ".tiff", ".exr", ".svg", ".psd", ".psb", ".xcf", ".xcf.gz"];
 
     /// <summary>Decodes an image file to RGBA premultiplied pixels, upright according to its EXIF orientation.</summary>
     public static SKBitmap Load(string path)
@@ -19,7 +19,7 @@ public static class ImageFiles
             using var stream = File.OpenRead(path);
             return Load(stream, Path.GetFileName(path));
         }
-        catch (InvalidDataException) when (ImageMagick.IsAvailable)
+        catch (InvalidDataException) when (ImageMagick.IsAvailable && !Path.GetExtension(path).Equals(".exr", StringComparison.OrdinalIgnoreCase))
         {
             // Skia has no HEIC, AVIF or TIFF decoder; ImageMagick fills the gap. When it cannot read
             // the file either, its reason is the one worth reporting, since it was the last to try.
@@ -36,6 +36,7 @@ public static class ImageFiles
             return Load(seekable, name);
         }
         var start = stream.Position;
+        if (ExrImage.IsExr(stream)) return ExrImage.Decode(stream);
         var wide = Png16.IsSixteenBit(stream);
         using var codec = SKCodec.Create(stream, out var status)
             ?? throw new InvalidDataException($"{name} could not be read ({status}). Supported formats are PNG, JPEG, WebP, BMP and GIF; HEIC, AVIF and TIFF open when ImageMagick is installed.");
@@ -92,6 +93,8 @@ public static class ImageFiles
     public static byte[] Encode(SKBitmap bitmap, ExportFormat format, int quality = 90, SKColor? matte = null, double resolution = 72)
     {
         if (format == ExportFormat.Png16) return Png16.Encode(bitmap, resolution);
+        if (format == ExportFormat.Exr) return ExrImage.Encode(bitmap);
+        if (format == ExportFormat.Tiff16) return RasterExport.Tiff(bitmap, resolution, sixteenBit: true);
         if (format == ExportFormat.Tiff) return RasterExport.Tiff(bitmap, resolution);
         if (format == ExportFormat.Pdf) return RasterExport.Pdf(bitmap, resolution);
         var source = bitmap;
@@ -132,6 +135,7 @@ public static class ImageFiles
         ".webp" => ExportFormat.Webp,
         ".tif" or ".tiff" => ExportFormat.Tiff,
         ".pdf" => ExportFormat.Pdf,
+        ".exr" => ExportFormat.Exr,
         _ => ExportFormat.Png
     };
 }

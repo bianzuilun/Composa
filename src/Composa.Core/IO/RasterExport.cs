@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
+using Composa.Rendering;
 using SkiaSharp;
 
 namespace Composa.IO;
@@ -10,7 +11,7 @@ public static class RasterExport
 {
     private static double Dpi(double resolution) => double.IsFinite(resolution) ? Math.Clamp(resolution, 1, 9600) : 72;
 
-    public static byte[] Tiff(SKBitmap bitmap, double resolution = 72)
+    public static byte[] Tiff(SKBitmap bitmap, double resolution = 72, bool sixteenBit = false)
     {
         const ushort fields = 14;
         const int directory = 8;
@@ -18,7 +19,7 @@ public static class RasterExport
         var xResolution = bits + 8;
         var yResolution = xResolution + 8;
         var pixels = yResolution + 8;
-        var length = checked(bitmap.Width * bitmap.Height * 4);
+        var length = checked(bitmap.Width * bitmap.Height * (sixteenBit ? 8 : 4));
         using var stream = new MemoryStream();
         using var writer = new BinaryWriter(stream, Encoding.ASCII, leaveOpen: true);
         writer.Write((byte)'I'); writer.Write((byte)'I'); writer.Write((ushort)42); writer.Write((uint)directory);
@@ -33,10 +34,20 @@ public static class RasterExport
         Field(279, 4, 1, (uint)length); Field(282, 5, 1, (uint)xResolution); Field(283, 5, 1, (uint)yResolution);
         Field(284, 3, 1, 1); Field(296, 3, 1, 2); Field(338, 3, 1, 2); // Unassociated alpha.
         writer.Write(0u);
-        for (var i = 0; i < 4; i++) writer.Write((ushort)8);
+        for (var i = 0; i < 4; i++) writer.Write((ushort)(sixteenBit ? 16 : 8));
         for (var i = 0; i < 2; i++) { writer.Write((uint)Math.Round(Dpi(resolution) * 1000)); writer.Write(1000u); }
+        var source = sixteenBit ? DeepPixels.Source(bitmap) ?? bitmap : bitmap;
         for (var y = 0; y < bitmap.Height; y++) for (var x = 0; x < bitmap.Width; x++)
         {
+            if (sixteenBit)
+            {
+                var color = DeepPixels.Read(source, x, y); var scale = color.Alpha > 0 ? 1 / color.Alpha : 0;
+                writer.Write((ushort)MathF.Round(Math.Clamp(color.Red * scale, 0, 1) * 65535));
+                writer.Write((ushort)MathF.Round(Math.Clamp(color.Green * scale, 0, 1) * 65535));
+                writer.Write((ushort)MathF.Round(Math.Clamp(color.Blue * scale, 0, 1) * 65535));
+                writer.Write((ushort)MathF.Round(color.Alpha * 65535));
+                continue;
+            }
             var p = bitmap.GetPixel(x, y);
             writer.Write(p.Red); writer.Write(p.Green); writer.Write(p.Blue); writer.Write(p.Alpha);
         }

@@ -10,6 +10,7 @@ using Avalonia.VisualTree;
 using Composa.Editing;
 using Composa.Filters;
 using Composa.Model;
+using Composa.Rendering;
 using SkiaSharp;
 using BlendMode = Composa.Model.BlendMode;
 using TextAlignment = Avalonia.Media.TextAlignment;
@@ -522,6 +523,12 @@ public sealed class LayersPanel : UserControl
         if (layer.IsAdjustment) Add("Edit Adjustment…", () => EditAdjustmentRequested?.Invoke(layer));
         if (layer.Text != null) Add("Edit Text…", () => EditTextRequested?.Invoke(layer));
         if (layer.IsLive) Add("Rasterize Layer", () => current.RasterizeShape(layer));
+        if (!layer.IsLive && layer.Pixels is { } raster)
+        {
+            var wide = DeepPixels.Source(raster);
+            Add("Convert Layer to 8-bit", () => current.ConvertLayerDepth(layer, false), wide != null);
+            Add("Convert Layer to 16-bit", () => current.ConvertLayerDepth(layer, true), wide == null || DeepPixels.IsHdr(wide));
+        }
         menu.Items.Add(new Separator());
 
         Add(layer.Clipped ? "Release Clipping Mask" : "Create Clipping Mask", () => current.ToggleClippingMask(layer), current.CanClip(layer));
@@ -531,7 +538,7 @@ public sealed class LayersPanel : UserControl
         Add(current.MergeTitle, current.MergeLayers, current.CanMerge);
         menu.Items.Add(new Separator());
 
-        var addMask = new MenuItem { Header = "Add Mask", IsEnabled = layer.Mask == null };
+        var addMask = new MenuItem { Header = L10n.Text("Add Mask"), IsEnabled = layer.Mask == null };
         Add("Reveal All (White)", () => current.AddMask(layer), parent: addMask);
         Add("Hide All (Black)", () => current.AddMask(layer, hideAll: true), parent: addMask);
         menu.Items.Add(addMask);

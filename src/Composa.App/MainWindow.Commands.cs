@@ -635,7 +635,24 @@ public sealed partial class MainWindow
     {
         var raw = await Busy(() => Task.Run(() => RawImporter.Decode(path)));
         if (await RawDevelopDialog.Show(this, Path.GetFileName(path), raw) is not { } settings) return null;
-        return await Busy(() => Task.Run(() => raw.Develop(settings)));
+        var developed = await Busy(() => Task.Run(() => raw.Develop(settings)));
+        if (!settings.OpenCameraRaw) return developed;
+        using var small = await Task.Run(() => raw.Develop(settings, 560));
+        SKBitmap? shown = null;
+        try
+        {
+            var grade = await CameraRawDialog.Show(this, new CameraRawSettings(), small, value =>
+            {
+                var next = ImageFilters.Run(small, new FilterSettings { Kind = FilterKind.CameraRaw, CameraRaw = value, CameraRawScale = small.Width / (double)raw.Width }).Result;
+                shown?.Dispose(); shown = next;
+            }, () => shown ?? small);
+            if (grade == null) { developed.Dispose(); return null; }
+            if (grade.IsIdentity) return developed;
+            try { return await Busy(() => Task.Run(() => ImageFilters.Run(developed, new FilterSettings { Kind = FilterKind.CameraRaw, CameraRaw = grade }).Result)); }
+            finally { developed.Dispose(); }
+        }
+        catch { developed.Dispose(); throw; }
+        finally { shown?.Dispose(); }
     }
 
     /// <summary>Reads a Photoshop file and, when anything has to be converted, asks before going on. Null means the user declined.</summary>

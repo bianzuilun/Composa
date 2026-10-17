@@ -450,6 +450,7 @@ public sealed partial class EditorSession
         if (right < 0 || (left == 0 && top == 0 && right == pixels.Width - 1 && bottom == pixels.Height - 1)) return;
         var trimmed = Pixels.NewColor(right - left + 1, bottom - top + 1);
         using (var canvas = new SKCanvas(trimmed)) canvas.DrawBitmap(pixels, -left, -top);
+        DeepPixels.PreserveDraw(pixels, trimmed, (drawing, wide) => drawing.DrawBitmap(wide, -left, -top));
         layer.Pixels = trimmed;
         layer.Transform = LayerTransform.Identity(trimmed.Width, trimmed.Height) with { X = layer.Transform.X + left, Y = layer.Transform.Y + top };
     }
@@ -510,6 +511,12 @@ public sealed partial class EditorSession
             using (var canvas = new SKCanvas(pixels))
             using (var paint = new SKPaint { BlendMode = SKBlendMode.DstIn })
                 canvas.DrawBitmap(layer.Mask, new SKRect(0, 0, pixels.Width, pixels.Height), paint);
+            DeepPixels.PreserveDraw(layer.Pixels, pixels, (drawing, wide) =>
+            {
+                drawing.DrawBitmap(wide, 0, 0);
+                using var paint = new SKPaint { BlendMode = SKBlendMode.DstIn };
+                drawing.DrawBitmap(layer.Mask, new SKRect(0, 0, pixels.Width, pixels.Height), paint);
+            });
             layer.Pixels = pixels;
             layer.Mask = null;
         });

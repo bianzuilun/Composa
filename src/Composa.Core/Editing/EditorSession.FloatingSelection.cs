@@ -37,12 +37,24 @@ public sealed partial class EditorSession
             using var keep = new SKPaint { BlendMode = SKBlendMode.DstIn };
             canvas.DrawBitmap(selection, -bounds.Left, -bounds.Top, keep);
         }
+        DeepPixels.PreserveDraw(original, floatPixels, (drawing, wide) =>
+        {
+            drawing.DrawBitmap(wide, -bounds.Left, -bounds.Top);
+            using var keep = new SKPaint { BlendMode = SKBlendMode.DstIn };
+            drawing.DrawBitmap(selection, -bounds.Left, -bounds.Top, keep);
+        });
         floatBase = Pixels.Clone(original);
         if (!duplicate)
         {
             using var canvas = new SKCanvas(floatBase);
             using var remove = new SKPaint { BlendMode = SKBlendMode.DstOut };
             canvas.DrawBitmap(selection, 0, 0, remove);
+            DeepPixels.PreserveDraw(original, floatBase, (drawing, wide) =>
+            {
+                drawing.DrawBitmap(wide, 0, 0);
+                using var remove = new SKPaint { BlendMode = SKBlendMode.DstOut };
+                drawing.DrawBitmap(selection, 0, 0, remove);
+            });
         }
         floatOrigin = new SKPointI(bounds.Left, bounds.Top);
         floatSelection = document.Selection;
@@ -64,6 +76,11 @@ public sealed partial class EditorSession
             moved = Pixels.Clone(floatBase);
             using var canvas = new SKCanvas(moved);
             canvas.DrawBitmap(floatPixels, floatOrigin.X + dx, floatOrigin.Y + dy);
+            DeepPixels.PreserveDraw(floatBase, moved, (drawing, wide) =>
+            {
+                drawing.DrawBitmap(wide, 0, 0);
+                drawing.DrawBitmap(DeepPixels.Source(floatPixels) ?? floatPixels, floatOrigin.X + dx, floatOrigin.Y + dy);
+            });
         }
         layer.Pixels = moved ?? floatOriginal!;
         // Only bitmaps made by earlier moves are disposed; the layer's original pixels belong to the undo history.

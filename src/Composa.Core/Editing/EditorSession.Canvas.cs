@@ -173,6 +173,11 @@ public sealed partial class EditorSession
             ? new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear)
             : new SKSamplingOptions(SKCubicResampler.CatmullRom);
         if (!source.ScalePixels(result, sampling)) throw new InvalidOperationException("The image could not be resampled.");
+        DeepPixels.PreserveDraw(source, result, (drawing, wide) =>
+        {
+            using var image = SKImage.FromBitmap(wide);
+            drawing.DrawImage(image, new SKRect(0, 0, width, height), sampling);
+        });
         return result;
     }
 

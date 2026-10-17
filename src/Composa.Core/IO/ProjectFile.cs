@@ -90,9 +90,11 @@ public static class ProjectFile
         string Store(SKBitmap bitmap, string name)
         {
             if (written.TryGetValue(bitmap, out var existing)) return existing;
+            var hdr = DeepPixels.Source(bitmap) is { } source && DeepPixels.IsHdr(source);
+            if (hdr) name = Path.ChangeExtension(name, ".exr");
             var entry = zip.CreateEntry("images/" + name, CompressionLevel.NoCompression);
             using var output = entry.Open();
-            var bytes = bitmap.ColorType == SKColorType.Alpha8 ? EncodeMask(bitmap) : ImageFiles.Encode(bitmap, DeepPixels.HasSource(bitmap) ? ExportFormat.Png16 : ExportFormat.Png);
+            var bytes = bitmap.ColorType == SKColorType.Alpha8 ? EncodeMask(bitmap) : ImageFiles.Encode(bitmap, hdr ? ExportFormat.Exr : DeepPixels.HasSource(bitmap) ? ExportFormat.Png16 : ExportFormat.Png);
             output.Write(bytes);
             return written[bitmap] = name;
         }

@@ -1032,4 +1032,34 @@
   <data name="Port.SaveLookAdaptive" xml:space="preserve">
     <value>Saves a .cube color lookup. Adaptive Contrast, Highlights and Shadows, plus Effects, Detail and Optics, are left out because they depend on the picture.</value>
   </data>
+  <data name="Port.Depth8" xml:space="preserve">
+    <value>Convert Layer to 8-bit</value>
+  </data>
+  <data name="Port.Depth16" xml:space="preserve">
+    <value>Convert Layer to 16-bit</value>
+  </data>
+  <data name="Port.Png16" xml:space="preserve">
+    <value>PNG (16-bit)</value>
+  </data>
+  <data name="Port.Tiff16" xml:space="preserve">
+    <value>TIFF (16-bit)</value>
+  </data>
+  <data name="Port.RawLumaNoise" xml:space="preserve">
+    <value>Luminance Noise Reduction</value>
+  </data>
+  <data name="Port.RawColorNoise" xml:space="preserve">
+    <value>Color Noise Reduction</value>
+  </data>
+  <data name="Port.HighlightRecovery" xml:space="preserve">
+    <value>Highlight Recovery</value>
+  </data>
+  <data name="Port.LensDistortion" xml:space="preserve">
+    <value>Lens Distortion</value>
+  </data>
+  <data name="Port.ContinueRaw" xml:space="preserve">
+    <value>Continue in Camera Raw</value>
+  </data>
+  <data name="Port.BlurRadius" xml:space="preserve">
+    <value>Blur Radius</value>
+  </data>
 </root>

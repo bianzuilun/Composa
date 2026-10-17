@@ -11,7 +11,7 @@ public sealed partial class MainWindow
         if (session is not { } target) return;
         using var source = target.Flatten();
         if (await ExportDialog.Show(this, source) is not { } options) return;
-        var extension = options.Format switch { ExportFormat.Jpeg => "jpg", ExportFormat.Tiff => "tiff", _ => options.Format.ToString().ToLowerInvariant() };
+        var extension = options.Format switch { ExportFormat.Jpeg => "jpg", ExportFormat.Tiff or ExportFormat.Tiff16 => "tiff", ExportFormat.Png16 => "png", _ => options.Format.ToString().ToLowerInvariant() };
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = L10n.Text("Export As"), SuggestedFileName = target.Title + "." + extension, DefaultExtension = extension,

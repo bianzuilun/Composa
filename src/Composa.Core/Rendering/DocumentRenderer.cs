@@ -18,11 +18,11 @@ internal sealed class Tile : IDisposable
     public SKRectI Area { get; }
     public RenderView View { get; }
 
-    public Tile(SKRectI area, RenderView view, bool mask = false)
+    public Tile(SKRectI area, RenderView view, bool mask = false, bool wide = false)
     {
         Area = area;
         View = view;
-        Bitmap = mask ? Pixels.NewMask(area.Width, area.Height) : Pixels.NewColor(area.Width, area.Height);
+        Bitmap = mask ? Pixels.NewMask(area.Width, area.Height) : wide ? DeepPixels.New(area.Width, area.Height, hdr: true) : Pixels.NewColor(area.Width, area.Height);
         Canvas = new SKCanvas(Bitmap);
         Canvas.Translate(-area.Left, -area.Top);
         Canvas.Scale(view.Scale);
@@ -30,7 +30,7 @@ internal sealed class Tile : IDisposable
     }
 
     /// <summary>A sibling buffer over the same area.</summary>
-    public Tile Sibling(bool mask = false) => new(Area, View, mask);
+    public Tile Sibling(bool mask = false) => new(Area, View, mask, DeepPixels.IsWide(Bitmap));
 
     /// <summary>Draws a bitmap covering the same area straight onto this tile, pixel for pixel.</summary>
     public void DrawRaw(SKBitmap bitmap, SKPaint? paint = null)
@@ -64,6 +64,14 @@ public static class DocumentRenderer
     /// <summary>A new bitmap holding the whole flattened document.</summary>
     public static SKBitmap Flatten(Document document, RenderOptions? options = null)
     {
+        var wide = document.AllLayers().Any(layer => layer.Pixels is { } pixels && DeepPixels.HasSource(pixels));
+        if (wide)
+        {
+            var hdr = document.AllLayers().Any(layer => layer.Pixels is { } pixels && DeepPixels.Source(pixels) is { } source && DeepPixels.IsHdr(source));
+            var widePixels = DeepPixels.New(document.Width, document.Height, hdr);
+            Render(document, widePixels, document.Bounds, options);
+            return DeepPixels.Preview(widePixels);
+        }
         var target = Pixels.NewColor(document.Width, document.Height);
         Render(document, target, document.Bounds, options);
         return target;
@@ -81,6 +89,7 @@ public static class DocumentRenderer
     {
         area = Geometry.Intersect(area, new SKRectI(0, 0, target.Width, target.Height));
         if (area.IsEmpty) return;
+        var wide = DeepPixels.IsWide(target) || document.AllLayers().Any(layer => layer.Pixels is { } pixels && DeepPixels.HasSource(pixels));
         // Skia's raster backend draws on one thread, so large areas are split into bands rendered side by side.
         // Every layer operation is per-pixel, which makes the bands independent of each other, except the blur
         // adjustments: their bands are rendered with a halo of the picture around them that is then left out.
@@ -102,7 +111,7 @@ public static class DocumentRenderer
                 padded.Inflate(margin, margin);
                 padded = Geometry.Union(part, Geometry.Intersect(padded, canvas));
             }
-            using var tile = new Tile(padded, view);
+            using var tile = new Tile(padded, view, wide: wide);
             RenderNodes(document.Layers, tile, options);
             tile.Canvas.Flush();
             CopyRows(tile.Bitmap, new SKPointI(part.Left - padded.Left, part.Top - padded.Top), target, part);
@@ -127,17 +136,41 @@ public static class DocumentRenderer
     {
         var source = (byte*)from.GetPixels();
         var destination = (byte*)to.GetPixels();
-        long bytes = (long)area.Width * 4;
+        if (from.ColorType != to.ColorType)
+        {
+            for (var y = 0; y < area.Height; y++) for (var x = 0; x < area.Width; x++)
+            {
+                var p = DeepPixels.Read(from, x + fromOrigin.X, y + fromOrigin.Y);
+                if (DeepPixels.IsWide(to)) DeepPixels.Write(to, x + area.Left, y + area.Top, p);
+                else
+                {
+                    var row = destination + (long)(y + area.Top) * to.RowBytes + (long)(x + area.Left) * 4;
+                    var alpha = (byte)Math.Clamp(MathF.Round(p.Alpha * 255), 0, 255);
+                    row[0] = (byte)Math.Clamp(MathF.Floor(p.Red * 255 + DeepPixels.Noise(x + area.Left, y + area.Top, 0)), 0, alpha);
+                    row[1] = (byte)Math.Clamp(MathF.Floor(p.Green * 255 + DeepPixels.Noise(x + area.Left, y + area.Top, 1)), 0, alpha);
+                    row[2] = (byte)Math.Clamp(MathF.Floor(p.Blue * 255 + DeepPixels.Noise(x + area.Left, y + area.Top, 2)), 0, alpha); row[3] = alpha;
+                }
+            }
+            return;
+        }
+        long bytes = (long)area.Width * from.BytesPerPixel;
         for (var y = 0; y < area.Height; y++)
-            Buffer.MemoryCopy(source + (long)(y + fromOrigin.Y) * from.RowBytes + (long)fromOrigin.X * 4, destination + (long)(y + area.Top) * to.RowBytes + (long)area.Left * 4, bytes, bytes);
+            Buffer.MemoryCopy(source + (long)(y + fromOrigin.Y) * from.RowBytes + (long)fromOrigin.X * from.BytesPerPixel, destination + (long)(y + area.Top) * to.RowBytes + (long)area.Left * to.BytesPerPixel, bytes, bytes);
     }
 
     /// <summary>Renders only the given layers (and their clipped followers) over a document-space area, for merges and copies.</summary>
     public static SKBitmap RenderLayers(Document document, IEnumerable<Layer> layers, SKRectI area)
     {
-        using var tile = new Tile(new SKRectI(0, 0, area.Width, area.Height), new RenderView(1, new SKPoint(area.Left, area.Top)));
-        RenderNodes(layers.ToList(), tile, null);
+        var roots = layers.ToList();
+        var wide = Document.Flatten(roots).Any(layer => layer.Pixels is { } pixels && DeepPixels.HasSource(pixels));
+        using var tile = new Tile(new SKRectI(0, 0, area.Width, area.Height), new RenderView(1, new SKPoint(area.Left, area.Top)), wide: wide);
+        RenderNodes(roots, tile, null);
         tile.Canvas.Flush();
+        if (wide)
+        {
+            var hdr = Document.Flatten(roots).Any(layer => layer.Pixels is { } pixels && DeepPixels.Source(pixels) is { } source && DeepPixels.IsHdr(source));
+            return DeepPixels.Preview(DeepPixels.Convert(tile.Bitmap, hdr));
+        }
         return Pixels.Clone(tile.Bitmap);
     }
 
@@ -241,6 +274,16 @@ public static class DocumentRenderer
     /// <summary>Straightens premultiplied pixels and gives every covered pixel full alpha.</summary>
     private static unsafe void MakeOpaque(SKBitmap bitmap)
     {
+        if (DeepPixels.IsWide(bitmap))
+        {
+            for (var y = 0; y < bitmap.Height; y++) for (var x = 0; x < bitmap.Width; x++)
+            {
+                var p = DeepPixels.Read(bitmap, x, y);
+                if (p.Alpha <= 0 || p.Alpha >= 1) continue;
+                DeepPixels.Write(bitmap, x, y, new SKColorF(p.Red / p.Alpha, p.Green / p.Alpha, p.Blue / p.Alpha, 1));
+            }
+            return;
+        }
         var pixels = (byte*)bitmap.GetPixels();
         for (var y = 0; y < bitmap.Height; y++)
         {
@@ -296,6 +339,7 @@ public static class DocumentRenderer
     /// </summary>
     internal static void DrawBitmap(SKCanvas canvas, SKBitmap bitmap, SKPaint paint)
     {
+        bitmap = DeepPixels.Source(bitmap) ?? bitmap;
         var scale = ScaleOf(canvas.TotalMatrix);
         var level = scale >= 0.5 || Pixels.IsLive(bitmap) ? 0 : (int)Math.Floor(Math.Log2(1 / scale));
         var image = Pixels.Level(bitmap, ref level);
@@ -393,7 +437,9 @@ public static class DocumentRenderer
         using var adjusted = Pixels.Clone(tile.Bitmap);
         var (originX, originY, step) = tile.DocumentGrid;
         // Bands already run side by side, so the adjustment itself stays on this thread.
-        layer.Adjustment.Apply(adjusted, new SKRectI(0, 0, adjusted.Width, adjusted.Height), originX, originY, step, parallel: tile.Area.Height * (long)tile.Area.Width > 2_000_000);
+        if (DeepPixels.IsWide(adjusted))
+            Composa.Filters.DeepAdjustments.Apply(layer.Adjustment, adjusted, new SKRectI(0, 0, adjusted.Width, adjusted.Height), originX, originY, step, parallel: tile.Area.Height * (long)tile.Area.Width > 2_000_000);
+        else layer.Adjustment.Apply(adjusted, new SKRectI(0, 0, adjusted.Width, adjusted.Height), originX, originY, step, parallel: tile.Area.Height * (long)tile.Area.Width > 2_000_000);
         Mix(tile, adjusted, layer, layer.Mask != null && layer.MaskEnabled);
     }
 }

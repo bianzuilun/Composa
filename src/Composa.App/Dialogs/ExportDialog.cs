@@ -18,7 +18,8 @@ public static class ExportDialog
         var image = new Image { Source = Ui.ToAvaloniaBitmap(source, 480), MaxWidth = 480, MaxHeight = 320, Stretch = Avalonia.Media.Stretch.Uniform };
         var info = Ui.Label("", Palette.Secondary);
         NumericUpDown widthBox = null!, heightBox = null!;
-        void Refresh() { info.Text = $"{width} × {height} px · {format}"; }
+        string Name(ExportFormat value) => value switch { ExportFormat.Png16 => L10n.Text("PNG (16-bit)"), ExportFormat.Tiff16 => L10n.Text("TIFF (16-bit)"), ExportFormat.Exr => "OpenEXR (HDR)", _ => value.ToString().ToUpperInvariant() };
+        void Refresh() { info.Text = $"{width} × {height} px · {Name(format)}"; }
         widthBox = Ui.Number(width, 1, DocumentLimits.MaxSide, value =>
         {
             width = (int)value;
@@ -31,14 +32,14 @@ public static class ExportDialog
             if (!updating && locked) { updating = true; widthBox.Value = (decimal)Math.Clamp(Math.Round(height * (double)source.Width / source.Height), 1, DocumentLimits.MaxSide); updating = false; }
             Refresh();
         }, width: 130);
-        var formats = Ui.Combo(Enum.GetValues<ExportFormat>(), format, value => value.ToString(), value => { format = value; Refresh(); }, 130);
+        var formats = Ui.Combo(Enum.GetValues<ExportFormat>(), format, Name, value => { format = value; Refresh(); }, 160);
         var preview = Ui.TextButton(L10n.Text("Preview"), () =>
         {
             if (!DocumentLimits.FitsSurface(width, height)) { info.Text = L10n.Text("The export exceeds the supported pixel budget."); return; }
             using var sized = Resize(source, width, height);
             var encoded = ImageFiles.Encode(sized, format, quality);
             // PDF/TIFF show the same rendered pixels; JPEG/WebP show their actual compression.
-            using var decoded = format is ExportFormat.Pdf or ExportFormat.Tiff ? Pixels.Clone(sized) : ImageFiles.Load(new MemoryStream(encoded));
+            using var decoded = format is ExportFormat.Pdf or ExportFormat.Tiff or ExportFormat.Tiff16 ? Pixels.Clone(sized) : ImageFiles.Load(new MemoryStream(encoded));
             image.Source = Ui.ToAvaloniaBitmap(decoded, 480);
             info.Text = $"{width} × {height} px · {encoded.Length / 1024.0:N1} KiB";
         });
@@ -53,10 +54,6 @@ public static class ExportDialog
     public static SKBitmap Resize(SKBitmap source, int width, int height)
     {
         if (!DocumentLimits.FitsSurface(width, height)) throw new ArgumentOutOfRangeException(nameof(width));
-        var result = Pixels.NewColor(width, height);
-        using var canvas = new SKCanvas(result);
-        using var image = SKImage.FromBitmap(source);
-        canvas.DrawImage(image, new SKRect(0, 0, width, height), new SKSamplingOptions(SKCubicResampler.Mitchell));
-        return result;
+        return Composa.Editing.EditorSession.Resample(source, width, height);
     }
 }

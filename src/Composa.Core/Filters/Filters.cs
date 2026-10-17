@@ -109,6 +109,8 @@ public static unsafe class ImageFilters
     /// </summary>
     public static (SKBitmap Result, int GrowX, int GrowY) Run(SKBitmap source, FilterSettings settings)
     {
+        if (DeepPixels.Source(source) is { } wide) return DeepFilters.Run(wide, settings);
+        if (DeepPixels.IsWide(source)) throw new ArgumentException("Pass the editing preview of a high precision image.");
         switch (settings.Kind)
         {
             case FilterKind.Scanlines:

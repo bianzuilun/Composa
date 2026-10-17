@@ -54,16 +54,22 @@ public static class RawDevelopDialog
         var exposure = Ui.SliderField("Exposure (EV)", settings.Exposure, -3, 3, v => Update(settings with { Exposure = v }), 0.05, "+0.00;-0.00;0.00", 400);
         var temperature = Ui.SliderField("Temperature", settings.Temperature, -100, 100, v => Update(settings with { Temperature = v }), 1, "0", 400);
         var tint = Ui.SliderField("Tint", settings.Tint, -100, 100, v => Update(settings with { Tint = v }), 1, "0", 400);
+        var luminance = Ui.SliderField(L10n.Text("Luminance Noise Reduction"), 0, 0, 100, v => Update(settings with { LuminanceNoise = v }), width: 400);
+        var chroma = Ui.SliderField(L10n.Text("Color Noise Reduction"), 0, 0, 100, v => Update(settings with { ColorNoise = v }), width: 400);
+        var recovery = Ui.SliderField(L10n.Text("Highlight Recovery"), 0, 0, 100, v => Update(settings with { HighlightRecovery = v }), width: 400);
+        var lens = Ui.SliderField(L10n.Text("Lens Distortion"), 0, -100, 100, v => Update(settings with { LensDistortion = v }), width: 400);
+        var cameraRaw = Ui.Check(L10n.Text("Continue in Camera Raw"), settings.OpenCameraRaw, v => settings = settings with { OpenCameraRaw = v });
         var reset = Ui.TextButton(L10n.Text("Reset"), () =>
         {
-            Update(new RawDevelopSettings());
+            Update(new RawDevelopSettings { OpenCameraRaw = settings.OpenCameraRaw });
             exposure.Value = 0; temperature.Value = 0; tint.Value = 0;
+            luminance.Value = 0; chroma.Value = 0; recovery.Value = 0; lens.Value = 0;
         });
         var note = Ui.Label("Cooler to warmer, and green to magenta, away from the camera's own white balance.", Palette.Secondary);
         note.TextWrapping = TextWrapping.Wrap;
         note.MaxWidth = PreviewWidth;
 
-        var body = Ui.Column(12, frame, info, exposure, temperature, tint, Ui.Row(12, reset, note));
+        var body = Ui.Column(12, frame, info, exposure, temperature, tint, luminance, chroma, recovery, lens, cameraRaw, Ui.Row(12, reset, note));
         var dialog = new DialogWindow($"Develop {fileName}", body, "Import");
         dialog.Opened += (_, _) => Render();
         var accepted = await dialog.Ask(owner);

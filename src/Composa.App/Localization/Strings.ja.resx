@@ -1032,4 +1032,34 @@
   <data name="Port.SaveLookAdaptive" xml:space="preserve">
     <value>色を .cube LUT に保存します。画像に依存するコントラスト、ハイライト、シャドウ、効果、ディテール、光学補正は除外されます。</value>
   </data>
+  <data name="Port.Depth8" xml:space="preserve">
+    <value>レイヤーを8ビットに変換</value>
+  </data>
+  <data name="Port.Depth16" xml:space="preserve">
+    <value>レイヤーを16ビットに変換</value>
+  </data>
+  <data name="Port.Png16" xml:space="preserve">
+    <value>PNG（16ビット）</value>
+  </data>
+  <data name="Port.Tiff16" xml:space="preserve">
+    <value>TIFF（16ビット）</value>
+  </data>
+  <data name="Port.RawLumaNoise" xml:space="preserve">
+    <value>輝度ノイズ軽減</value>
+  </data>
+  <data name="Port.RawColorNoise" xml:space="preserve">
+    <value>カラーノイズ軽減</value>
+  </data>
+  <data name="Port.HighlightRecovery" xml:space="preserve">
+    <value>ハイライト復元</value>
+  </data>
+  <data name="Port.LensDistortion" xml:space="preserve">
+    <value>レンズの歪曲</value>
+  </data>
+  <data name="Port.ContinueRaw" xml:space="preserve">
+    <value>Camera Rawで続ける</value>
+  </data>
+  <data name="Port.BlurRadius" xml:space="preserve">
+    <value>ぼかし半径</value>
+  </data>
 </root>

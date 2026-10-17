@@ -1032,4 +1032,34 @@
   <data name="Port.SaveLookAdaptive" xml:space="preserve">
     <value>保存 .cube 色彩查找表。自适应对比度、高光、阴影，以及效果、细节和光学调整依赖图像内容，保存时会略过。</value>
   </data>
+  <data name="Port.Depth8" xml:space="preserve">
+    <value>转换图层为 8 位</value>
+  </data>
+  <data name="Port.Depth16" xml:space="preserve">
+    <value>转换图层为 16 位</value>
+  </data>
+  <data name="Port.Png16" xml:space="preserve">
+    <value>PNG（16 位）</value>
+  </data>
+  <data name="Port.Tiff16" xml:space="preserve">
+    <value>TIFF（16 位）</value>
+  </data>
+  <data name="Port.RawLumaNoise" xml:space="preserve">
+    <value>明度降噪</value>
+  </data>
+  <data name="Port.RawColorNoise" xml:space="preserve">
+    <value>颜色降噪</value>
+  </data>
+  <data name="Port.HighlightRecovery" xml:space="preserve">
+    <value>高光恢复</value>
+  </data>
+  <data name="Port.LensDistortion" xml:space="preserve">
+    <value>镜头畸变</value>
+  </data>
+  <data name="Port.ContinueRaw" xml:space="preserve">
+    <value>继续进入 Camera Raw</value>
+  </data>
+  <data name="Port.BlurRadius" xml:space="preserve">
+    <value>模糊半径</value>
+  </data>
 </root>

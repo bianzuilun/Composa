@@ -82,7 +82,9 @@ public static unsafe class DeepPixels
     public static SKBitmap New(int width, int height, bool hdr = false)
     {
         using var colorSpace = SKColorSpace.CreateSrgb();
-        return new SKBitmap(new SKImageInfo(width, height, hdr ? SKColorType.RgbaF32 : SKColorType.Rgba16161616, SKAlphaType.Premul, colorSpace));
+        var bitmap = new SKBitmap(new SKImageInfo(width, height, hdr ? SKColorType.RgbaF32 : SKColorType.Rgba16161616, SKAlphaType.Premul, colorSpace));
+        bitmap.Erase(SKColors.Transparent);
+        return bitmap;
     }
 
     public static SKBitmap Convert(SKBitmap source, bool hdr = false)
@@ -91,6 +93,42 @@ public static unsafe class DeepPixels
         using var drawing = new SKCanvas(result);
         drawing.Clear(SKColors.Transparent);
         drawing.DrawBitmap(source, 0, 0);
+        return result;
+    }
+
+    /// <summary>Mirror a geometric raster edit in a float surface and associate its full precision result.</summary>
+    internal static void PreserveDraw(SKBitmap source, SKBitmap result, Action<SKCanvas, SKBitmap> draw)
+    {
+        if (Source(source) is not { } original) return;
+        var wide = New(result.Width, result.Height, hdr: true);
+        try
+        {
+            using (var canvas = new SKCanvas(wide)) draw(canvas, original);
+            if (!IsHdr(original))
+            {
+                var integer = Convert(wide); wide.Dispose(); wide = integer;
+            }
+            Attach(result, wide);
+        }
+        catch { wide.Dispose(); throw; }
+    }
+
+    internal static SKBitmap? MixSelection(SKBitmap original, SKBitmap modified, SKBitmap selection)
+    {
+        var oldWide = Source(original); var newWide = Source(modified);
+        if (oldWide == null && newWide == null) return null;
+        var first = oldWide ?? original; var second = newWide ?? modified;
+        var result = New(original.Width, original.Height, IsHdr(first) || IsHdr(second));
+        Parallel.For(0, result.Height, y =>
+        {
+            for (var x = 0; x < result.Width; x++)
+            {
+                var cover = x < selection.Width && y < selection.Height ? selection.GetPixel(x, y).Alpha / 255f : 0;
+                var a = Read(first, x, y); var b = Read(second, x, y);
+                Write(result, x, y, new SKColorF(a.Red + (b.Red - a.Red) * cover, a.Green + (b.Green - a.Green) * cover,
+                    a.Blue + (b.Blue - a.Blue) * cover, a.Alpha + (b.Alpha - a.Alpha) * cover));
+            }
+        });
         return result;
     }
 

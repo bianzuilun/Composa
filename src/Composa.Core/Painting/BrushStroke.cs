@@ -21,6 +21,8 @@ public sealed record BrushSettings
     /// pointer pulls it taut, so a shaky hand still draws a smooth line. 0 follows the pointer exactly.
     /// </summary>
     public double Smoothing { get; init; }
+    /// <summary>The Blur tool's Gaussian radius in document pixels, independent of its brush diameter.</summary>
+    public double BlurRadius { get; init; } = 5;
 }
 
 /// <summary>A stroke planned in advance, as <see cref="Editing.EditorSession.PaintStrokes"/> takes them.</summary>
@@ -36,6 +38,7 @@ public sealed unsafe class BrushStroke : IDisposable
     private readonly SKBitmap original;
     private readonly BrushSettings settings;
     private readonly BrushMode mode;
+    private readonly float blurRadius;
     private readonly bool isMask;
     private readonly byte[] coverage;
     private readonly int width, height, bytesPerPixel;
@@ -70,6 +73,7 @@ public sealed unsafe class BrushStroke : IDisposable
         Working = Pixels.Clone(target);
         this.settings = settings;
         this.mode = mode;
+        blurRadius = (float)(Math.Clamp(settings.BlurRadius, .1, 100) / Math.Max(1e-6, scale));
         isMask = target.ColorType == SKColorType.Alpha8;
         bytesPerPixel = isMask ? 1 : 4;
         width = target.Width;
@@ -243,7 +247,7 @@ public sealed unsafe class BrushStroke : IDisposable
         var result = new SKBitmap(original.Info);
         result.Erase(SKColors.Transparent);
         using var canvas = new SKCanvas(result);
-        var sigma = Math.Max(1.5f, radius * 0.25f);
+        var sigma = blurRadius;
         using var paint = new SKPaint { ImageFilter = SKImageFilter.CreateBlur(sigma, sigma, SKShaderTileMode.Clamp), BlendMode = SKBlendMode.Src };
         canvas.DrawBitmap(original, 0, 0, paint);
         return result;

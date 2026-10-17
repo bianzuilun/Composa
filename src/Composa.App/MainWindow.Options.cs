@@ -35,6 +35,8 @@ public sealed partial class MainWindow
                 var size = Ui.SliderField(L10n.Text("Size"), s.Brush.Size, 1, 500, v => s.Brush = s.Brush with { Size = v });
                 var hardness = Ui.SliderField(L10n.Text("Hardness"), s.Brush.Hardness * 100, 0, 100, v => s.Brush = s.Brush with { Hardness = v / 100 });
                 Add(size, hardness);
+                if (s.Tool == Tool.Smear && s.SmearMode == SmearMode.Blur)
+                    Add(Ui.SliderField(L10n.Text("Blur Radius"), s.Brush.BlurRadius, .1, 100, v => s.Brush = s.Brush with { BlurRadius = v }, .1, "0.0"));
                 Action<double>? setOpacity = null;
                 if (s.Tool != Tool.SpotHealing)
                 {
