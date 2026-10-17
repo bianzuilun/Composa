@@ -2,9 +2,9 @@ Third-party software in this build of Composa
 
 Composa itself is MIT licensed; see LICENSE.
 
-The Windows and macOS builds of Composa include Magick.NET, which is how they open HEIC, AVIF, TIFF and camera RAW files without ImageMagick being installed separately. Linux builds do not include it and use the ImageMagick that the distribution provides instead.
+The Windows and macOS builds of Composa include Magick.NET, which is how they open HEIC, AVIF, TIFF and camera RAW files without ImageMagick being installed separately. Linux builds include only the managed Magick.NET.Core ICC profile resources and use the ImageMagick that the distribution provides for conversions.
 
-Magick.NET is licensed under the Apache License 2.0. It carries ImageMagick (ImageMagick License) and the libraries ImageMagick uses to read and write image formats, all compiled into the single native library Magick.Native-Q16-<architecture>.dll (or .dylib on macOS) that sits next to the Composa executable. Every component, its version and its full licence text is listed in ImageMagick-NOTICE.txt, which is Magick.NET's own notice file, shipped unchanged.
+Magick.NET is licensed under the Apache License 2.0. It carries ImageMagick (ImageMagick License) and the libraries ImageMagick uses to read and write image formats, all compiled into the single native library Magick.Native-Q16-HDRI-<architecture>.dll (or .dylib on macOS) that sits next to the Composa executable. Every component, its version and its full licence text is listed in ImageMagick-NOTICE.txt, which is Magick.NET's own notice file, shipped unchanged.
 
 Several of those components are licensed under the GNU Lesser General Public License, among them libraw (camera RAW), libheif and libde265 (HEIC). Composa does not modify them. The native library is loaded at runtime as a separate file, so it can be replaced with one built from source. The sources and the build scripts that produce it are published at:
 
@@ -58,7 +58,7 @@ Compositor algorithms
 ShapePaths.cs and Scanlines.cs are adapted from robbietilton/Compositor v1.5.3, commit 554104cf1c2de844c1acbd60b4f7b422bd6ce7bd, Document/ShapeTool.swift and Rendering/DitherPixels.c.
 CameraRawTables.cs, CameraRawShadows.cs, CameraRawMeasuredColor.cs and the monotone parametric curve are adapted from Document/CameraRawTables.swift, Document/CameraRawShadows.swift, Document/CameraRawColor.swift and Rendering/AdjustPixels.c at that same commit.
 CameraRawData contains the original CameraRawShadows.bin and a lossless gzip repack of CameraRawTables.bin. scripts/import-compositor-tables.py records their original SHA-256 hashes and reproduces the repack without a runtime LZMA dependency.
-DeepPixels.cs adapts the immutable source/painted-preview approach and per-channel noise from Document/DeepLayers.swift and Rendering/DeepPixels.c at that same commit.
+DeepFilters.cs and DeepAdjustments.cs adapt precision reconstruction from Rendering/DeepPixels.c. DeepPixels.cs adapts the immutable source/painted-preview approach and per-channel noise from Document/DeepLayers.swift and Rendering/DeepPixels.c at that same commit.
 
 MIT License
 

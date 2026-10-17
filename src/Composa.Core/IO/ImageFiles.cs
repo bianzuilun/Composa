@@ -19,6 +19,12 @@ public static class ImageFiles
             using var stream = File.OpenRead(path);
             return Load(stream, Path.GetFileName(path));
         }
+        catch (InvalidDataException) when (ImageMagick.IsAvailable && Path.GetExtension(path).Equals(".exr", StringComparison.OrdinalIgnoreCase))
+        {
+            // Let the HDR decoder unpack tiled/PIZ/DWA images; retain floating-point samples on the handoff.
+            using var stream = new MemoryStream(ImageMagick.Convert(path, ImageMagickOutput.Exr)!);
+            return ExrImage.Decode(stream);
+        }
         catch (InvalidDataException) when (ImageMagick.IsAvailable && !Path.GetExtension(path).Equals(".exr", StringComparison.OrdinalIgnoreCase))
         {
             // Skia has no HEIC, AVIF or TIFF decoder; ImageMagick fills the gap. When it cannot read

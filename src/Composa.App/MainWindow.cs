@@ -205,6 +205,7 @@ public sealed partial class MainWindow : Window
         session = next;
         if (session != null) CarryToolState(session, tool);
         canvas.Session = session;
+        if (session?.View is { } view && (view.ProofColors || view.GamutWarning)) _ = EnsureColorProof();
         layers.Session = session;
         history.Session = session;
         welcome.IsVisible = session == null;

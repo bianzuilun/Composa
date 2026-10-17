@@ -9,6 +9,7 @@ using Avalonia.Threading;
 using Composa.Editing;
 using Composa.Model;
 using Composa.Rendering;
+using Composa.IO;
 using Geometry = Composa.Model.Geometry;
 using Composa.Selections;
 using SkiaSharp;
@@ -18,6 +19,8 @@ namespace Composa.App.Controls;
 /// <summary>The editing surface: shows the flattened document with zoom and pan, draws tool overlays, and turns pointer input into edits.</summary>
 public sealed partial class CanvasView : Control
 {
+    public CmykProof? ColorProof { get; private set; }
+    public void SetColorProof(CmykProof? proof) { ColorProof = proof; viewStale = true; navigatorStale = true; InvalidateVisual(); }
     private EditorSession? session;
     private double zoom = 1;
     private Point origin; // Where the document's top-left sits, in control coordinates.
@@ -381,7 +384,12 @@ public sealed partial class CanvasView : Control
         viewKey = key;
         viewStale = false;
         viewDirty = SKRectI.Empty;
-        if (!dirty.IsEmpty) session.RenderView(viewCache, dirty, new RenderView(scale, viewOrigin));
+        if (!dirty.IsEmpty)
+        {
+            session.RenderView(viewCache, dirty, new RenderView(scale, viewOrigin));
+            if (session.SoloMaskLayerId == null && (session.View.ProofColors || session.View.GamutWarning))
+                ColorProof?.Apply(viewCache, dirty, session.View.ProofColors, session.View.GamutWarning);
+        }
         return (viewCache, new SKRect(0, 0, width, height), target);
     }
 

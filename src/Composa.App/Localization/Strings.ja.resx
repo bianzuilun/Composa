@@ -1062,4 +1062,22 @@
   <data name="Port.BlurRadius" xml:space="preserve">
     <value>ぼかし半径</value>
   </data>
+  <data name="Port.Cmyk" xml:space="preserve">
+    <value>CMYK（JPEG、TIFF、PDF）</value>
+  </data>
+  <data name="Port.Proof" xml:space="preserve">
+    <value>色の校正</value>
+  </data>
+  <data name="Port.Gamut" xml:space="preserve">
+    <value>色域外警告</value>
+  </data>
+  <data name="Port.CmykProfile" xml:space="preserve">
+    <value>CMYKプロファイル</value>
+  </data>
+  <data name="Port.CmykValid" xml:space="preserve">
+    <value>有効なCMYK ICCプロファイルを選択してください。</value>
+  </data>
+  <data name="Port.ShortcutDelete" xml:space="preserve">
+    <value>ショートカットをクリックして新しいキーの組み合わせを押します。Escapeで記録を中止し、BackspaceまたはDeleteで割り当てを解除します。ブラシのサイズと硬さ（[ ] と { }）、不透明度の数字キー、スペースによる移動、修飾キーとマウスの操作は固定です。</value>
+  </data>
 </root>

@@ -9,6 +9,8 @@ public enum ImageMagickOutput
     Png,
     /// <summary>A 16-bit PAM, which keeps a camera RAW decode's range for the develop step.</summary>
     Pam16,
+    /// <summary>Uncompressed floating-point OpenEXR; the decoder must retain HDR values.</summary>
+    Exr,
 }
 
 /// <summary>One way of reaching ImageMagick: the installed command line, or the library bundled with the Windows and macOS builds.</summary>
@@ -36,6 +38,8 @@ public interface IImageMagick
 /// </summary>
 public static class ImageMagick
 {
+    public static byte[]? RgbProfile { get; set; }
+    public static byte[]? DefaultCmykProfile { get; set; }
     private static readonly Lazy<IImageMagick?> resolved = new(Resolve, LazyThreadSafetyMode.ExecutionAndPublication);
 
     /// <summary>
@@ -62,7 +66,7 @@ public static class ImageMagick
 }
 
 /// <summary>ImageMagick's command line, run once per conversion with the result read from its standard output.</summary>
-public sealed class ImageMagickTool : IImageMagick
+public sealed class ImageMagickTool : IImageMagick, IColorConverter
 {
     private ImageMagickTool(string executable) => Executable = executable;
 
@@ -76,7 +80,9 @@ public sealed class ImageMagickTool : IImageMagick
     {
         string[] arguments = output == ImageMagickOutput.Png
             ? [path + "[0]", "-auto-orient", "png:-"]
-            : [path + "[0]", "-auto-orient", "-depth", "16", "pam:-"];
+            : output == ImageMagickOutput.Exr
+                ? [path + "[0]", "-auto-orient", "-define", "quantum:format=floating-point", "-depth", "32", "-compress", "None", "exr:-"]
+                : [path + "[0]", "-auto-orient", "-depth", "16", "pam:-"];
         // A RAW decode is several seconds of work on a large sensor, so it gets longer than an image.
         return Run(path, arguments, output == ImageMagickOutput.Png ? 60_000 : 180_000);
     }
@@ -84,6 +90,52 @@ public sealed class ImageMagickTool : IImageMagick
     /// <summary>ImageMagick sizes an SVG from its resolution, 96 dots per inch being the size the file declares; the background must be set before the file is read.</summary>
     public byte[] Rasterize(string path, double scale) =>
         Run(path, ["-background", "none", "-density", (96 * scale).ToString("0.####", System.Globalization.CultureInfo.InvariantCulture), path + "[0]", "png:-"], 60_000);
+
+    public byte[] ConvertColor(byte[] png, byte[] rgbProfile, byte[] cmykProfile, bool proof, ExportFormat format, int quality, double resolution)
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "composa-color-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            var input = Path.Combine(directory, "input.png"); var rgb = Path.Combine(directory, "rgb.icc"); var cmyk = Path.Combine(directory, "print.icc");
+            File.WriteAllBytes(input, png); File.WriteAllBytes(rgb, rgbProfile); File.WriteAllBytes(cmyk, cmykProfile);
+            var arguments = new List<string> { input, "-intent", "Relative", "-black-point-compensation", "-profile", rgb, "-profile", cmyk };
+            if (proof) arguments.AddRange(["-profile", rgb]);
+            arguments.AddRange(["-depth", "8", "-quality", Math.Clamp(quality, 1, 100).ToString(), "-units", "PixelsPerInch", "-density", resolution.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                proof ? "png:-" : format == ExportFormat.Pdf ? "cmyk:-" : format == ExportFormat.Jpeg ? "jpeg:-" : "tiff:-"]);
+            return Run(input, arguments.ToArray(), 180_000);
+        }
+        finally
+        {
+            // Only exact files created above; no recursive removal of a computed directory.
+            foreach (var name in new[] { "input.png", "rgb.icc", "print.icc" }) File.Delete(Path.Combine(directory, name));
+            Directory.Delete(directory);
+        }
+    }
+
+    public byte[] DecodeCmyk(byte[] samples, int width, int height, int depth, byte[]? profile)
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "composa-cmyk-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            var raw = Path.Combine(directory, "input.cmyk"); var source = Path.Combine(directory, "print.icc"); var target = Path.Combine(directory, "rgb.icc");
+            File.WriteAllBytes(raw, samples);
+            var args = new List<string> { "-size", $"{width}x{height}", "-depth", depth.ToString(), "-endian", "LSB", "cmyk:" + raw };
+            if ((profile ?? ImageMagick.DefaultCmykProfile) is { } cmyk && ImageMagick.RgbProfile is { } rgb)
+            {
+                File.WriteAllBytes(source, cmyk); File.WriteAllBytes(target, rgb);
+                args.AddRange(["-intent", "Relative", "-black-point-compensation", "-profile", source, "-profile", target]);
+            }
+            else args.AddRange(["-colorspace", "sRGB"]);
+            args.Add("png:-"); return Run(raw, args.ToArray(), 180_000);
+        }
+        finally
+        {
+            foreach (var name in new[] { "input.cmyk", "print.icc", "rgb.icc" }) File.Delete(Path.Combine(directory, name));
+            Directory.Delete(directory);
+        }
+    }
 
     private byte[] Run(string path, string[] arguments, int timeout)
     {

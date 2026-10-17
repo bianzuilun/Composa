@@ -7,6 +7,9 @@ public sealed class Settings
 {
     /// <summary>system, en, zh-CN or ja. Applied only at the next launch.</summary>
     public string Language { get; set; } = "system";
+    /// <summary>A selected print ICC profile, stored as base64 by JSON so moving its source file cannot break proofing.</summary>
+    public byte[]? CmykProfile { get; set; }
+    public string CmykProfileName { get; set; } = "Coated FOGRA39";
 
     public List<string> RecentFiles { get; set; } = [];
     public double WindowWidth { get; set; } = 1280;

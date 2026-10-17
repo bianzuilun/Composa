@@ -208,6 +208,9 @@ public sealed partial class MainWindow
             Item("Toggle Fullscreen", ToggleCanvasOnly, Key.F, needsDocument: false),
             Line(),
             ViewToggle("Navigator (300% and above)", v => v.ShowNavigator, v => v with { ShowNavigator = !v.ShowNavigator }),
+            Item("Proof Colors", () => _ = ToggleProof(), Key.Y, ctrl),
+            Item("Gamut Warning", () => _ = ToggleProof(gamut: true), Key.Y, ctrl | shift),
+            Item("CMYK Profile…", () => _ = ChooseCmykProfile(), needsDocument: false),
             Item("Fit Canvas", canvas.Fit, Key.D0, ctrl),
             Item("Actual Pixels", () => canvas.ZoomTo(1), Key.D1, ctrl),
             Item("Zoom In", canvas.ZoomIn, Key.OemPlus, ctrl),
@@ -659,7 +662,16 @@ public sealed partial class MainWindow
     private async Task<PsdImport?> ImportPhotoshop(string path, long pixelBudget)
     {
         var import = await Task.Run(() => PsdImport.Load(path, pixelBudget));
-        if (import.Conversions.Count == 0 || await ImportConversionDialog.Confirm(this, Path.GetFileName(path), "Photoshop", import.Conversions)) return import;
+        if (import.Conversions.Count == 0 || await ImportConversionDialog.Confirm(this, Path.GetFileName(path), "Photoshop", import.Conversions))
+        {
+            if (import.CmykProfile is { Length: >= 128 } profile && profile.AsSpan(16, 4).SequenceEqual("CMYK"u8))
+            {
+                settings.CmykProfile = profile; settings.CmykProfileName = Path.GetFileNameWithoutExtension(path) + " ICC"; settings.Save();
+                colorProof = null; canvas.SetColorProof(null);
+                if (session?.View is { } view && (view.ProofColors || view.GamutWarning)) _ = EnsureColorProof();
+            }
+            return import;
+        }
         import.Discard();
         return null;
     }

@@ -10,7 +10,9 @@ public sealed partial class MainWindow
     {
         if (session is not { } target) return;
         using var source = target.Flatten();
-        if (await ExportDialog.Show(this, source) is not { } options) return;
+        if (await ExportDialog.Show(this, source, EnsureColorProof, settings.CmykProfileName) is not { } options) return;
+        var proof = options.Cmyk ? await EnsureColorProof() : null;
+        if (options.Cmyk && proof == null) return;
         var extension = options.Format switch { ExportFormat.Jpeg => "jpg", ExportFormat.Tiff or ExportFormat.Tiff16 => "tiff", ExportFormat.Png16 => "png", _ => options.Format.ToString().ToLowerInvariant() };
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
@@ -23,7 +25,14 @@ public sealed partial class MainWindow
             await Busy(() => Task.Run(() =>
             {
                 using var bitmap = ExportDialog.Resize(source, options.Width, options.Height);
-                ImageFiles.Save(bitmap, path, options.Format, options.Quality, target.Document.Resolution);
+                if (proof == null) ImageFiles.Save(bitmap, path, options.Format, options.Quality, target.Document.Resolution);
+                else
+                {
+                    var bytes = proof.Export(bitmap, options.Format, options.Quality, target.Document.Resolution);
+                    var temporary = path + ".tmp-" + Guid.NewGuid().ToString("N");
+                    try { File.WriteAllBytes(temporary, bytes); File.Move(temporary, path, overwrite: true); }
+                    finally { if (File.Exists(temporary)) File.Delete(temporary); }
+                }
                 return true;
             }));
         }

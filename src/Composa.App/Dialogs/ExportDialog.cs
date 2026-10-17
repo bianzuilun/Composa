@@ -7,14 +7,17 @@ using SkiaSharp;
 
 namespace Composa.App.Dialogs;
 
-public sealed record ExportOptions(ExportFormat Format, int Width, int Height, int Quality);
+public sealed record ExportOptions(ExportFormat Format, int Width, int Height, int Quality, bool Cmyk = false);
 
 public static class ExportDialog
 {
-    public static async Task<ExportOptions?> Show(Window owner, SKBitmap source)
+    public static async Task<ExportOptions?> Show(Window owner, SKBitmap source, Func<Task<CmykProof?>>? getProof = null, string profileName = "")
     {
         var format = ExportFormat.Png; var quality = 90; var width = source.Width; var height = source.Height;
         var locked = true; var updating = false;
+        var cmyk = false;
+        var print = Ui.Check(L10n.Text("CMYK (JPEG, TIFF and PDF)"), false, value => cmyk = value);
+        print.IsEnabled = false;
         var image = new Image { Source = Ui.ToAvaloniaBitmap(source, 480), MaxWidth = 480, MaxHeight = 320, Stretch = Avalonia.Media.Stretch.Uniform };
         var info = Ui.Label("", Palette.Secondary);
         NumericUpDown widthBox = null!, heightBox = null!;
@@ -32,23 +35,36 @@ public static class ExportDialog
             if (!updating && locked) { updating = true; widthBox.Value = (decimal)Math.Clamp(Math.Round(height * (double)source.Width / source.Height), 1, DocumentLimits.MaxSide); updating = false; }
             Refresh();
         }, width: 130);
-        var formats = Ui.Combo(Enum.GetValues<ExportFormat>(), format, Name, value => { format = value; Refresh(); }, 160);
-        var preview = Ui.TextButton(L10n.Text("Preview"), () =>
+        var formats = Ui.Combo(Enum.GetValues<ExportFormat>(), format, Name, value =>
+        {
+            format = value;
+            print.IsEnabled = getProof != null && value is ExportFormat.Jpeg or ExportFormat.Tiff or ExportFormat.Pdf;
+            if (!print.IsEnabled) { print.IsChecked = false; cmyk = false; }
+            Refresh();
+        }, 160);
+        var preview = Ui.TextButton(L10n.Text("Preview"), async () =>
         {
             if (!DocumentLimits.FitsSurface(width, height)) { info.Text = L10n.Text("The export exceeds the supported pixel budget."); return; }
-            using var sized = Resize(source, width, height);
-            var encoded = ImageFiles.Encode(sized, format, quality);
-            // PDF/TIFF show the same rendered pixels; JPEG/WebP show their actual compression.
-            using var decoded = format is ExportFormat.Pdf or ExportFormat.Tiff or ExportFormat.Tiff16 ? Pixels.Clone(sized) : ImageFiles.Load(new MemoryStream(encoded));
-            image.Source = Ui.ToAvaloniaBitmap(decoded, 480);
-            info.Text = $"{width} × {height} px · {encoded.Length / 1024.0:N1} KiB";
+            try
+            {
+                var proof = cmyk && getProof != null ? await getProof() : null;
+                if (cmyk && proof == null) return;
+                using var sized = Resize(source, width, height);
+                var encoded = await Task.Run(() => proof == null ? ImageFiles.Encode(sized, format, quality) : proof.Export(sized, format, quality));
+                using var decoded = proof != null || format is ExportFormat.Pdf or ExportFormat.Tiff or ExportFormat.Tiff16 ? Pixels.Clone(sized) : ImageFiles.Load(new MemoryStream(encoded));
+                proof?.Apply(decoded, new SKRectI(0, 0, decoded.Width, decoded.Height), true, false);
+                image.Source = Ui.ToAvaloniaBitmap(decoded, 480);
+                info.Text = $"{width} × {height} px · {encoded.Length / 1024.0:N1} KiB";
+            }
+            catch (Exception error) { await Prompts.Alert(owner, L10n.Text("Export As"), error.Message); }
         });
         var body = Ui.Column(12, image, Ui.Row(10, formats, Ui.Label(L10n.Text("Width")), widthBox, Ui.Label(L10n.Text("Height")), heightBox),
             Ui.Check(L10n.Text("Keep proportions"), locked, value => locked = value),
+            Ui.Row(8, print, Ui.Label(profileName, Palette.Secondary)),
             Ui.SliderField(L10n.Text("Quality"), quality, 1, 100, value => quality = (int)value, width: 300), Ui.Row(12, preview, info));
         Refresh();
         return await new DialogWindow("Export As", body, "Export").Ask(owner) && DocumentLimits.FitsSurface(width, height)
-            ? new ExportOptions(format, width, height, quality) : null;
+            ? new ExportOptions(format, width, height, quality, cmyk) : null;
     }
 
     public static SKBitmap Resize(SKBitmap source, int width, int height)

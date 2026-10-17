@@ -96,4 +96,32 @@ public static class RasterExport
         Text($"trailer\n<< /Size 7 /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n");
         return output.ToArray();
     }
+
+    /// <summary>One-page print PDF with an embedded four-channel ICC profile and lossless CMYK image samples.</summary>
+    public static byte[] CmykPdf(int pixelWidth, int pixelHeight, byte[] samples, byte[] profile, double resolution = 72)
+    {
+        if (samples.LongLength != (long)pixelWidth * pixelHeight * 4) throw new InvalidDataException("The CMYK conversion returned an incomplete image.");
+        using var compressed = new MemoryStream();
+        using (var zip = new ZLibStream(compressed, CompressionLevel.Optimal, true)) zip.Write(samples);
+        var width = (pixelWidth * 72 / Dpi(resolution)).ToString("0.#####", CultureInfo.InvariantCulture);
+        var height = (pixelHeight * 72 / Dpi(resolution)).ToString("0.#####", CultureInfo.InvariantCulture);
+        using var output = new MemoryStream(); var offsets = new List<long> { 0 };
+        void Text(string text) => output.Write(Encoding.ASCII.GetBytes(text));
+        void Object(int id, string body) { offsets.Add(output.Position); Text($"{id} 0 obj\n{body}\nendobj\n"); }
+        void Stream(int id, string attributes, byte[] data)
+        {
+            offsets.Add(output.Position); Text($"{id} 0 obj\n<< {attributes} /Length {data.Length} >>\nstream\n"); output.Write(data); Text("\nendstream\nendobj\n");
+        }
+        Text("%PDF-1.4\n");
+        Object(1, "<< /Type /Catalog /Pages 2 0 R >>");
+        Object(2, "<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
+        Object(3, $"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {width} {height}] /Resources << /XObject << /Image 4 0 R >> >> /Contents 6 0 R >>");
+        Stream(4, $"/Type /XObject /Subtype /Image /Width {pixelWidth} /Height {pixelHeight} /ColorSpace [/ICCBased 5 0 R] /BitsPerComponent 8 /Filter /FlateDecode", compressed.ToArray());
+        Stream(5, "/N 4 /Alternate /DeviceCMYK", profile);
+        Stream(6, "", Encoding.ASCII.GetBytes($"q\n{width} 0 0 {height} 0 0 cm\n/Image Do\nQ\n"));
+        var xref = output.Position; Text("xref\n0 7\n0000000000 65535 f \n");
+        foreach (var at in offsets.Skip(1)) Text(at.ToString("D10", CultureInfo.InvariantCulture) + " 00000 n \n");
+        Text($"trailer\n<< /Size 7 /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n");
+        return output.ToArray();
+    }
 }

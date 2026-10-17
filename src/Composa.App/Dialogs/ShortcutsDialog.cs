@@ -121,7 +121,7 @@ public static class ShortcutsDialog
         var restore = Ui.TextButton("Restore Defaults", () => { foreach (var shortcut in listed) draft[shortcut.Id] = shortcut.Default; recording = null; Refresh(); });
         var notes = new TextBlock
         {
-            Text = "Click a shortcut, then press its new key combination; Escape stops recording and Backspace clears it. Brush size and hardness ([ ] and { }), the opacity digits, Space to pan and the modifier-and-mouse gestures are fixed.",
+            Text = L10n.Text("Click a shortcut, then press its new key combination; Escape stops recording and Backspace or Delete clears it. Brush size and hardness ([ ] and { }), the opacity digits, Space to pan and the modifier-and-mouse gestures are fixed."),
             Foreground = Palette.Secondary, TextWrapping = TextWrapping.Wrap, MaxWidth = 590
         };
         var body = Ui.Column(10, notes, Ui.Row(10, search, restore), scroll, problem);
@@ -133,7 +133,7 @@ public static class ShortcutsDialog
             e.Handled = true;
             if (e.Key is Key.LeftCtrl or Key.RightCtrl or Key.LeftShift or Key.RightShift or Key.LeftAlt or Key.RightAlt or Key.LWin or Key.RWin or Key.None) return;
             if (e.Key == Key.Escape) { recording = null; Refresh(); return; }
-            draft[recording.Id] = e.Key == Key.Back && e.KeyModifiers == KeyModifiers.None ? null : new KeyGesture(e.Key, e.KeyModifiers);
+            draft[recording.Id] = e.Key is Key.Back or Key.Delete && e.KeyModifiers == KeyModifiers.None ? null : new KeyGesture(e.Key, e.KeyModifiers);
             recording = null;
             Refresh();
         }, RoutingStrategies.Tunnel);

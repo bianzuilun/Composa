@@ -1062,4 +1062,22 @@
   <data name="Port.BlurRadius" xml:space="preserve">
     <value>模糊半径</value>
   </data>
+  <data name="Port.Cmyk" xml:space="preserve">
+    <value>CMYK（JPEG、TIFF 和 PDF）</value>
+  </data>
+  <data name="Port.Proof" xml:space="preserve">
+    <value>校样颜色</value>
+  </data>
+  <data name="Port.Gamut" xml:space="preserve">
+    <value>色域警告</value>
+  </data>
+  <data name="Port.CmykProfile" xml:space="preserve">
+    <value>CMYK 配置文件</value>
+  </data>
+  <data name="Port.CmykValid" xml:space="preserve">
+    <value>请选择有效的 CMYK ICC 配置文件。</value>
+  </data>
+  <data name="Port.ShortcutDelete" xml:space="preserve">
+    <value>单击快捷键后按下新的按键组合；Escape 取消录制，Backspace 或 Delete 清除绑定。画笔大小和硬度（[ ] 和 { }）、不透明度数字键、空格平移及修饰键与鼠标手势为固定操作。</value>
+  </data>
 </root>

@@ -33,7 +33,7 @@ internal static class PsdReader
     }
 
     /// <summary>The channel IDs that are unpacked: transparency, red, green, blue and the user mask. Spot and other planes are skipped.</summary>
-    private static bool Wanted(short id) => id is -1 or 0 or 1 or 2 or -2;
+    private static bool Wanted(short id, int mode) => id is -1 or 0 or 1 or 2 or -2 || mode == 4 && id == 3;
 
     /// <summary>The additional-info keys whose length is 8 bytes in a PSB even under an <c>8BIM</c> signature.</summary>
     private static readonly HashSet<string> LargeKeys = ["LMsk", "Lr16", "Lr32", "Layr", "Mt16", "Mt32", "Mtrn", "Alph", "FMsk", "lnk2", "FEid", "FXid", "PxSD"];
@@ -63,8 +63,8 @@ internal static class PsdReader
         // The canvas is a size, not an allocation: only its layers count against the budget, and only when the
         // file is flattened is the merged image (one canvas-sized surface) read at all.
         if (!DocumentLimits.FitsSurface(width, height)) throw PsdException.TooLarge();
-        if (depth != 8 || mode != 3) throw new PsdException("Only 8-bit RGB Photoshop files can be imported.");
-        var file = new PsdFile { Width = width, Height = height, LargeDocument = largeDocument };
+        if (depth is not (8 or 16) || mode is not (3 or 4)) throw new PsdException("Only 8-bit or 16-bit RGB and CMYK Photoshop files can be imported.");
+        var file = new PsdFile { Width = width, Height = height, LargeDocument = largeDocument, Depth = depth, ColorMode = mode };
 
         // Color mode data: only indexed and duotone files have any.
         cursor.Skip(cursor.U32());
@@ -88,6 +88,7 @@ internal static class PsdReader
                 var resolution = cursor.U32() / 65536.0;
                 file.Resolution = double.IsFinite(resolution) && resolution >= 1 ? Math.Min(9600, resolution) : 72;
             }
+            else if (id == 1039 && length is >= 128 and <= 16 * 1024 * 1024) file.ColorProfile = cursor.Bytes(length).ToArray();
             cursor.Seek(dataStart + length);
             if (length % 2 == 1) cursor.Skip(1);
         }
@@ -98,25 +99,38 @@ internal static class PsdReader
         var sectionEnd = cursor.Offset + sectionLength;
         if (sectionEnd > cursor.Length) throw PsdException.Truncated();
         var used = 0L;
-        if (sectionLength >= (largeDocument ? 10 : 6))
+        if (sectionLength >= (largeDocument ? 8 : 4))
         {
-            _ = Length(ref cursor, largeDocument); // layer info length
-            var count = Math.Abs((int)cursor.I16());
-            if (count > MaxLayers) throw PsdException.TooLarge();
-            for (var i = 0; i < count; i++) file.Layers.Add(ReadRecord(ref cursor, largeDocument));
-            // A file whose layers fit imports whole, every pixel kept. Only one that would be refused falls back: each
-            // layer and mask reaching past the canvas is cut to it and the budget checked again. The decision is made
-            // from the records before a pixel is read, with the same test the decoder applies, so the two cannot disagree.
-            if (!FitsBudget(file.Layers, pixelBudget))
+            var layerLength = Length(ref cursor, largeDocument);
+            var layerEnd = cursor.Offset + layerLength;
+            if (layerEnd > sectionEnd) throw PsdException.Truncated();
+            if (layerLength >= 2) used = ReadLayerInfo(ref cursor, file, pixelBudget);
+            cursor.Seek(layerEnd);
+            if (cursor.Offset + 4 <= sectionEnd)
             {
-                foreach (var layer in file.Layers) CropToCanvas(layer, width, height);
-                if (!FitsBudget(file.Layers, pixelBudget)) throw PsdException.TooLarge();
+                var globalLength = cursor.U32();
+                if (cursor.Offset + globalLength > sectionEnd) throw PsdException.Truncated();
+                cursor.Skip(globalLength);
             }
-            foreach (var layer in file.Layers)
+            while (cursor.Offset + 12 <= sectionEnd)
             {
-                DecodeChannels(ref cursor, layer, pixelBudget - used, largeDocument);
-                if (layer.Image != null) used += (long)layer.Image.Width * layer.Image.Height;
-                if (layer.MaskImage != null) used += (long)layer.MaskImage.Width * layer.MaskImage.Height;
+                var signature = cursor.Ascii(4); if (signature is not ("8BIM" or "8B64")) break;
+                var key = cursor.Ascii(4);
+                var length = Length(ref cursor, signature == "8B64" || largeDocument && LargeKeys.Contains(key));
+                var end = cursor.Offset + length;
+                if (end > sectionEnd) throw PsdException.Truncated();
+                // Sixteen-bit Photoshop documents put their real layer tree here rather than in the legacy block.
+                if (key == "Lr16" && depth == 16 && file.Layers.Count == 0 && length >= 2)
+                {
+                    // The tag may supply the layer-info length itself, or carry a complete Layer info structure.
+                    var payload = cursor.Offset;
+                    var prefix = Length(ref cursor, largeDocument);
+                    var padding = end - cursor.Offset - prefix;
+                    if (prefix < 2 || padding is < 0 or > 3) cursor.Seek(payload);
+                    used = ReadLayerInfo(ref cursor, file, pixelBudget);
+                }
+                cursor.Seek(end);
+                if ((length & 1) != 0 && cursor.Offset < sectionEnd) cursor.Skip(1);
             }
         }
         cursor.Seek(sectionEnd);
@@ -125,9 +139,29 @@ internal static class PsdReader
         if (file.Layers.Count == 0 && cursor.Remaining >= 2)
         {
             if ((long)width * height > pixelBudget - used) throw PsdException.TooLarge();
-            file.Composite = ReadComposite(ref cursor, data, width, height, largeDocument);
+            file.Composite = ReadComposite(ref cursor, data, width, height, largeDocument, depth, mode, file.ColorProfile);
         }
         return file;
+    }
+
+    private static long ReadLayerInfo(ref PsdCursor cursor, PsdFile file, long pixelBudget)
+    {
+        var count = Math.Abs((int)cursor.I16());
+        if (count > MaxLayers) throw PsdException.TooLarge();
+        for (var i = 0; i < count; i++) file.Layers.Add(ReadRecord(ref cursor, file.LargeDocument));
+        if (!FitsBudget(file.Layers, pixelBudget))
+        {
+            foreach (var layer in file.Layers) CropToCanvas(layer, file.Width, file.Height);
+            if (!FitsBudget(file.Layers, pixelBudget)) throw PsdException.TooLarge();
+        }
+        var used = 0L;
+        foreach (var layer in file.Layers)
+        {
+            DecodeChannels(ref cursor, layer, pixelBudget - used, file.LargeDocument, file.Depth, file.ColorMode, file.ColorProfile);
+            if (layer.Image != null) used += (long)layer.Image.Width * layer.Image.Height;
+            if (layer.MaskImage != null) used += (long)layer.MaskImage.Width * layer.MaskImage.Height;
+        }
+        return used;
     }
 
     private static PsdLayer ReadRecord(ref PsdCursor cursor, bool largeDocument)
@@ -200,7 +234,7 @@ internal static class PsdReader
         catch (PsdException) { return null; }
     }
 
-    private static void DecodeChannels(ref PsdCursor cursor, PsdLayer layer, long remainingPixels, bool largeDocument)
+    private static void DecodeChannels(ref PsdCursor cursor, PsdLayer layer, long remainingPixels, bool largeDocument, int depth, int mode, byte[]? profile)
     {
         int width = layer.Width, height = layer.Height, maskWidth = layer.MaskWidth, maskHeight = layer.MaskHeight;
         if (!FitsBudget(width, height, maskWidth, maskHeight, layer.HasMask, remainingPixels)) throw PsdException.TooLarge();
@@ -208,7 +242,7 @@ internal static class PsdReader
         foreach (var (id, length) in layer.Channels)
         {
             var start = cursor.Offset;
-            if (Wanted(id) && length >= 2)
+            if (Wanted(id, mode) && length >= 2)
             {
                 var compression = cursor.U16();
                 var payload = cursor.Bytes(length - 2);
@@ -216,14 +250,19 @@ internal static class PsdReader
                 // The plane is laid out at the size the file gives; the crop picks the imported part out of it.
                 int sourceW = isMask ? layer.SourceMaskWidth : layer.SourceWidth, sourceH = isMask ? layer.SourceMaskHeight : layer.SourceHeight;
                 int w = isMask ? maskWidth : width, h = isMask ? maskHeight : height;
-                if (w > 0 && h > 0) planes[id] = PsdChannels.Decode(compression, sourceW, sourceH, payload, largeDocument, isMask ? layer.MaskCrop : layer.ImageCrop);
+                if (w > 0 && h > 0) planes[id] = depth == 16
+                    ? PsdChannels.Decode16(compression, sourceW, sourceH, payload, largeDocument, isMask ? layer.MaskCrop : layer.ImageCrop)
+                    : PsdChannels.Decode(compression, sourceW, sourceH, payload, largeDocument, isMask ? layer.MaskCrop : layer.ImageCrop);
             }
             cursor.Seek(start + (long)Math.Max(0, length));
         }
         if (layer.HasMask && maskWidth > 0 && maskHeight > 0 && planes.TryGetValue(-2, out var gray))
-            layer.MaskImage = PsdChannels.MaskImage(maskWidth, maskHeight, gray);
+            layer.MaskImage = PsdChannels.MaskImage(maskWidth, maskHeight, depth == 16 ? Enumerable.Range(0, maskWidth * maskHeight).Select(i => gray[i * 2]).ToArray() : gray);
         if (width <= 0 || height <= 0) return;
-        layer.Image = PsdChannels.ColorImage(width, height, Plane(planes, 0), Plane(planes, 1), Plane(planes, 2), Plane(planes, -1));
+        layer.Image = mode == 4 ? PsdChannels.CmykImage(width, height, depth, Plane(planes, 0), Plane(planes, 1), Plane(planes, 2), Plane(planes, 3), Plane(planes, -1), profile)
+            : depth == 16 ? PsdChannels.ColorImage16(width, height, Plane(planes, 0), Plane(planes, 1), Plane(planes, 2), Plane(planes, -1))
+            : PsdChannels.ColorImage(width, height, Plane(planes, 0), Plane(planes, 1), Plane(planes, 2), Plane(planes, -1));
+        if (mode == 3) layer.Image = PsdChannels.RgbProfile(layer.Image, profile);
     }
 
     private static bool FitsBudget(List<PsdLayer> layers, long pixelBudget)
@@ -294,13 +333,14 @@ internal static class PsdReader
     private static byte[]? Plane(Dictionary<short, byte[]> planes, short id) => planes.TryGetValue(id, out var plane) ? plane : null;
 
     /// <summary>The merged image at the end of the file: one compression method for all channels, planes in R, G, B, A order.</summary>
-    private static SKBitmap ReadComposite(ref PsdCursor cursor, ReadOnlySpan<byte> data, int width, int height, bool largeDocument)
+    private static SKBitmap ReadComposite(ref PsdCursor cursor, ReadOnlySpan<byte> data, int width, int height, bool largeDocument, int depth, int mode, byte[]? profile)
     {
         var channels = (int)new PsdCursor(data) { Offset = 12 }.U16();
-        if (channels < 3) throw new PsdException("Only 8-bit RGB Photoshop files can be imported.");
+        var colorChannels = mode == 4 ? 4 : 3;
+        if (channels < colorChannels) throw PsdException.Truncated();
         var compression = cursor.U16();
-        var count = (long)width * height;
-        var planes = new byte[Math.Min(channels, 4)][];
+        var count = (long)width * height * (depth / 8);
+        var planes = new byte[Math.Min(channels, colorChannels + 1)][];
         switch (compression)
         {
             case PsdChannels.Raw:
@@ -316,13 +356,26 @@ internal static class PsdReader
                 for (var c = 0; c < planes.Length; c++)
                 {
                     planes[c] = new byte[count];
-                    consumed += PsdChannels.UnpackRows(rest[consumed..], counts.AsSpan(c * height, height), width, height, planes[c], 0);
+                    consumed += PsdChannels.UnpackRows(rest[consumed..], counts.AsSpan(c * height, height), width * (depth / 8), height, planes[c], 0);
                 }
+                break;
+            }
+            case PsdChannels.Zip:
+            case PsdChannels.ZipWithPrediction:
+            {
+                var payload = data[cursor.Offset..];
+                var decoded = depth == 16 ? PsdChannels.Decode16(compression, width, height * planes.Length, payload)
+                    : PsdChannels.Decode(compression, width, height * planes.Length, payload);
+                for (var c = 0; c < planes.Length; c++) planes[c] = decoded.AsSpan(checked((int)(c * count)), checked((int)count)).ToArray();
                 break;
             }
             default:
                 throw new PsdException("This Photoshop file uses an image compression method that isn't supported.");
         }
-        return PsdChannels.ColorImage(width, height, planes[0], planes[1], planes[2], planes.Length > 3 ? planes[3] : null);
+        var alpha = planes.Length > colorChannels ? planes[colorChannels] : null;
+        var image = mode == 4 ? PsdChannels.CmykImage(width, height, depth, planes[0], planes[1], planes[2], planes[3], alpha, profile)
+            : depth == 16 ? PsdChannels.ColorImage16(width, height, planes[0], planes[1], planes[2], alpha)
+            : PsdChannels.ColorImage(width, height, planes[0], planes[1], planes[2], alpha);
+        return mode == 3 ? PsdChannels.RgbProfile(image, profile) : image;
     }
 }

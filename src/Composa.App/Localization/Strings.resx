@@ -1062,4 +1062,22 @@
   <data name="Port.BlurRadius" xml:space="preserve">
     <value>Blur Radius</value>
   </data>
+  <data name="Port.Cmyk" xml:space="preserve">
+    <value>CMYK (JPEG, TIFF and PDF)</value>
+  </data>
+  <data name="Port.Proof" xml:space="preserve">
+    <value>Proof Colors</value>
+  </data>
+  <data name="Port.Gamut" xml:space="preserve">
+    <value>Gamut Warning</value>
+  </data>
+  <data name="Port.CmykProfile" xml:space="preserve">
+    <value>CMYK Profile</value>
+  </data>
+  <data name="Port.CmykValid" xml:space="preserve">
+    <value>Choose a valid CMYK ICC profile.</value>
+  </data>
+  <data name="Port.ShortcutDelete" xml:space="preserve">
+    <value>Click a shortcut, then press its new key combination; Escape stops recording and Backspace or Delete clears it. Brush size and hardness ([ ] and { }), the opacity digits, Space to pan and the modifier-and-mouse gestures are fixed.</value>
+  </data>
 </root>
