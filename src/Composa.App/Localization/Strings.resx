@@ -1029,4 +1029,7 @@
   <data name="Port.MaskHint" xml:space="preserve">
     <value>Layer mask: click to paint, Alt-click to view alone, Shift-click to disable, Ctrl-click to select</value>
   </data>
+  <data name="Port.SaveLookAdaptive" xml:space="preserve">
+    <value>Saves a .cube color lookup. Adaptive Contrast, Highlights and Shadows, plus Effects, Detail and Optics, are left out because they depend on the picture.</value>
+  </data>
 </root>

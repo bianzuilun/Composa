@@ -1029,4 +1029,7 @@
   <data name="Port.MaskHint" xml:space="preserve">
     <value>レイヤーマスク：クリックで描画、Alt で単独表示、Shift で無効化、Ctrl で選択範囲に読み込み</value>
   </data>
+  <data name="Port.SaveLookAdaptive" xml:space="preserve">
+    <value>色を .cube LUT に保存します。画像に依存するコントラスト、ハイライト、シャドウ、効果、ディテール、光学補正は除外されます。</value>
+  </data>
 </root>

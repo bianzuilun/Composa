@@ -1029,4 +1029,7 @@
   <data name="Port.MaskHint" xml:space="preserve">
     <value>图层蒙版：单击绘制，Alt 单击单独查看，Shift 单击禁用，Ctrl 单击载入选区</value>
   </data>
+  <data name="Port.SaveLookAdaptive" xml:space="preserve">
+    <value>保存 .cube 色彩查找表。自适应对比度、高光、阴影，以及效果、细节和光学调整依赖图像内容，保存时会略过。</value>
+  </data>
 </root>

@@ -355,7 +355,7 @@ public static class CameraRawDialog
         {
             var grade = Rendered();
             if (saveLookPath == null || LookBake.ColorOnly(grade).IsIdentity || await saveLookPath() is not { } path) return;
-            var leftOut = LookBake.LeftOutOf(grade).Select(GroupName).ToList();
+            var leftOut = LookBake.LeftOutNames(grade).Select(L10n.Text).ToList();
             try
             {
                 var comment = leftOut.Count > 0 ? $"Saved from Composa's Camera Raw Filter without {string.Join(", ", leftOut)}, which a table cannot hold" : "Saved from Composa's Camera Raw Filter";
@@ -368,7 +368,7 @@ public static class CameraRawDialog
             }
         });
         saveLook.IsEnabled = !LookBake.ColorOnly(Rendered()).IsIdentity;
-        ToolTip.SetTip(saveLook, "Saves the grade as a .cube lookup table for other editors. Effects, Detail and Optics change pixels by their neighbours or their place and are left out.");
+        ToolTip.SetTip(saveLook, L10n.Text("Saves a .cube color lookup. Adaptive Contrast, Highlights and Shadows, plus Effects, Detail and Optics, are left out because they depend on the picture."));
         var footer = Ui.Row(8, saveLook, saved);
         footer.IsVisible = saveLookPath != null;
         var body = Ui.Column(10, head, Ui.Separator(false), scroll, footer);

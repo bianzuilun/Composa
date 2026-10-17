@@ -634,10 +634,13 @@ public class ColorLookupTests
     {
         var grade = new CameraRawSettings { Exposure = 0.4, Contrast = 20, Temperature = 15, Saturation = 25, Texture = 40, VignetteAmount = -30, GrainAmount = 20 }
             with { Detail = new CameraRawDetail { SharpenAmount = 50 }, Calibration = new CameraRawCalibration { BlueSaturation = 20 } };
-        Assert.Equal([CameraRawGroup.Effects, CameraRawGroup.Detail], LookBake.LeftOutOf(grade));
+        Assert.Equal([CameraRawGroup.Light, CameraRawGroup.Effects, CameraRawGroup.Detail], LookBake.LeftOutOf(grade));
+        Assert.Equal(new[] { "Contrast", "Effects", "Detail" }, LookBake.LeftOutNames(grade));
         var colorOnly = LookBake.ColorOnly(grade);
         Assert.True(colorOnly.Adjusts(CameraRawGroup.Light) && colorOnly.Adjusts(CameraRawGroup.Calibration));
         Assert.False(colorOnly.Adjusts(CameraRawGroup.Effects) || colorOnly.Adjusts(CameraRawGroup.Detail));
+        Assert.Equal(0, colorOnly.Contrast);
+        Assert.True(LookBake.ColorOnly(new CameraRawSettings { Contrast = 20, Highlights = -30, Shadows = 50 }).IsIdentity);
         var lattice = LookBake.Bake(grade, 33, "Graded");
         Assert.Equal(("Graded", 33), (lattice.Title, lattice.Size));
 
