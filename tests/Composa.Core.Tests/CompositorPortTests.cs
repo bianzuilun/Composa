@@ -10,6 +10,48 @@ namespace Composa.Core.Tests;
 public class CompositorPortTests
 {
     [Fact]
+    public void Camera_raw_shadows_adapt_to_surrounding_brightness_and_preserve_alpha()
+    {
+        using var dark = Pixels.NewColor(64, 32); dark.Erase(new SKColor(40, 40, 40));
+        using var mixed = Pixels.Clone(dark);
+        for (var y = 0; y < 32; y++) for (var x = 0; x < 64; x++)
+        {
+            var tone = (byte)((x < 32 ? 218 : 38) + x % 3);
+            mixed.SetPixel(x, y, new SKColor(tone, tone, tone));
+        }
+        var settings = new CameraRawSettings { Shadows = 100 };
+        using var uniform = CameraRawPixels.Apply(dark, settings);
+        using var contextual = CameraRawPixels.Apply(mixed, settings);
+        Assert.True(contextual.GetPixel(48, 16).Red > uniform.GetPixel(48, 16).Red + 10);
+        using var translucent = Pixels.NewColor(8, 8); translucent.Erase(new SKColor(120, 60, 30, 128));
+        using var graded = CameraRawPixels.Apply(translucent, settings with { Exposure = .5, Contrast = 30, Temperature = 10 });
+        Assert.Equal(translucent.GetPixel(4, 4).Alpha, graded.GetPixel(4, 4).Alpha);
+    }
+
+    [Fact]
+    public void Camera_raw_parametric_curve_keeps_tone_order_when_dividers_move()
+    {
+        var curve = new CameraRawCurve { Shadows = 100, Darks = -60, Lights = 40, Highlights = -100, ShadowSplit = 20, DarkSplit = 45, LightSplit = 80 };
+        var previous = 0.0;
+        for (var i = 0; i <= 255; i++)
+        {
+            var value = curve.Parametric(i / 255.0);
+            Assert.True(value >= previous - .0001, $"Tone {i} reversed: {value} after {previous}");
+            previous = value;
+        }
+        Assert.Equal(1, previous, 6);
+    }
+    [Fact]
+    public void Camera_raw_reset_clears_styles_and_inactive_parameters_without_touching_other_groups()
+    {
+        var settings = new CameraRawSettings { Exposure = 1, GlowStyle = CameraRawGlowStyle.Halation, GlowSpread = 60,
+            VignetteStyle = CameraRawVignetteStyle.PaintOverlay, VignetteMidpoint = 10, GrainSize = 80, GrainRoughness = 90 };
+        var reset = settings.ResetGroup(CameraRawGroup.Effects);
+        Assert.Equal(System.Text.Json.JsonSerializer.Serialize(new CameraRawSettings { Exposure = 1 }), System.Text.Json.JsonSerializer.Serialize(reset));
+        Assert.Equal(60, settings.Without(CameraRawGroup.Effects).GlowSpread);
+        Assert.Equal(CameraRawWhiteBalance.Custom, new CameraRawSettings { WhiteBalance = CameraRawWhiteBalance.Auto }.ResetGroup(CameraRawGroup.Color).WhiteBalance);
+    }
+    [Fact]
     public void Mask_from_selection_can_be_inverted_and_solo_is_only_a_view()
     {
         var session = EditorSession.NewCanvas(16, 12, SKColors.Red);

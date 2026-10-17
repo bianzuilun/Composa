@@ -154,11 +154,13 @@ public static class CanvasDialogs
         var widthBox = Ui.Number(width, 0.01, DocumentLimits.MaxSide, v => width = CanvasUnits.ToPixels(v, unit, resolution), step: 0.01, format: "0.##", width: 120);
         var heightBox = Ui.Number(height, 0.01, DocumentLimits.MaxSide, v => height = CanvasUnits.ToPixels(v, unit, resolution), step: 0.01, format: "0.##", width: 120);
         var applying = false;
+        ComboBox? dpi = null;
         ComboBox preset = null!;
         preset = Ui.Combo(presets, presets.FirstOrDefault(p => p.W == width && p.H == height, presets[custom]), PresetLabel, p =>
         {
             if (p.W == 0 || applying) return;
             applying = true;
+            if (p.Item1.EndsWith("300 ppi", StringComparison.Ordinal)) { resolution = 300; if (dpi != null) dpi.SelectedIndex = 1; }
             widthBox.Value = (decimal)CanvasUnits.FromPixels(p.W, unit, resolution); heightBox.Value = (decimal)CanvasUnits.FromPixels(p.H, unit, resolution);
             applying = false;
         }, 220);
@@ -182,7 +184,7 @@ public static class CanvasDialogs
             heightBox.Value = (decimal)CanvasUnits.FromPixels(pixelHeight, unit, resolution);
             width = pixelWidth; height = pixelHeight; applying = false;
         }, 220);
-        var dpi = Ui.Combo(new[] { 72, 300 }, resolution, value => value + " ppi", value =>
+        dpi = Ui.Combo(new[] { 72, 300 }, resolution, value => value + " ppi", value =>
         {
             resolution = value;
             width = CanvasUnits.ToPixels((double)(widthBox.Value ?? 1), unit, resolution);

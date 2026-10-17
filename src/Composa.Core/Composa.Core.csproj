@@ -16,6 +16,8 @@
   <ItemGroup>
     <!-- The film looks of the Color Lookup adjustment, made by scripts/make-looks.sh; see packaging/THIRD-PARTY-NOTICES.txt. -->
     <EmbeddedResource Include="Looks/*.cube" LogicalName="Looks/%(Filename)%(Extension)" />
+    <!-- MIT-licensed Compositor v1.5.3 Camera Raw data; regeneration and source hashes are in scripts/import-compositor-tables.py. -->
+    <EmbeddedResource Include="CameraRawData/*" LogicalName="CameraRawData/%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup>
     <!--
