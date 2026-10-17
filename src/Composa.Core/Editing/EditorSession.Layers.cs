@@ -33,6 +33,7 @@ public sealed partial class EditorSession
         }
         else document.SetActive(id);
         if (ActiveLayer?.Mask == null) EditingMask = false;
+        if (SoloMaskLayerId != null && SoloMaskLayerId != document.ActiveLayerId) { SoloMaskLayerId = null; InvalidateAll(); }
         LayersChanged?.Invoke();
     }
 
@@ -465,6 +466,12 @@ public sealed partial class EditorSession
                 layer.Mask = document.Selection != null ? Pixels.Clone(document.Selection) : Pixels.NewMask(document.Width, document.Height, hideAll ? (byte)0 : (byte)255);
             else if (document.Selection != null) layer.Mask = SelectionInLayerSpace(layer)!;
             else layer.Mask = Pixels.NewMask(layer.Pixels.Width, layer.Pixels.Height, hideAll ? (byte)0 : (byte)255);
+            if (document.Selection != null && hideAll)
+            {
+                var selected = layer.Mask;
+                layer.Mask = Composa.Selections.SelectionMask.Invert(selected);
+                selected.Dispose();
+            }
             layer.MaskEnabled = true;
         });
         EditingMask = true;
@@ -472,9 +479,20 @@ public sealed partial class EditorSession
         LayersChanged?.Invoke();
     }
 
+    /// <summary>Alt-click on a mask shows its coverage without changing the document or its export.</summary>
+    public void ToggleSoloMask(Layer layer)
+    {
+        if (layer.Mask == null) return;
+        if (SoloMaskLayerId == layer.Id) SoloMaskLayerId = null;
+        else { SelectLayer(layer.Id); EditingMask = true; SoloMaskLayerId = layer.Id; }
+        InvalidateAll();
+        LayersChanged?.Invoke();
+    }
+
     public void DeleteMask(Layer layer)
     {
         if (layer.Mask == null) return;
+        if (SoloMaskLayerId == layer.Id) { SoloMaskLayerId = null; InvalidateAll(); }
         Apply("Delete Layer Mask", () => layer.Mask = null);
         EditingMask = false;
         Invalidate(AffectedArea(layer));
@@ -485,6 +503,7 @@ public sealed partial class EditorSession
     public void ApplyMask(Layer layer)
     {
         if (layer.Mask == null || layer.Pixels == null) return;
+        if (SoloMaskLayerId == layer.Id) { SoloMaskLayerId = null; InvalidateAll(); }
         Apply("Apply Layer Mask", () =>
         {
             var pixels = Pixels.Clone(layer.Pixels);

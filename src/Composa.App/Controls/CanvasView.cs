@@ -117,6 +117,9 @@ public sealed partial class CanvasView : Control
             spaceDown = false;
             outlineStale = true;
             fitPending = true;
+            navigatorStale = true;
+            navigatorRect = SKRect.Empty;
+            navigatorDragging = false;
             viewStale = true;
             UpdateCursor();
             InvalidateVisual();
@@ -126,6 +129,7 @@ public sealed partial class CanvasView : Control
 
     private void OnCanvasChanged(SKRectI? area)
     {
+        navigatorStale = true;
         if (area is { } changed && !viewStale)
         {
             var (scale, shown, _, _) = viewKey;
@@ -242,10 +246,10 @@ public sealed partial class CanvasView : Control
 
     // ---- Rendering ----------------------------------------------------------------------------------------------
 
-    private sealed class DrawOperation(Rect bounds, Action<SKCanvas> draw) : ICustomDrawOperation
+    private sealed class DrawOperation(Rect bounds, Action<SKCanvas> draw, IDisposable? held = null) : ICustomDrawOperation
     {
         public Rect Bounds { get; } = bounds;
-        public void Dispose() { }
+        public void Dispose() => held?.Dispose();
         public bool Equals(ICustomDrawOperation? other) => false;
         public bool HitTest(Point p) => true;
 
@@ -285,6 +289,7 @@ public sealed partial class CanvasView : Control
         var view = SKMatrix.CreateScale(units, units).PostConcat(SKMatrix.CreateTranslation((float)origin.X, (float)origin.Y));
         var documentRect = new SKRect(0, 0, session.Document.Width, session.Document.Height);
         var (cache, cacheSource, cacheTarget) = UpdateViewCache(view, size);
+        var navigatorImage = CaptureNavigator(out var navigatorDraw);
         var overlay = CaptureOverlay(view);
         var filterOverlay = FilterOverlay?.Invoke(view);
         var rulers = CaptureRulers((float)Scaling);
@@ -317,7 +322,8 @@ public sealed partial class CanvasView : Control
             overlay?.Invoke(canvas);
             filterOverlay?.Invoke(canvas);
             rulers?.Invoke(canvas);
-        }));
+            navigatorDraw?.Invoke(canvas);
+        }, navigatorImage));
     }
 
     /// <summary>What the ants stroke: the selection's outline, or when zoomed out on a complex one, the outline traced at screen resolution.</summary>

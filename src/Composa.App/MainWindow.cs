@@ -75,14 +75,19 @@ public sealed partial class MainWindow : Window
         var root = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,Auto,Auto,Auto,*,Auto,Auto") };
         var mainMenu = BuildMenu();
         root.Children.Add(mainMenu);
-        workspaceChrome.AddRange([mainMenu, tabs, optionsHost, dock, center.Children[0], center.Children[1], center.Children[3]]);
+        var tabBar = BuildTabBar();
+        var optionsSeparator = Ui.Separator(false);
+        var statusSeparator = Ui.Separator(false);
+        var statusBar = BuildStatusBar();
+        workspaceChrome.AddRange([mainMenu, updateNotice, tabBar, optionsHost, optionsSeparator, statusSeparator, statusBar,
+            dock, center.Children[0], center.Children[1], center.Children[3]]);
         AddRow(root, updateNotice, 1);
-        AddRow(root, BuildTabBar(), 2);
+        AddRow(root, tabBar, 2);
         AddRow(root, optionsHost, 3);
-        AddRow(root, Ui.Separator(false), 4);
+        AddRow(root, optionsSeparator, 4);
         AddRow(root, center, 5);
-        AddRow(root, Ui.Separator(false), 6);
-        AddRow(root, BuildStatusBar(), 7);
+        AddRow(root, statusSeparator, 6);
+        AddRow(root, statusBar, 7);
         Content = root;
 
         WireUpdateNotice();
@@ -222,6 +227,7 @@ public sealed partial class MainWindow : Window
             target.Feather = from.Feather; target.WandTolerance = from.WandTolerance; target.WandContiguous = from.WandContiguous;
             target.SampleAllLayers = from.SampleAllLayers; target.CloneAligned = from.CloneAligned; target.ShapeKind = from.ShapeKind;
             target.ShapeCornerRadius = from.ShapeCornerRadius; target.GradientRadial = from.GradientRadial; target.GradientToTransparent = from.GradientToTransparent; target.TextDefaults = from.TextDefaults;
+            target.ShapeSmoothCorners = from.ShapeSmoothCorners;
             target.ShapeLineWidth = from.ShapeLineWidth; target.WandMode = from.WandMode; target.ObjectEdgeOffset = from.ObjectEdgeOffset; target.View = from.View; target.Detect = from.Detect;
             target.SelectionExpandAmount = from.SelectionExpandAmount; target.SelectionContractAmount = from.SelectionContractAmount; target.SelectionFeatherAmount = from.SelectionFeatherAmount;
             target.CropRatio = from.CropRatio;
@@ -242,19 +248,28 @@ public sealed partial class MainWindow : Window
             var tab = new Border
             {
                 Child = Ui.Row(8, label, close), Padding = new Thickness(12, 4, 6, 4), CornerRadius = new CornerRadius(6),
-                Background = item == session ? Palette.PanelRaised : Brushes.Transparent, Cursor = new Cursor(StandardCursorType.Hand)
+                Tag = item, Background = item == session ? Palette.PanelRaised : Brushes.Transparent, Cursor = new Cursor(StandardCursorType.Hand)
             };
             tab.PointerPressed += (_, e) =>
             {
                 // A right-click opens the tab's menu without switching to it, as browsers do.
                 var pressed = e.GetCurrentPoint(tab).Properties;
                 if (pressed.IsMiddleButtonPressed) _ = CloseSession(item);
-                else if (pressed.IsLeftButtonPressed && item != session) SetSession(item);
+                else if (pressed.IsLeftButtonPressed)
+                {
+                    if (item != session) SetSession(item);
+                    pressedTab = item;
+                    tabPressPoint = e.GetPosition(this);
+                    draggingTab = false;
+                    e.Pointer.Capture(this);
+                    e.Handled = true;
+                }
             };
             tab.ContextMenu = TabMenu(item);
             tabs.Children.Add(tab);
         }
         Title = session == null ? "Composa" : $"{session.Title}{(session.IsModified ? " •" : "")} - Composa";
+        UpdateTabOverflow();
     }
 
     /// <summary>A click or a scrub in the History panel. Like any command it waits for a drag on the canvas to end.</summary>
@@ -420,14 +435,27 @@ public sealed partial class MainWindow : Window
     {
         var newButton = Ui.IconButton(Icons.Plus, "New canvas (Ctrl+N)", () => _ = NewCanvas());
         var scroll = new ScrollViewer { Content = tabs, HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled };
+        tabScroll = scroll;
+        tabOverflow = Ui.TextButton("…", OpenTabOverflow);
+        ToolTip.SetTip(tabOverflow, L10n.Text("All documents"));
+        tabOverflow.IsVisible = false;
+        scroll.LayoutUpdated += (_, _) => UpdateTabOverflow();
+        AddHandler(PointerMovedEvent, MoveTab, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        AddHandler(PointerReleasedEvent, (_, e) =>
+        {
+            if (pressedTab == null) return;
+            pressedTab = null; draggingTab = false; e.Pointer.Capture(null); e.Handled = true;
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        PointerCaptureLost += (_, _) => { pressedTab = null; draggingTab = false; };
         var zoomControls = Ui.Row(2,
             Ui.TextButton("Fit", () => canvas.Fit()), Ui.TextButton("100%", () => canvas.ZoomTo(1)),
             Ui.IconButton(Icons.ZoomOut, "Zoom out (Ctrl+-)", canvas.ZoomOut), Ui.IconButton(Icons.ZoomIn, "Zoom in (Ctrl++)", canvas.ZoomIn));
         foreach (var button in zoomControls.Children.OfType<Button>()) { button.MinWidth = 0; button.Classes.Add("flat"); }
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"), Background = Palette.Window, Margin = new Thickness(6, 2) };
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,Auto"), Background = Palette.Window, Margin = new Thickness(6, 2) };
         grid.Children.Add(newButton);
         AddAt(grid, scroll, 1).Margin = new Thickness(6, 0);
-        AddAt(grid, zoomControls, 2);
+        AddAt(grid, tabOverflow, 2);
+        AddAt(grid, zoomControls, 3);
         return grid;
     }
 

@@ -159,6 +159,7 @@ public sealed partial class CanvasView
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed && NavigateAt(e.GetPosition(this), begin: true)) { e.Pointer.Capture(this); e.Handled = true; return; }
         if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed && FilterPointPressed?.Invoke(ToDocument(e.GetPosition(this))) == true)
         {
             filterPointDragging = true; e.Pointer.Capture(this); e.Handled = true; InvalidateVisual(); return;
@@ -172,6 +173,10 @@ public sealed partial class CanvasView
         dragModifiers = e.KeyModifiers;
         e.Pointer.Capture(this);
 
+        if (point.Properties.IsMiddleButtonPressed && e.KeyModifiers.HasFlag(KeyModifiers.Control))
+        {
+            drag = Drag.ZoomScrub; scrubZoom = zoom; UpdateCursor(); return;
+        }
         if (point.Properties.IsMiddleButtonPressed || spaceDown || (session.Tool == Tool.Hand && point.Properties.IsLeftButtonPressed))
         {
             drag = Drag.Pan;
@@ -303,6 +308,7 @@ public sealed partial class CanvasView
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
+        if (navigatorDragging) { NavigateAt(e.GetPosition(this), begin: false); e.Handled = true; return; }
         if (filterPointDragging) { FilterPointMoved?.Invoke(ToDocument(e.GetPosition(this))); e.Handled = true; InvalidateVisual(); return; }
         var position = e.GetPosition(this);
         var delta = position - cursorScreen;
@@ -364,6 +370,7 @@ public sealed partial class CanvasView
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
+        if (navigatorDragging) { navigatorDragging = false; e.Pointer.Capture(null); e.Handled = true; return; }
         if (filterPointDragging) { filterPointDragging = false; FilterPointReleased?.Invoke(); e.Pointer.Capture(null); e.Handled = true; return; }
         // Only the button that started a drag ends it; a stray right or middle click mid-stroke changes nothing.
         if (session == null) return;
@@ -438,7 +445,7 @@ public sealed partial class CanvasView
                 else session.AddShape(MarqueeRect(shift, alt));
                 break;
             case Drag.ZoomScrub:
-                if (!moved) ZoomTo(alt ? zoom / 1.5 : zoom * 1.5, pressScreen);
+                if (!moved && dragButton == MouseButton.Left) ZoomTo(alt ? zoom / 1.5 : zoom * 1.5, pressScreen);
                 break;
             case Drag.TextBox: FinishTextBoxDrag(moved); break;
             case Drag.Guide: FinishGuideDrag(e.GetPosition(this)); break;
@@ -450,6 +457,8 @@ public sealed partial class CanvasView
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
     {
         base.OnPointerCaptureLost(e);
+        navigatorDragging = false;
+        if (filterPointDragging) { filterPointDragging = false; FilterPointReleased?.Invoke(); }
         if (recapture)
         {
             recapture = false;
@@ -819,7 +828,7 @@ public sealed partial class CanvasView
             // that covers the canvas contains every press, and keeping it would hide the layer painted on top.
             var hit = LayerAt(pressDocument);
             if (hit != null && !session.Document.SelectedLayerIds.Contains(hit.Id)
-                && (control || clicks >= 2 || (AutoSelect && (handle == TransformHandle.None || IsAbove(hit, session.ActiveLayer)))))
+                && (clicks >= 2 || ((AutoSelect != control) && (handle == TransformHandle.None || IsAbove(hit, session.ActiveLayer)))))
                 session.SelectLayer(hit.Id, extend: dragModifiers.HasFlag(KeyModifiers.Shift));
             handle = TransformHandle.Move;
         }

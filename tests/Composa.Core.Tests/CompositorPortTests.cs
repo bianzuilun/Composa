@@ -10,6 +10,32 @@ namespace Composa.Core.Tests;
 public class CompositorPortTests
 {
     [Fact]
+    public void Mask_from_selection_can_be_inverted_and_solo_is_only_a_view()
+    {
+        var session = EditorSession.NewCanvas(16, 12, SKColors.Red);
+        session.SelectRect(new SKRect(0, 0, 8, 12));
+        var layer = session.ActiveLayer!;
+        session.AddMask(layer, hideAll: true);
+        Assert.Equal((byte)0, layer.Mask!.GetPixel(2, 6).Alpha);
+        Assert.Equal((byte)255, layer.Mask.GetPixel(12, 6).Alpha);
+        var state = session.History.CurrentId;
+        session.ToggleSoloMask(layer);
+        using var view = Pixels.NewColor(16, 12);
+        session.RenderView(view, session.Document.Bounds, RenderView.Identity);
+        Assert.Equal(SKColors.Black, view.GetPixel(2, 6));
+        Assert.Equal(SKColors.White, view.GetPixel(12, 6));
+        using var exported = session.Flatten();
+        Assert.Equal(SKColors.Red, exported.GetPixel(12, 6));
+        Assert.Equal(state, session.History.CurrentId);
+        session.ToggleSoloMask(layer);
+        Assert.Null(session.SoloMaskLayerId);
+        session.Undo();
+        Assert.Null(session.ActiveLayer!.Mask);
+        session.Redo();
+        Assert.NotNull(session.ActiveLayer!.Mask);
+    }
+
+    [Fact]
     public void Tiff_and_pdf_have_real_container_headers_and_keep_print_resolution()
     {
         using var bitmap = Pixels.NewColor(30, 20);

@@ -1017,4 +1017,16 @@
   <data name="Port.ExportBudget" xml:space="preserve">
     <value>The export exceeds the supported pixel budget.</value>
   </data>
+  <data name="Port.Navigator" xml:space="preserve">
+    <value>Navigator (300% and above)</value>
+  </data>
+  <data name="Port.AllDocuments" xml:space="preserve">
+    <value>All documents</value>
+  </data>
+  <data name="Port.AddMaskHint" xml:space="preserve">
+    <value>Add layer mask (Alt: invert selection or hide all)</value>
+  </data>
+  <data name="Port.MaskHint" xml:space="preserve">
+    <value>Layer mask: click to paint, Alt-click to view alone, Shift-click to disable, Ctrl-click to select</value>
+  </data>
 </root>

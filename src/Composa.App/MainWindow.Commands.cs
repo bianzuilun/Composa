@@ -207,6 +207,7 @@ public sealed partial class MainWindow
             Item("Search Commands…", () => _ = SearchCommands(), Key.F, ctrl, needsDocument: false),
             Item("Toggle Fullscreen", ToggleCanvasOnly, Key.F, needsDocument: false),
             Line(),
+            ViewToggle("Navigator (300% and above)", v => v.ShowNavigator, v => v with { ShowNavigator = !v.ShowNavigator }),
             Item("Fit Canvas", canvas.Fit, Key.D0, ctrl),
             Item("Actual Pixels", () => canvas.ZoomTo(1), Key.D1, ctrl),
             Item("Zoom In", canvas.ZoomIn, Key.OemPlus, ctrl),
@@ -871,11 +872,12 @@ public sealed partial class MainWindow
             if (image == null) { ShowProblem("The clipboard has no image."); return; }
             AddSession(EditorSession.NewCanvas(image.Pixels.Width, image.Pixels.Height, null));
         }
+        var destination = session!;
         var pasted = kind switch
         {
-            PasteKind.InPlace => session.PasteInPlace(external),
-            PasteKind.Into => session.PasteInto(external),
-            _ => session.Paste(external)
+            PasteKind.InPlace => destination.PasteInPlace(external),
+            PasteKind.Into => destination.PasteInto(external),
+            _ => destination.Paste(external)
         };
         if (pasted == null) ShowProblem("The clipboard has no image.");
         else SelectTool(Tool.Move);

@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
@@ -31,8 +32,60 @@ public class WorkspacePortTests
             dialog.Close(false); Dispatcher.UIThread.RunJobs();
             window.ToggleCanvasOnly();
             Assert.Equal(WindowState.FullScreen, window.WindowState);
+            var root = (Grid)window.Content!;
+            Assert.False(root.Children.Single(child => Grid.GetRow(child) == 2).IsVisible);
+            Assert.False(root.Children.Single(child => Grid.GetRow(child) == 7).IsVisible);
             window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
             Assert.NotEqual(WindowState.FullScreen, window.WindowState);
+            Assert.True(root.Children.Single(child => Grid.GetRow(child) == 2).IsVisible);
+            Assert.True(root.Children.Single(child => Grid.GetRow(child) == 7).IsVisible);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void Document_tabs_reorder_by_dragging_and_keep_the_active_document()
+    {
+        var window = new MainWindow(); window.Show();
+        try
+        {
+            var first = EditorSession.NewCanvas(20, 20); first.SuggestedName = "First";
+            var second = EditorSession.NewCanvas(20, 20); second.SuggestedName = "Second";
+            var third = EditorSession.NewCanvas(20, 20); third.SuggestedName = "Third";
+            window.AddSession(first); window.AddSession(second); window.AddSession(third);
+            Dispatcher.UIThread.RunJobs();
+            Border Tab(EditorSession item) => window.GetVisualDescendants().OfType<Border>().Single(border => ReferenceEquals(border.Tag, item));
+            var from = Tab(first).TranslatePoint(new Point(24, 12), window)!.Value;
+            var target = Tab(third);
+            var to = target.TranslatePoint(new Point(target.Bounds.Width - 5, 12), window)!.Value;
+            window.MouseDown(from, MouseButton.Left);
+            window.MouseMove(to, RawInputModifiers.LeftMouseButton);
+            window.MouseUp(to, MouseButton.Left);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(new[] { second, third, first }, window.Sessions);
+            Assert.Same(first, window.Session);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void Navigator_click_pans_at_high_zoom_without_editing_the_document()
+    {
+        var window = new MainWindow { Width = 1280, Height = 800 }; window.Show();
+        try
+        {
+            var session = EditorSession.NewCanvas(1000, 800, SKColors.White);
+            window.AddSession(session);
+            Dispatcher.UIThread.RunJobs();
+            window.Canvas.ZoomTo(4);
+            Assert.True(Screenshots.Save(window, "port-navigator"));
+            var before = window.Canvas.ToScreen(SKPoint.Empty);
+            var state = session.History.CurrentId;
+            var at = window.Canvas.TranslatePoint(new Point(window.Canvas.Bounds.Width - 30, window.Canvas.Bounds.Height - 30), window)!.Value;
+            window.MouseDown(at, MouseButton.Left); window.MouseUp(at, MouseButton.Left);
+            Assert.NotEqual(before, window.Canvas.ToScreen(SKPoint.Empty));
+            Assert.Equal(4, window.Canvas.Zoom);
+            Assert.Equal(state, session.History.CurrentId);
         }
         finally { window.Close(); }
     }

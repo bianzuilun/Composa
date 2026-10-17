@@ -125,10 +125,16 @@ public sealed class LayersPanel : UserControl
         var effectsButton = Ui.IconButton(Icons.Effects, "Layer effects: stroke, drop shadow, color overlay, inner shadow, outer glow, inner glow", () => { });
         effectsButton.Click += (_, _) => { if (session?.ActiveLayer is { Pixels: not null }) effectsMenu.Open(effectsButton); };
 
+        var maskButton = Ui.IconButton(Icons.Mask, "Add layer mask (Alt: invert selection or hide all)", () => { if (session?.ActiveLayer is { } layer) session.AddMask(layer); });
+        maskButton.AddHandler(PointerPressedEvent, (_, e) =>
+        {
+            if (e.GetCurrentPoint(maskButton).Properties.IsLeftButtonPressed && e.KeyModifiers.HasFlag(KeyModifiers.Alt) && session?.ActiveLayer is { } layer)
+            { session.AddMask(layer, hideAll: true); e.Handled = true; }
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         var footer = Ui.Row(2,
             Ui.IconButton(Icons.Plus, "New layer (Ctrl+Shift+N)", () => session?.AddBlankLayer()),
             Ui.IconButton(Icons.Folder, "Group selected layers (Ctrl+G)", () => session?.GroupSelectedLayers()),
-            Ui.IconButton(Icons.Mask, "Add layer mask (Alt: hide all)", () => { if (session?.ActiveLayer is { } layer) session.AddMask(layer); }),
+            maskButton,
             effectsButton,
             adjustButton,
             Ui.IconButton(Icons.Trash, "Delete layer, mask or effect", () => DeleteLayerOrMask()));
@@ -298,7 +304,11 @@ public sealed class LayersPanel : UserControl
         {
             var pixelThumb = Thumb(new Image { Source = Thumbnail(layer.Pixels), Stretch = Stretch.Uniform }, selected && layer.Id == current.ActiveLayer?.Id && !current.IsEditingMask);
             // The row's own press handler (which bubbles next) selects the layer and then applies this target.
-            pixelThumb.PointerPressed += (_, _) => thumbnailTarget = false;
+            pixelThumb.PointerPressed += (_, _) =>
+            {
+                if (current.SoloMaskLayerId == layer.Id) current.ToggleSoloMask(layer);
+                thumbnailTarget = false;
+            };
             content.Children.Add(pixelThumb);
         }
         if (layer.Mask != null)
@@ -306,10 +316,11 @@ public sealed class LayersPanel : UserControl
             var maskThumb = Thumb(new Image { Source = Thumbnail(layer.Mask), Stretch = Stretch.Uniform, Opacity = layer.MaskEnabled ? 1 : 0.35 },
                 layer.Id == current.ActiveLayer?.Id && current.IsEditingMask);
             maskThumb.PointerPressed += (_, _) => thumbnailTarget = true;
-            ToolTip.SetTip(maskThumb, "Layer mask: click to paint on it, Shift-click to disable, Ctrl-click to load as selection");
+            ToolTip.SetTip(maskThumb, L10n.Text("Layer mask: click to paint, Alt-click to view alone, Shift-click to disable, Ctrl-click to select"));
             maskThumb.AddHandler(PointerPressedEvent, (_, e) =>
             {
-                if (e.KeyModifiers.HasFlag(KeyModifiers.Shift)) { current.SetMaskEnabled(layer, !layer.MaskEnabled); e.Handled = true; }
+                if (e.KeyModifiers.HasFlag(KeyModifiers.Alt)) { current.ToggleSoloMask(layer); e.Handled = true; }
+                else if (e.KeyModifiers.HasFlag(KeyModifiers.Shift)) { current.SetMaskEnabled(layer, !layer.MaskEnabled); e.Handled = true; }
                 else if (e.KeyModifiers.HasFlag(KeyModifiers.Control)) { current.SelectLayerMask(layer); e.Handled = true; }
             }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
             content.Children.Add(maskThumb);

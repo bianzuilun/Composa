@@ -1017,4 +1017,16 @@
   <data name="Port.ExportBudget" xml:space="preserve">
     <value>書き出しサイズが対応するピクセル数の上限を超えています。</value>
   </data>
+  <data name="Port.Navigator" xml:space="preserve">
+    <value>ナビゲーター（300% 以上）</value>
+  </data>
+  <data name="Port.AllDocuments" xml:space="preserve">
+    <value>すべてのドキュメント</value>
+  </data>
+  <data name="Port.AddMaskHint" xml:space="preserve">
+    <value>レイヤーマスクを追加（Alt：選択範囲を反転、またはすべて隠す）</value>
+  </data>
+  <data name="Port.MaskHint" xml:space="preserve">
+    <value>レイヤーマスク：クリックで描画、Alt で単独表示、Shift で無効化、Ctrl で選択範囲に読み込み</value>
+  </data>
 </root>
