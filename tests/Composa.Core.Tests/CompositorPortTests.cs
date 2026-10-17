@@ -10,6 +10,21 @@ namespace Composa.Core.Tests;
 public class CompositorPortTests
 {
     [Fact]
+    public void Tiff_and_pdf_have_real_container_headers_and_keep_print_resolution()
+    {
+        using var bitmap = Pixels.NewColor(30, 20);
+        bitmap.Erase(new SKColor(200, 30, 10, 128));
+        var tiff = ImageFiles.Encode(bitmap, ExportFormat.Tiff, resolution: 300);
+        Assert.Equal(new byte[] { 73, 73, 42, 0 }, tiff[..4]);
+        Assert.Equal(ExportFormat.Tiff, ImageFiles.FormatFor("image.tiff"));
+        var pdf = System.Text.Encoding.ASCII.GetString(ImageFiles.Encode(bitmap, ExportFormat.Pdf, resolution: 300));
+        Assert.StartsWith("%PDF-1.4", pdf);
+        Assert.Contains("/MediaBox [0 0 7.2 4.8]", pdf);
+        Assert.Contains("/SMask 5 0 R", pdf);
+        Assert.Contains("/Count 1", pdf);
+        Assert.EndsWith("%%EOF\n", pdf);
+    }
+    [Fact]
     public void Physical_canvas_units_round_trip_at_print_resolution()
     {
         Assert.Equal(300, CanvasUnits.ToPixels(1, CanvasUnit.Inches, 300));

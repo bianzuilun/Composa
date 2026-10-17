@@ -996,4 +996,25 @@
   <data name="Port.Millimeters" xml:space="preserve">
     <value>毫米</value>
   </data>
+  <data name="Port.ExportAs" xml:space="preserve">
+    <value>导出为</value>
+  </data>
+  <data name="Port.Export" xml:space="preserve">
+    <value>导出</value>
+  </data>
+  <data name="Port.ExportTiff" xml:space="preserve">
+    <value>导出 TIFF</value>
+  </data>
+  <data name="Port.ExportPdf" xml:space="preserve">
+    <value>导出 PDF</value>
+  </data>
+  <data name="Port.Proportions" xml:space="preserve">
+    <value>保持比例</value>
+  </data>
+  <data name="Port.Quality" xml:space="preserve">
+    <value>质量</value>
+  </data>
+  <data name="Port.ExportBudget" xml:space="preserve">
+    <value>导出尺寸超过支持的像素预算。</value>
+  </data>
 </root>

@@ -136,7 +136,7 @@ public sealed partial class MainWindow
                 Add(Title(s.Tool == Tool.Hand ? "Hand" : "Zoom"), Flat("Fit", canvas.Fit), Flat("100%", () => canvas.ZoomTo(1)), Flat("200%", () => canvas.ZoomTo(2)));
                 break;
         }
-        optionsHost.Child = row;
+        optionsHost.Child = new ScrollViewer { Content = row, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
     }
 
     /// <summary>The Type bar: font, size, style, color, alignment and spacing for the text being typed (or the next text).</summary>

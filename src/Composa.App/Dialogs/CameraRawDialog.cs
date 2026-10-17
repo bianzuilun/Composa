@@ -85,7 +85,7 @@ public static class CameraRawDialog
         var groups = new StackPanel { Spacing = 6 };
         Expander Group(CameraRawGroup group, string title, Control body, bool open = false)
         {
-            var eye = new Button { Classes = { "flat" }, Padding = new Thickness(4), Content = Icons.Create(Icons.Eye, 13, Palette.Secondary), IsVisible = initial.Adjusts(group) };
+            var eye = new Button { Tag = "group-visibility", Classes = { "flat" }, Padding = new Thickness(4), Content = Icons.Create(Icons.Eye, 13, Palette.Secondary), IsVisible = initial.Adjusts(group) };
             ToolTip.SetTip(eye, "Switch this group off or on without clearing its sliders");
             eye.Click += (_, _) =>
             {
@@ -104,6 +104,7 @@ public static class CameraRawDialog
                 eye.Content = Icons.Create(Icons.Eye, 13, Palette.Secondary);
                 foreach (var refresh in refreshFields) refresh();
             });
+            resetGroup.Tag = "group-reset";
             resetGroup.MinWidth = 0;
             Grid.SetColumn(resetGroup, 1);
             header.Children.Add(resetGroup);

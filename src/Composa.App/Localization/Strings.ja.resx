@@ -996,4 +996,25 @@
   <data name="Port.Millimeters" xml:space="preserve">
     <value>ミリメートル</value>
   </data>
+  <data name="Port.ExportAs" xml:space="preserve">
+    <value>書き出し形式</value>
+  </data>
+  <data name="Port.Export" xml:space="preserve">
+    <value>書き出す</value>
+  </data>
+  <data name="Port.ExportTiff" xml:space="preserve">
+    <value>TIFF を書き出し</value>
+  </data>
+  <data name="Port.ExportPdf" xml:space="preserve">
+    <value>PDF を書き出し</value>
+  </data>
+  <data name="Port.Proportions" xml:space="preserve">
+    <value>縦横比を固定</value>
+  </data>
+  <data name="Port.Quality" xml:space="preserve">
+    <value>品質</value>
+  </data>
+  <data name="Port.ExportBudget" xml:space="preserve">
+    <value>書き出しサイズが対応するピクセル数の上限を超えています。</value>
+  </data>
 </root>

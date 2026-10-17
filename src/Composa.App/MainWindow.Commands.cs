@@ -79,6 +79,9 @@ public sealed partial class MainWindow
             Item("Export PNG…", () => _ = Export(ExportFormat.Png), Key.E, ctrl | shift),
             Item("Export JPEG…", () => _ = Export(ExportFormat.Jpeg), Key.S, ctrl | shift | alt),
             Item("Export WebP…", () => _ = Export(ExportFormat.Webp)),
+            Item("Export TIFF…", () => _ = Export(ExportFormat.Tiff)),
+            Item("Export PDF…", () => _ = Export(ExportFormat.Pdf)),
+            Item("Export As…", () => _ = ExportAs(), Key.W, ctrl | shift | alt),
             Item("Export Look as .cube…", () => _ = ExportLook()),
             Line(),
             Item("Close Project", () => _ = CloseSession(session!), Key.W, ctrl),
@@ -738,7 +741,7 @@ public sealed partial class MainWindow
             if (await CanvasDialogs.JpegQuality(this, jpegQuality, preview) is not { } quality) return;
             jpegQuality = quality;
         }
-        var extension = format switch { ExportFormat.Jpeg => "jpg", ExportFormat.Webp => "webp", _ => "png" };
+        var extension = format switch { ExportFormat.Jpeg => "jpg", ExportFormat.Webp => "webp", ExportFormat.Tiff => "tiff", ExportFormat.Pdf => "pdf", _ => "png" };
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = "Export " + extension.ToUpperInvariant(), SuggestedFileName = session.Title + "." + extension, DefaultExtension = extension,
@@ -750,7 +753,7 @@ public sealed partial class MainWindow
             Busy(() =>
             {
                 using var flat = session.Flatten();
-                ImageFiles.Save(flat, path, format, format == ExportFormat.Png ? 100 : jpegQuality);
+                ImageFiles.Save(flat, path, format, format == ExportFormat.Png ? 100 : jpegQuality, session.Document.Resolution);
             });
         }
         catch (Exception error) { await Prompts.Alert(this, "Couldn't export", error.Message); }

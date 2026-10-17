@@ -996,4 +996,25 @@
   <data name="Port.Millimeters" xml:space="preserve">
     <value>Millimeters</value>
   </data>
+  <data name="Port.ExportAs" xml:space="preserve">
+    <value>Export As</value>
+  </data>
+  <data name="Port.Export" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="Port.ExportTiff" xml:space="preserve">
+    <value>Export TIFF</value>
+  </data>
+  <data name="Port.ExportPdf" xml:space="preserve">
+    <value>Export PDF</value>
+  </data>
+  <data name="Port.Proportions" xml:space="preserve">
+    <value>Keep proportions</value>
+  </data>
+  <data name="Port.Quality" xml:space="preserve">
+    <value>Quality</value>
+  </data>
+  <data name="Port.ExportBudget" xml:space="preserve">
+    <value>The export exceeds the supported pixel budget.</value>
+  </data>
 </root>

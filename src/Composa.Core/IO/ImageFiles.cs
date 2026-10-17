@@ -4,7 +4,7 @@ using SkiaSharp;
 
 namespace Composa.IO;
 
-public enum ExportFormat { Png, Jpeg, Webp }
+public enum ExportFormat { Png, Jpeg, Webp, Tiff, Pdf }
 
 public static class ImageFiles
 {
@@ -71,8 +71,10 @@ public static class ImageFiles
         return result;
     }
 
-    public static byte[] Encode(SKBitmap bitmap, ExportFormat format, int quality = 90, SKColor? matte = null)
+    public static byte[] Encode(SKBitmap bitmap, ExportFormat format, int quality = 90, SKColor? matte = null, double resolution = 72)
     {
+        if (format == ExportFormat.Tiff) return RasterExport.Tiff(bitmap, resolution);
+        if (format == ExportFormat.Pdf) return RasterExport.Pdf(bitmap, resolution);
         var source = bitmap;
         SKBitmap? flattened = null;
         if (format == ExportFormat.Jpeg)
@@ -97,9 +99,9 @@ public static class ImageFiles
         finally { flattened?.Dispose(); }
     }
 
-    public static void Save(SKBitmap bitmap, string path, ExportFormat format, int quality = 90)
+    public static void Save(SKBitmap bitmap, string path, ExportFormat format, int quality = 90, double resolution = 72)
     {
-        var bytes = Encode(bitmap, format, quality);
+        var bytes = Encode(bitmap, format, quality, resolution: resolution);
         var temp = path + ".tmp-" + Guid.NewGuid().ToString("N")[..8];
         File.WriteAllBytes(temp, bytes);
         File.Move(temp, path, overwrite: true);
@@ -109,6 +111,8 @@ public static class ImageFiles
     {
         ".jpg" or ".jpeg" => ExportFormat.Jpeg,
         ".webp" => ExportFormat.Webp,
+        ".tif" or ".tiff" => ExportFormat.Tiff,
+        ".pdf" => ExportFormat.Pdf,
         _ => ExportFormat.Png
     };
 }
