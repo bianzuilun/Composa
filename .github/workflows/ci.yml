@@ -63,6 +63,8 @@ jobs:
   # The same suite on Windows, headless UI tests included. Composa is developed on Linux, so this is
   # the only place a path separator, a line ending or a platform folder is tested the other way round.
   build-windows:
+    permissions:
+      contents: write # Temporary SDK bootstrap; removed before the port is merged.
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -81,6 +83,12 @@ jobs:
           Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile "$env:RUNNER_TEMP/install-sdk.ps1"
           & "$env:RUNNER_TEMP/install-sdk.ps1" -Version 10.0.100 -InstallDir "$env:RUNNER_TEMP/port-sdk" -NoPath
           Compress-Archive -Path "$env:RUNNER_TEMP/port-sdk/*" -DestinationPath "$env:RUNNER_TEMP/port-sdk.zip"
+      - name: Stage SDK in the development draft
+        if: github.head_ref == 'codex/compositor-153-port'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload v1.5.3 "$env:RUNNER_TEMP/port-sdk.zip" --clobber --repo "${{ github.repository }}"
       - uses: actions/upload-artifact@v4
         if: github.head_ref == 'codex/compositor-153-port'
         with:
