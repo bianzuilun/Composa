@@ -1,5 +1,6 @@
 using System.IO.Pipes;
 using Avalonia.Threading;
+using Composa.IO;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 
@@ -13,12 +14,14 @@ namespace Composa.App.Mcp;
 public sealed class McpHost : IDisposable
 {
     private readonly MainWindow window;
+    private readonly Func<string,RawImage>? rawDecoder;
     private readonly CancellationTokenSource stop = new();
     private int connections;
 
-    public McpHost(MainWindow window, string? pipeName = null)
+    public McpHost(MainWindow window, string? pipeName = null, Func<string,RawImage>? rawDecoder = null)
     {
         this.window = window;
+        this.rawDecoder = rawDecoder;
         PipeName = pipeName ?? McpPipe.Name;
     }
 
@@ -98,7 +101,7 @@ public sealed class McpHost : IDisposable
 
     private McpServerOptions Options()
     {
-        var tools = new ComposaTools(window);
+        var tools = new ComposaTools(window,rawDecoder);
         return new McpServerOptions
         {
             ServerInfo = new Implementation { Name = "composa", Title = "Composa", Version = AppInfo.Version },

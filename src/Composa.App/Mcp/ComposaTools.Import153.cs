@@ -22,7 +22,7 @@ public sealed partial class ComposaTools
         return await Task.Run(() => {
             if (PsdImport.IsPsd(path)) { var data = PsdImport.Load(path); try { return JsonSerializer.Serialize(new { data.Width, data.Height, conversions = data.Conversions },McpJson); } finally { data.Discard(); } }
             if (XcfImport.IsXcf(path)) { var data = XcfImport.Load(path); try { return JsonSerializer.Serialize(new { data.Width, data.Height, conversions = data.Conversions },McpJson); } finally { data.Discard(); } }
-            if (RawImporter.IsRaw(path)) { var raw = RawImporter.Decode(path); return JsonSerializer.Serialize(new { raw.Width, raw.Height, rawSettings = new RawDevelopSettings(), cameraRaw = new CameraRawSettings() },McpJson); }
+            if (RawImporter.IsRaw(path)) { var raw = (rawDecoder ?? RawImporter.Decode)(path); return JsonSerializer.Serialize(new { raw.Width, raw.Height, rawSettings = new RawDevelopSettings(), cameraRaw = new CameraRawSettings() },McpJson); }
             using var pixels = SvgImporter.IsSvg(path) ? SvgImporter.Render(path) : ImageFiles.Load(path);
             var source = Composa.Rendering.DeepPixels.Source(pixels);
             return JsonSerializer.Serialize(new { pixels.Width,pixels.Height,precision = source == null ? "8-bit" : Composa.Rendering.DeepPixels.IsHdr(source) ? "HDR float" : "16-bit" },McpJson);
@@ -119,18 +119,19 @@ public sealed partial class ComposaTools
         return report.Length == 0 ? "" : " Conversions: " + report;
     }
 
-    private static async Task<SKBitmap> DecodeRaw(string path,RawDevelopSettings? settings,CameraRawSettings? grade)
+    private async Task<SKBitmap> DecodeRaw(string path,RawDevelopSettings? settings,CameraRawSettings? grade)
     {
         if (grade != null) ValidateGrade(grade);
         var raw = settings ?? new RawDevelopSettings();
         FiniteRange(raw.Exposure,-3,3,"exposure"); FiniteRange(raw.Temperature,-100,100,"temperature"); FiniteRange(raw.Tint,-100,100,"tint");
         FiniteRange(raw.LuminanceNoise,0,100,"luminanceNoise"); FiniteRange(raw.ColorNoise,0,100,"colorNoise"); FiniteRange(raw.HighlightRecovery,0,100,"highlightRecovery"); FiniteRange(raw.LensDistortion,-100,100,"lensDistortion");
-        return await Task.Run(() => {
-            var pixels = RawImporter.Decode(path).Develop(raw);
+        try { return await Task.Run(() => {
+            var pixels = (rawDecoder ?? RawImporter.Decode)(path).Develop(raw);
             if (grade == null || grade.IsIdentity) return pixels;
             try { return ImageFilters.Run(pixels,new FilterSettings { Kind = FilterKind.CameraRaw,CameraRaw = grade.Normalized() }).Result; }
             finally { pixels.Dispose(); }
-        });
+        }); }
+        catch (Exception error) when (error is not McpException) { throw new McpException($"Couldn't develop {Path.GetFileName(path)}: {error.Message}"); }
     }
 
     private static string Existing(string path) { path = Absolute(path); if (!File.Exists(path)) throw new McpException($"There is no file at {path}."); return path; }

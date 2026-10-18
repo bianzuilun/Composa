@@ -96,7 +96,7 @@ public partial class McpTests
     {
         var folder = Path.Combine(Path.GetTempPath(),"composa-mcp153-"+Guid.NewGuid().ToString("N")); Directory.CreateDirectory(folder);
         var window = new MainWindow { Width = 1000,Height = 700 }; window.Show();
-        using var host = new McpHost(window,PipeName()); Assert.True(await host.StartAsync());
+        using var host = new McpHost(window,PipeName(),path => Path.GetFileName(path).StartsWith("bad") ? throw new InvalidDataException("Malformed synthetic frame") : new RawImage(16,8,Enumerable.Repeat((ushort)60000,16*8*3).ToArray())); Assert.True(await host.StartAsync());
         await using var client = await Pumped(McpClient.CreateAsync(Bridge(host.PipeName)));
         try {
             var source = Path.Combine(folder,"source.png"); var wide = DeepPixels.New(16,8,true);
@@ -113,11 +113,14 @@ public partial class McpTests
             var jpg = Path.Combine(folder,"cmyk.jpg"); await Call(client,"export_image",new() { ["path"] = jpg,["colorMode"] = "cmyk" });
             using (var magick = new ImageMagick.MagickImage(jpg)) { Assert.Equal(ImageMagick.ColorSpace.CMYK,magick.ColorSpace); Assert.NotNull(magick.GetColorProfile()); }
             await Call(client,"render_view");
-            // A decoded-frame fixture exercises RAW routing/develop/Camera Raw without redistributing a camera file.
-            // ImageMagick recognizes the PNG signature; the .dng suffix deliberately selects the app's RAW workflow.
+            // A pinned decoded-frame fixture exercises RAW routing/develop/Camera Raw over stdio.
+            // Production uses RawImporter.Decode; this test does not assert camera/LibRaw decoding parity.
             var raw = Path.Combine(folder,"decoded-frame.dng"); File.Copy(source,raw);
             await Call(client,"open_document",new() { ["path"] = raw,["rawSettings"] = new { exposure = -1,colorNoise = 10,luminanceNoise = 10,highlightRecovery = 20,lensDistortion = 1 },["cameraRaw"] = new { exposure = .25 } });
             Assert.True(DeepPixels.HasSource(window.Session!.ActiveLayer!.Pixels!)); Assert.True(window.Session.ActiveLayer.Pixels!.GetPixel(4,4).Red < 255);
+            var beforeBadImport = window.Sessions.Count; var badRaw = Path.Combine(folder,"bad-frame.dng"); File.Copy(source,badRaw);
+            var refusedRaw = await Pumped(client.CallToolAsync("open_document",new Dictionary<string,object?> { ["path"] = badRaw }));
+            Assert.True(refusedRaw.IsError); Assert.Contains("Malformed synthetic frame",Text(refusedRaw)); Assert.Equal(beforeBadImport,window.Sessions.Count);
             var look = Path.Combine(folder,"grade.cube"); await Call(client,"export_look",new() { ["path"] = look,["cameraRaw"] = new { exposure = 1,shadows = 20 } });
             Assert.Contains("LUT_3D_SIZE",File.ReadAllText(look));
             var psd = Path.Combine(folder,"import.psd"); var writer = new PsdWriter { Width = 16,Height = 8,Composite = preview };
