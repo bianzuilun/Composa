@@ -49,9 +49,11 @@ public sealed partial class ComposaTools
 
     [McpServerTool(Name = "render_view", ReadOnly = true, Idempotent = true)]
     [Description("Returns the document's flattened preview with current CMYK proof/gamut warning applied. Does not alter exports or document pixels. render returns unproofed RGB; render_mask shows a mask.")]
-    public Task<CallToolResult> RenderView(int maxSide = 1024,int? document = null) => OnUi(() => {
-        var s = Session(document); using var image = Pixels.Clone(s.Composite());
-        window.Canvas.ColorProof?.Apply(image,new SKRectI(0,0,image.Width,image.Height),s.View.ProofColors,s.View.GamutWarning);
+    public Task<CallToolResult> RenderView(int maxSide = 1024,int? document = null) => OnUi(async () => {
+        var s = Session(document);
+        var proof = s.View.ProofColors || s.View.GamutWarning ? await window.McpColorProof() : null;
+        using var image = Pixels.Clone(s.Composite());
+        proof?.Apply(image,new SKRectI(0,0,image.Width,image.Height),s.View.ProofColors,s.View.GamutWarning);
         return ImageResult(image,maxSide,"Document view with current print proof.");
     });
 

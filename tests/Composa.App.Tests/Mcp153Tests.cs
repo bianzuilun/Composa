@@ -110,6 +110,10 @@ public partial class McpTests
             using (var magick = new ImageMagick.MagickImage(tiff)) { Assert.Equal(16u,magick.Depth); Assert.Equal(8u,magick.Width); }
             var exr = Path.Combine(folder,"export.exr"); await Call(client,"export_image",new() { ["path"] = exr }); using (var decoded = ImageFiles.Load(exr)) Assert.True(DeepPixels.IsHdr(DeepPixels.Source(decoded)!));
             await Call(client,"set_print_proof",new() { ["proofColors"] = true,["gamutWarning"] = true }); Assert.True(s.View.ProofColors);
+            var proofView = Assert.Single((await Call(client,"render_view")).Content.OfType<ImageContentBlock>()).DecodedData.ToArray();
+            window.Canvas.SetColorProof(null);
+            var restoredProof = Assert.Single((await Call(client,"render_view")).Content.OfType<ImageContentBlock>()).DecodedData.ToArray();
+            Assert.Equal(proofView,restoredProof);
             var jpg = Path.Combine(folder,"cmyk.jpg"); await Call(client,"export_image",new() { ["path"] = jpg,["colorMode"] = "cmyk" });
             using (var magick = new ImageMagick.MagickImage(jpg)) { Assert.Equal(ImageMagick.ColorSpace.CMYK,magick.ColorSpace); Assert.NotNull(magick.GetColorProfile()); }
             await Call(client,"render_view");

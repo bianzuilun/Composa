@@ -53,8 +53,8 @@ public sealed partial class ComposaTools
                 foreach (var layer in opened.Document.AllLayers()) { layer.Pixels?.Dispose(); layer.Mask?.Dispose(); }
                 throw new McpException("A canvas interaction started during import; no document was added.");
             }
-            window.AddSession(opened); window.Settings.AddRecent(path);
             window.RememberMcpProfile(cmykProfile,Path.GetFileNameWithoutExtension(path)+" ICC");
+            window.AddSession(opened); window.Settings.AddRecent(path);
             return $"Opened document {window.Sessions.Count}: \"{opened.Title}\" {opened.Document.Width}×{opened.Document.Height} px, {opened.Document.AllLayers().Count()} layers, now active." + report;
         });
     }
