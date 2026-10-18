@@ -30,6 +30,13 @@ public sealed partial class MainWindow
 
     internal void RememberMcpView() { RememberToolSettings(); RebuildOptions(); canvas.InvalidateVisual(); }
 
+    internal void RememberMcpProfile(byte[]? profile,string name)
+    {
+        if (profile is not { Length: >= 128 } || profile.Length > 16*1024*1024 || !profile.AsSpan(16,4).SequenceEqual("CMYK"u8) || !profile.AsSpan(36,4).SequenceEqual("acsp"u8)) return;
+        settings.CmykProfile = profile.ToArray(); settings.CmykProfileName = name; settings.Save();
+        colorProof = null; canvas.SetColorProof(null);
+    }
+
     internal Task McpClipboard(string action) => action switch {
         "copy" => Copy(false), "copy_merged" => Copy(true), "cut" => Cut(),
         "paste_in_place" => Paste(PasteKind.InPlace), "paste_into" => Paste(PasteKind.Into), _ => Paste()

@@ -33,10 +33,11 @@ public sealed partial class ComposaTools
     {
         await OnUi(() => { if (window.IsDragging || window.Session?.IsInteracting == true) throw new McpException("Finish the current canvas interaction first."); return true; });
         EditorSession opened;
+        byte[]? cmykProfile = null;
         string report = "";
         if (PsdImport.IsPsd(path)) {
             var data = await Task.Run(() => PsdImport.Load(path));
-            try { report = ConversionReport(data.Conversions,allowConversions); opened = EditorSession.OpenPhotoshop(data,Path.GetFileNameWithoutExtension(path)); }
+            try { report = ConversionReport(data.Conversions,allowConversions); cmykProfile = data.CmykProfile; opened = EditorSession.OpenPhotoshop(data,Path.GetFileNameWithoutExtension(path)); }
             catch { data.Discard(); throw; }
         } else if (XcfImport.IsXcf(path)) {
             var data = await Task.Run(() => XcfImport.Load(path));
@@ -53,6 +54,7 @@ public sealed partial class ComposaTools
                 throw new McpException("A canvas interaction started during import; no document was added.");
             }
             window.AddSession(opened); window.Settings.AddRecent(path);
+            window.RememberMcpProfile(cmykProfile,Path.GetFileNameWithoutExtension(path)+" ICC");
             return $"Opened document {window.Sessions.Count}: \"{opened.Title}\" {opened.Document.Width}×{opened.Document.Height} px, {opened.Document.AllLayers().Count()} layers, now active." + report;
         });
     }
@@ -67,7 +69,7 @@ public sealed partial class ComposaTools
             var data = await Task.Run(() => PsdImport.Load(path,budget)); var consumed = false;
             try {
                 var report = ConversionReport(data.Conversions,allowConversions);
-                return await OnUi(() => { EnsureImportTarget(s,budget); var added = s.PlacePhotoshop(data,Path.GetFileNameWithoutExtension(path),center); consumed = true; return $"Placed Photoshop folder \"{added.Name}\"." + report; });
+                return await OnUi(() => { EnsureImportTarget(s,budget); var added = s.PlacePhotoshop(data,Path.GetFileNameWithoutExtension(path),center); consumed = true; window.RememberMcpProfile(data.CmykProfile,Path.GetFileNameWithoutExtension(path)+" ICC"); return $"Placed Photoshop folder \"{added.Name}\"." + report; });
             } finally { if (!consumed) data.Discard(); }
         }
         if (XcfImport.IsXcf(path)) {

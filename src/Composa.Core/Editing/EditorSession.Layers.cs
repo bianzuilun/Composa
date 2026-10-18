@@ -203,7 +203,9 @@ public sealed partial class EditorSession
         LayersChanged?.Invoke();
     }
 
-    public void GroupSelectedLayers()
+    public void GroupSelectedLayers() => GroupSelectedLayers(null);
+
+    public void GroupSelectedLayers(string? name)
     {
         var roots = SelectedRoots();
         if (roots.Count == 0) return;
@@ -211,7 +213,7 @@ public sealed partial class EditorSession
         {
             var top = roots[^1];
             var siblings = document.SiblingsOf(top.Id)!;
-            var group = Layer.Group(document.UniqueName("Folder"));
+            var group = Layer.Group(string.IsNullOrWhiteSpace(name) ? document.UniqueName("Folder") : name.Trim());
             siblings.Insert(siblings.IndexOf(top) + 1, group);
             foreach (var layer in roots)
             {

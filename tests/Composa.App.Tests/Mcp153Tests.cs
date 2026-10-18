@@ -45,6 +45,8 @@ public partial class McpTests
         await Call(client,"undo"); Assert.Same(original,s.ActiveLayer!.Pixels);
         await Call(client,"paint_strokes",new() { ["strokes"] = new[] { new { points = path,mode = "liquify",size = 28,opacity = 1 } } });
         Assert.NotEqual(value,s.ActiveLayer!.Pixels!.GetPixel(32,16)); await Call(client,"undo");
+        await Call(client,"paint_strokes",new() { ["strokes"] = new[] { new { points = new double[][] { [-100,-100] },mode = "liquify",size = 28,opacity = 1 },new { points = path,mode = "liquify",size = 28,opacity = 1 } } });
+        await Call(client,"undo"); Assert.Same(original,s.ActiveLayer!.Pixels); Assert.Equal("Gradient",s.History.UndoName);
         var noStroke = s.History.CurrentId;
         var bad = await Pumped(client.CallToolAsync("liquify",new Dictionary<string,object?> { ["points"] = new[] { new[] { 1,1 } } }));
         Assert.True(bad.IsError); Assert.Equal(noStroke,s.History.CurrentId);
@@ -152,7 +154,8 @@ public partial class McpTests
         await Call(client,"set_shortcut",new() { ["id"] = id,["gesture"] = "" }); Assert.Equal("",window.Settings.Shortcuts[id]);
         await Call(client,"get_layer_details",new() { ["layer"] = shape.Name });
         await Call(client,"get_history"); var current = first.History.CurrentIndex; await Call(client,"go_to_history",new() { ["index"] = current-1 }); await Call(client,"redo"); Assert.Equal(current,first.History.CurrentIndex);
-        await Call(client,"group_layers",new() { ["layers"] = new[] { shape.Name,text.Name } }); Assert.True(first.ActiveLayer!.IsGroup);
+        var groupHistory = first.History.Count;
+        await Call(client,"group_layers",new() { ["layers"] = new[] { shape.Name,text.Name },["name"] = "Artwork" }); Assert.True(first.ActiveLayer!.IsGroup); Assert.Equal("Artwork",first.ActiveLayer.Name); Assert.Equal(groupHistory+1,first.History.Count);
         await Call(client,"ungroup_layers",new() { ["layer"] = first.ActiveLayer.Name }); Assert.DoesNotContain(first.Document.Layers,l => l.IsGroup);
         window.Close();
     }

@@ -84,6 +84,7 @@ public sealed partial class EditorSession
     public (int Painted, string? Problem) PaintStrokes(IReadOnlyList<PlannedStroke> strokes)
     {
         var painted = 0;
+        var hasStep = false;
         foreach (var stroke in strokes)
         {
             var entries = History.Count;
@@ -91,7 +92,11 @@ public sealed partial class EditorSession
             if (problem != null) return (painted, problem);
             painted++;
             // A stroke that touched nothing left no entry; every other one folds into the first.
-            if (painted > 1 && History.Count == entries + 1) FoldLastStep("Brush Strokes");
+            if (History.Count == entries + 1)
+            {
+                if (hasStep) FoldLastStep("Brush Strokes");
+                hasStep = true;
+            }
         }
         return (painted, null);
     }

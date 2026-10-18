@@ -49,8 +49,7 @@ public sealed partial class ComposaTools
         var targets = layers.Select(l => Find(s, l)).Distinct().ToList();
         if (targets.Select(l => s.Document.ParentOf(l.Id)).Distinct().Count() != 1) throw new McpException("Grouped layers must be siblings.");
         s.SelectLayer(targets[0].Id); foreach (var target in targets.Skip(1)) s.SelectLayer(target.Id, extend: true);
-        s.GroupSelectedLayers();
-        if (name != null) s.Rename(s.ActiveLayer!, name);
+        s.GroupSelectedLayers(name);
         return $"Grouped {targets.Count} layers as \"{s.ActiveLayer!.Name}\".";
     });
 
