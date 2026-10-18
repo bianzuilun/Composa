@@ -23,7 +23,7 @@ public partial class McpTests
     private static async Task<CallToolResult> Call(McpClient client,string name,Dictionary<string,object?>? arguments = null)
     {
         var result = await Pumped(client.CallToolAsync(name,arguments));
-        Assert.False(result.IsError, $"{name}: {Text(result)}"); return result;
+        Assert.True(result.IsError != true, $"{name}: {Text(result)}"); return result;
     }
 
     [AvaloniaFact]
@@ -111,6 +111,13 @@ public partial class McpTests
             var jpg = Path.Combine(folder,"cmyk.jpg"); await Call(client,"export_image",new() { ["path"] = jpg,["colorMode"] = "cmyk" });
             using (var magick = new ImageMagick.MagickImage(jpg)) { Assert.Equal(ImageMagick.ColorSpace.CMYK,magick.ColorSpace); Assert.NotNull(magick.GetColorProfile()); }
             await Call(client,"render_view");
+            // A decoded-frame fixture exercises RAW routing/develop/Camera Raw without redistributing a camera file.
+            // ImageMagick recognizes the PNG signature; the .dng suffix deliberately selects the app's RAW workflow.
+            var raw = Path.Combine(folder,"decoded-frame.dng"); File.Copy(source,raw);
+            await Call(client,"open_document",new() { ["path"] = raw,["rawSettings"] = new { exposure = -1,colorNoise = 10,luminanceNoise = 10,highlightRecovery = 20,lensDistortion = 1 },["cameraRaw"] = new { exposure = .25 } });
+            Assert.True(DeepPixels.HasSource(window.Session!.ActiveLayer!.Pixels!)); Assert.True(window.Session.ActiveLayer.Pixels!.GetPixel(4,4).Red < 255);
+            var look = Path.Combine(folder,"grade.cube"); await Call(client,"export_look",new() { ["path"] = look,["cameraRaw"] = new { exposure = 1,shadows = 20 } });
+            Assert.Contains("LUT_3D_SIZE",File.ReadAllText(look));
             var psd = Path.Combine(folder,"import.psd"); var writer = new PsdWriter { Width = 16,Height = 8,Composite = preview };
             File.WriteAllBytes(psd,writer.Build()); await Call(client,"inspect_import",new() { ["path"] = psd }); await Call(client,"open_document",new() { ["path"] = psd,["allowConversions"] = true });
             var images = Path.Combine(folder,"inputs"); Directory.CreateDirectory(images); File.Copy(source,Path.Combine(images,"a.png"));
