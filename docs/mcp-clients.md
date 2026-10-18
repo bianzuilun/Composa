@@ -6,6 +6,8 @@ The published 1.5.3 build predates the MCP coverage additions described here. Up
 
 ## Codex
 
+On Windows you can generate all three configuration fragments with `scripts/configure-mcp.ps1 -Executable <actual-composa.exe>`. They are saved under `dist/mcp-client-config/`. Adding `-RegisterCodex` also registers the server through `codex mcp add`; without that switch the script only writes fragments and leaves client settings alone.
+
 Register the actual installed or portable executable using the Codex CLI:
 
 ```powershell
