@@ -19,7 +19,7 @@ namespace Composa.App.Tests;
 /// tests go the whole way: the bridge is the built application, launched the way an MCP client launches it, and every
 /// tool call lands on the window's dispatcher, which a headless test drives by hand.
 /// </summary>
-public class McpTests
+public partial class McpTests
 {
     private static readonly string App = Path.Combine(AppContext.BaseDirectory, "composa.dll");
 
@@ -63,11 +63,12 @@ public class McpTests
         await Pumped(() => host.Connections == 1);
         var tools = await client.ListToolsAsync();
         Assert.Equal(
-            ["add_line", "add_shape", "add_text", "adjust_black_and_white", "adjust_brightness_contrast", "adjust_color_balance", "adjust_color_lookup", "adjust_curves", "adjust_exposure", "adjust_gradient_map",
+            new[] { "add_line", "add_shape", "add_text", "adjust_black_and_white", "adjust_brightness_contrast", "adjust_color_balance", "adjust_color_lookup", "adjust_curves", "adjust_exposure", "adjust_gradient_map",
              "adjust_hue_saturation", "adjust_invert", "adjust_levels", "delete_layer", "describe_document", "deselect", "duplicate_layer", "enhance_layer_resolution", "export_image", "export_look", "fill_layer", "filter_add_noise",
              "filter_bloom", "filter_blur", "filter_dither", "filter_lens_correction", "filter_motion_blur", "filter_painterly", "filter_remove_background", "filter_sharpen", "filter_tonal_contrast", "filter_vignette", "image_size", "list_documents",
              "modify_selection", "new_document", "new_layer", "open_document", "paint_stroke", "paint_strokes", "place_image", "render", "reorder_layer", "sample_color", "save_document", "select_all", "select_color_range", "select_inverse",
-             "select_layer", "select_layer_pixels", "select_object", "select_shape", "select_subject", "select_wand", "set_layer", "trace_edges", "transform_layer", "undo"],
+             "select_layer", "select_layer_pixels", "select_object", "select_shape", "select_subject", "select_wand", "set_layer", "trace_edges", "transform_layer", "undo" }
+             .Concat(NewTools).Order(),
             tools.Select(t => t.Name).Order());
 
         var resources = await client.ListResourcesAsync();
@@ -78,7 +79,7 @@ public class McpTests
 
         var tooBig = await Pumped(client.CallToolAsync("new_document", new Dictionary<string, object?> { ["width"] = 40000, ["height"] = 10 }));
         Assert.Equal(true, tooBig.IsError);
-        Assert.Contains("at most", Text(tooBig));
+        Assert.Contains(DocumentLimits.MaxSide.ToString(), Text(tooBig));
         var created = await Pumped(client.CallToolAsync("new_document", new Dictionary<string, object?> { ["width"] = 400, ["height"] = 300, ["background"] = "#FFFFFF" }));
         Assert.Equal("Created document 1: \"Untitled\" 400×300 px, now active.", Text(created));
         var session = window.Session!;
@@ -346,9 +347,9 @@ public class McpTests
             Assert.Equal(copy, session.FilePath);
             Assert.Equal("copy", session.Title);
 
-            var badExtension = await Pumped(client.CallToolAsync("export_image", new Dictionary<string, object?> { ["path"] = Path.Combine(folder, "flat.tiff") }));
+            var badExtension = await Pumped(client.CallToolAsync("export_image", new Dictionary<string, object?> { ["path"] = Path.Combine(folder, "flat.xyz") }));
             Assert.Equal(true, badExtension.IsError);
-            Assert.Contains(".png, .jpg or .webp", Text(badExtension));
+            Assert.Contains(".tiff", Text(badExtension));
             var jpeg = Path.Combine(folder, "flat.jpg");
             Assert.Equal($"Exported \"copy\" as a 400×300 px JPEG to {jpeg}.", Text(await Pumped(client.CallToolAsync("export_image", new Dictionary<string, object?> { ["path"] = jpeg, ["quality"] = 80 }))));
             using (var exported = SKBitmap.Decode(jpeg)) { Assert.Equal(400, exported.Width); Assert.Equal(300, exported.Height); }

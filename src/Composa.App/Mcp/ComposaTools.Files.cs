@@ -17,20 +17,13 @@ namespace Composa.App.Mcp;
 public sealed partial class ComposaTools
 {
     [McpServerTool(Name = "open_document")]
-    [Description("Opens a file in a new tab and makes it the active document: a Composa project (.cmps), an image (PNG, JPEG, WebP, BMP, GIF, SVG, and HEIC, AVIF or TIFF when ImageMagick is available) or a GIMP file (.xcf) that needs nothing converted. A file already open just becomes the active document. Photoshop and camera RAW files, and a GIMP file whose layers would be converted, need a dialog, so they are opened from the File menu instead.")]
-    public async Task<string> OpenDocument([Description("Absolute path of the file")] string path)
+    [Description("Opens a project or image as a new tab, including native 16-bit/HDR PNG/TIFF/EXR/HDR, HEIF/HIF, Photoshop PSD/PSB, GIMP XCF and camera RAW. Photoshop/GIMP conversion reports require allowConversions=true; inspect_import lists them without editing. RAW uses rawSettings and optional cameraRaw, with no modal dialog. Existing projects are activated.")]
+    public async Task<string> OpenDocument([Description("Absolute path of the file")] string path, bool allowConversions = false, RawDevelopSettings? rawSettings = null, CameraRawSettings? cameraRaw = null)
     {
         path = Absolute(path);
         if (!File.Exists(path)) throw new McpException($"There is no file at {path}.");
-        if (PsdImport.IsPsd(path) || RawImporter.IsRaw(path)) throw new McpException("Photoshop and camera RAW files need a dialog; open them from the File menu.");
-        if (XcfImport.IsXcf(path))
-        {
-            // The window asks before converting anything; an agent cannot answer, so such a file is refused with what it would ask.
-            var trial = await Task.Run(() => XcfImport.Load(path));
-            var conversions = trial.Conversions.Select(c => $"{c.LayerName}: {c.Message}").ToList();
-            trial.Discard();
-            if (conversions.Count > 0) throw new McpException("This GIMP file needs conversions that the person has to approve in a dialog; open it from the File menu. " + string.Join(" ", conversions));
-        }
+        if (PsdImport.IsPsd(path) || XcfImport.IsXcf(path) || RawImporter.IsRaw(path))
+            return await OpenSpecial(path, allowConversions, rawSettings, cameraRaw);
         return await OnUi(async () =>
         {
             if (window.IsDragging) throw new McpException("The person is dragging on the canvas; try again in a moment.");
@@ -69,12 +62,12 @@ public sealed partial class ComposaTools
     });
 
     [McpServerTool(Name = "export_image")]
-    [Description("Exports the document flattened to an image file: PNG, JPEG or WebP, by the path's extension. The document itself is untouched; save_document keeps the layers.")]
+    [Description("Exports PNG/JPEG/WebP/TIFF/PDF/EXR, optionally resized without changing the document. bitDepth=16 writes native PNG/TIFF; EXR retains floating HDR. colorMode=cmyk supports 8-bit JPEG/TIFF/PDF with the selected ICC profile. Omitted dimensions keep the canvas; one dimension keeps its aspect ratio. save_document keeps layers.")]
     public async Task<string> ExportImage(
-        [Description("Absolute path ending in .png, .jpg or .webp")] string path,
+        [Description("Absolute path ending in .png, .jpg, .webp, .tif, .tiff, .pdf or .exr")] string path,
         [Description("JPEG and WebP quality from 1 to 100")] int quality = 90,
         [Description("Replace a file that exists at the path")] bool overwrite = false,
-        int? document = null)
+        int? document = null, int bitDepth = 8, string colorMode = "rgb", int? width = null, int? height = null, string? profilePath = null)
     {
         path = Absolute(path);
         var format = Path.GetExtension(path).ToLowerInvariant() switch
@@ -82,18 +75,32 @@ public sealed partial class ComposaTools
             ".png" => ExportFormat.Png,
             ".jpg" or ".jpeg" => ExportFormat.Jpeg,
             ".webp" => ExportFormat.Webp,
-            _ => throw new McpException("The path must end in .png, .jpg or .webp; save_document writes a project file.")
+            ".tif" or ".tiff" => ExportFormat.Tiff, ".pdf" => ExportFormat.Pdf, ".exr" => ExportFormat.Exr,
+            _ => throw new McpException("The path must end in .png, .jpg, .webp, .tif, .tiff, .pdf or .exr; save_document writes a project file.")
         };
         if (quality is < 1 or > 100) throw new McpException("quality is from 1 to 100.");
         Fresh(path, null, overwrite);
-        var (title, flat) = await OnUi(() => { var s = Session(document); return (s.Title, s.Flatten()); });
+        if (bitDepth is not (8 or 16)) throw new McpException("bitDepth is 8 or 16; EXR always uses floating-point HDR.");
+        var cmyk = colorMode.Trim().ToLowerInvariant() switch { "rgb" => false, "cmyk" => true, _ => throw new McpException("colorMode is rgb or cmyk.") };
+        if (cmyk && (bitDepth != 8 || format is not (ExportFormat.Jpeg or ExportFormat.Tiff or ExportFormat.Pdf))) throw new McpException("CMYK supports 8-bit JPEG, TIFF or PDF.");
+        if (bitDepth == 16) format = format switch { ExportFormat.Png => ExportFormat.Png16, ExportFormat.Tiff => ExportFormat.Tiff16, ExportFormat.Exr => format, _ => throw new McpException("16-bit export supports PNG or TIFF; EXR is floating point.") };
+        var profile = profilePath == null ? null : await ReadProfile(profilePath);
+        var (title, snapshot, resolution) = await OnUi(() => { var s = Editable(document); return (s.Title, s.Document.Clone(), s.Document.Resolution); });
+        var proof = cmyk ? await OnUi(() => window.McpColorProof(profile, profilePath == null ? null : Path.GetFileNameWithoutExtension(profilePath))) : null;
+        using var flat = await Task.Run(() => Composa.Rendering.DocumentRenderer.Flatten(snapshot));
+        var w = width ?? (height is { } h ? Math.Max(1,(int)Math.Round(flat.Width * (double)h / flat.Height)) : flat.Width);
+        var hOut = height ?? (width is { } tw ? Math.Max(1,(int)Math.Round(flat.Height * (double)tw / flat.Width)) : flat.Height);
+        CheckSurface(w,hOut);
         try
         {
-            await Task.Run(() => ImageFiles.Save(flat, path, format, format == ExportFormat.Png ? 100 : quality));
-            return $"Exported \"{title}\" as a {flat.Width}×{flat.Height} px {format.ToString().ToUpperInvariant()} to {path}.";
+            await Task.Run(() => {
+                using var sized = w == flat.Width && hOut == flat.Height ? Composa.Rendering.Pixels.Clone(flat) : EditorSession.Resample(flat,w,hOut);
+                if (proof == null) ImageFiles.Save(sized,path,format,quality,resolution);
+                else WriteExport(path,proof.Export(sized,format,quality,resolution));
+            });
+            return $"Exported \"{title}\" as a {w}×{hOut} px {format.ToString().ToUpperInvariant()} to {path}.";
         }
         catch (Exception error) when (error is not McpException) { throw new McpException($"Couldn't export {Path.GetFileName(path)}: {error.Message}"); }
-        finally { flat.Dispose(); }
     }
 
     [McpServerTool(Name = "export_look")]
@@ -102,12 +109,20 @@ public sealed partial class ComposaTools
         [Description("Absolute path ending in .cube")] string path,
         [Description("Points per axis: 17, 33 or 65")] int size = 33,
         [Description("Replace a file that exists at the path")] bool overwrite = false,
-        int? document = null)
+        int? document = null, CameraRawSettings? cameraRaw = null)
     {
         path = Absolute(path);
         if (!path.EndsWith(".cube", StringComparison.OrdinalIgnoreCase)) throw new McpException("The path must end in .cube.");
         if (!LookBake.Sizes.Contains(size)) throw new McpException($"size is one of {string.Join(", ", LookBake.Sizes)}.");
         Fresh(path, null, overwrite);
+        if (cameraRaw != null)
+        {
+            ValidateGrade(cameraRaw);
+            var grade = cameraRaw.Normalized();
+            var baked = await Task.Run(() => LookBake.Bake(grade,size,"Camera Raw").ToCube("Camera Raw"));
+            await File.WriteAllTextAsync(path,baked);
+            return $"Exported Camera Raw look to {path}. Left out spatial/adaptive controls: {string.Join(", ",LookBake.LeftOutNames(grade))}.";
+        }
         // The bake reads the layers, so it runs where they are edited; the file is written off that thread.
         var (title, text, names, leftOut) = await OnUi(() =>
         {

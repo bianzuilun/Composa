@@ -25,7 +25,7 @@ For Claude Code, from a terminal:
 claude mcp add composa -- composa --mcp
 ```
 
-Other clients take the same command and argument in their own configuration, usually a JSON file with a `command` and an `args` entry.
+Other clients take the same command and argument in their own configuration. See [Codex, DeepSeek Harness 0.2.1-rc.2 and Claude setup](mcp-clients.md) for client-specific examples.
 
 ### The bridge
 
@@ -37,20 +37,22 @@ Some clients only read the tool list when they start. If a client shows no tools
 
 ## What an agent can do
 
-An agent gets fifty-four tools, covering most of what you can do from the menus:
+Call `get_capabilities` for the running editor's editing routes and `tools/list` for exact schemas. The tools cover these workflows:
 
 - **Documents**: create a canvas, open a project or image, list and describe the open documents, save the project, export a PNG, JPEG or WebP, and render the document to see it.
 - **Layers**: add a layer, place an image or SVG file as a layer, select, rename, hide, reorder, duplicate and delete layers, move, resize and rotate them, and set opacity and blend mode.
 - **Content**: add text with a font, size, color, bold and italic; add rectangles, rounded rectangles, ellipses and lines; fill a layer; paint brush strokes with the brush, eraser, blur, smudge, dodge and burn, one at a time or many in one call.
 - **Adjustments**: every adjustment, on the layer's pixels or as an adjustment layer.
-- **Filters**: every filter but Camera Raw, including Dither and Painterly.
+- **Filters**: Camera Raw with all its groups, Progressive Blur, Scanlines, Dither, Painterly and the other filters; repeat the last accepted filter.
 - **Selections**: marquee, lasso, wand, object and subject; select all, inverse, deselect; expand, contract, feather and move the selection.
 - **Looking**: render the document, with a labelled grid to read coordinates from or a region at full size; read the colors at points; and trace the picture's edges.
 - **Undo**: take back the last step, whoever made it.
 
 The document list, a document's layers and its rendered image are also available as resources, for clients that attach context rather than call tools. The full list of tools and their parameters is in the [AI tool reference](ai-tools-reference.md).
 
-An agent cannot do two things you can: open Photoshop or camera RAW files, because those need a dialog, and use the Camera Raw Filter, which has a panel of its own. It is also refused while you are dragging on the canvas, and asked to try again in a moment.
+Photoshop/PSB, GIMP conversions and RAW development are available without modal dialogs. `inspect_import` lists conversions before an explicit `allowConversions=true` import. RAW takes develop settings and an optional complete Camera Raw grade. Export supports native 16-bit PNG/TIFF, HDR EXR, TIFF/PDF and CMYK print formats. Liquify, healing, mask editing, live shape/text/effects, tab/view preferences and shortcut rebinding are also exposed. See the [1.5.3 coverage map](compatibility/mcp-1.5.3-coverage.md).
+
+An edit is refused while you are dragging on the canvas or have a pending preview. Preferences/view changes persist separately from document history; file writes require the same explicit overwrite choice as other MCP save/export calls.
 
 ## What to ask for
 

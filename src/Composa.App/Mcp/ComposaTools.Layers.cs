@@ -61,12 +61,18 @@ public sealed partial class ComposaTools
         double? width = null,
         double? height = null,
         [Description("Degrees; positive turns clockwise")] double? rotation = null,
-        int? document = null) => OnUi(() =>
+        int? document = null,
+        [Description("Width as percentage of source pixel width; cannot combine with width")] double? widthPercent = null,
+        [Description("Height as percentage of source pixel height; cannot combine with height")] double? heightPercent = null) => OnUi(() =>
     {
         var s = Editable(document);
         var target = Find(s, layer);
         if (target.Pixels == null) throw new McpException($"\"{target.Name}\" is a {Kind(target)} layer and has no frame of its own.");
         var t = target.Transform;
+        if (widthPercent != null && width != null || heightPercent != null && height != null) throw new McpException("Give each dimension in pixels or percent.");
+        if (widthPercent is { } wp) width = target.Pixels.Width * FiniteRange(wp,0.01,100000,"widthPercent") / 100;
+        if (heightPercent is { } hp) height = target.Pixels.Height * FiniteRange(hp,0.01,100000,"heightPercent") / 100;
+        foreach (var value in new[] { x,y,width,height,rotation }) if (value is { } v && !double.IsFinite(v)) throw new McpException("Transform values must be finite.");
         var next = t with { X = x ?? t.X, Y = y ?? t.Y, Width = width ?? t.Width, Height = height ?? t.Height, Rotation = rotation ?? t.Rotation };
         if (next.Width < 1 || next.Height < 1 || next.Width > DocumentLimits.MaxSide || next.Height > DocumentLimits.MaxSide)
             throw new McpException($"The width and height must be between 1 and {DocumentLimits.MaxSide} px.");

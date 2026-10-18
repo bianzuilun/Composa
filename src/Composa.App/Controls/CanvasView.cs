@@ -197,6 +197,9 @@ public sealed partial class CanvasView : Control
     public void ZoomTo(double value, Point? anchor = null)
     {
         if (session == null) return;
+        // An explicit zoom wins over the deferred fit queued by a tab switch, including MCP calls before layout.
+        if (fitPending) FitCore();
+        fitPending = false;
         var around = anchor ?? new Point(Bounds.Width / 2, Bounds.Height / 2);
         var fixedPoint = ToDocument(around);
         zoom = Math.Clamp(value, 0.01, 64);

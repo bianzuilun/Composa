@@ -158,6 +158,7 @@ public sealed class UpdateNotice : Border
     public IReadOnlyList<string> Buttons => buttons.Children.OfType<Button>().Select(b => b.Content as string ?? "").ToList();
 
     public string Message => message.Text ?? "";
+    public string ReleaseBody => releaseBody.Text ?? "";
 
     public string? Command => commandRow.IsVisible ? command.Text : null;
 

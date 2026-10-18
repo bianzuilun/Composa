@@ -18,23 +18,26 @@ public sealed partial class ComposaTools
         [Description("A color as #rrggbb or #aarrggbb; ignored by the erase and smearing modes")] string color = "#000000",
         [Description("Brush diameter in pixels")] double size = 40,
         [Description("Edge hardness from 0 (soft) to 1 (hard)")] double hardness = 0.8,
-        [Description("The most the stroke covers, 0 to 1; the strength for blur, smudge, dodge and burn")] double opacity = 1,
-        [Description("paint, erase, blur, smudge, dodge or burn")] string mode = "paint",
+        [Description("The most the stroke covers, 0 to 1; also Liquify/heal/blur/smudge/dodge/burn strength")] double opacity = 1,
+        [Description("paint, erase, liquify (push pixels along the path), heal (texture-aware), blur, smudge, dodge or burn")] string mode = "paint",
         [Description("The layer to paint on; the active one when left out")] string? layer = null,
-        int? document = null) => OnUi(() =>
+        int? document = null,
+        [Description("Blur's Gaussian radius in canvas pixels, independent of size; 0.1 to 250")] double blurRadius = 5) => OnUi(() =>
     {
         var s = Editable(document);
         var brushMode = ParseBrushMode(mode);
+        ValidatePoints(points);
         if (points.Length == 0 || points.Any(p => p.Length != 2)) throw new McpException("points is a list of [x, y] pairs with at least one pair.");
         if (size is < 1 or > 5000 || double.IsNaN(size)) throw new McpException("size is 1 to 5000 pixels.");
         // A stroke aimed at a layer paints there and leaves the selection alone, so what is added next still goes where it did.
         var active = s.ActiveLayer;
         if (layer != null) s.SelectLayer(Find(s, layer).Id);
         var target = s.ActiveLayer ?? throw new McpException("No layer is active.");
-        var brush = new BrushSettings { Size = size, Hardness = Math.Clamp(hardness, 0, 1), Opacity = Math.Clamp(opacity, 0, 1) };
+        var brush = new BrushSettings { Size = size, Hardness = Math.Clamp(hardness, 0, 1), Opacity = Math.Clamp(opacity, 0, 1), BlurRadius = FiniteRange(blurRadius, 0.1, 250, "blurRadius") };
         var path = points.Select(p => new SKPoint((float)p[0], (float)p[1])).ToList();
-        var problem = s.PaintStroke(path, brush, ParseColor(color), brushMode);
-        if (active != null && active != target) s.SelectLayer(active.Id);
+        string? problem;
+        try { problem = s.PaintStroke(path, brush, ParseColor(color), brushMode); }
+        finally { if (active != null && active != target) s.SelectLayer(active.Id); }
         if (problem != null) throw new McpException(problem);
         return $"Painted a {mode} stroke of {path.Count} point{(path.Count == 1 ? "" : "s")} on \"{target.Name}\".";
     });
@@ -52,8 +55,10 @@ public sealed partial class ComposaTools
         public double Hardness { get; set; } = 0.8;
         [JsonPropertyName("opacity"), Description("The most the stroke covers, 0 to 1")]
         public double Opacity { get; set; } = 1;
-        [JsonPropertyName("mode"), Description("paint, erase, blur, smudge, dodge or burn")]
+        [JsonPropertyName("mode"), Description("paint, erase, liquify, heal, blur, smudge, dodge or burn")]
         public string Mode { get; set; } = "paint";
+        [JsonPropertyName("blurRadius"), Description("Independent Blur radius, 0.1 to 250 canvas pixels")]
+        public double BlurRadius { get; set; } = 5;
     }
 
     private const int MaxBatch = 2000;
@@ -72,16 +77,19 @@ public sealed partial class ComposaTools
         for (var i = 0; i < strokes.Length; i++)
         {
             var stroke = strokes[i];
+            ValidatePoints(stroke.Points);
             if (stroke.Points.Length == 0 || stroke.Points.Any(p => p.Length != 2)) throw new McpException($"Stroke {i + 1}: points is a list of [x, y] pairs with at least one pair.");
             if (stroke.Size is < 1 or > 5000 || double.IsNaN(stroke.Size)) throw new McpException($"Stroke {i + 1}: size is 1 to 5000 pixels.");
-            var brush = new BrushSettings { Size = stroke.Size, Hardness = Math.Clamp(stroke.Hardness, 0, 1), Opacity = Math.Clamp(stroke.Opacity, 0, 1) };
+            var brush = new BrushSettings { Size = stroke.Size, Hardness = Math.Clamp(stroke.Hardness, 0, 1), Opacity = Math.Clamp(stroke.Opacity, 0, 1), BlurRadius = FiniteRange(stroke.BlurRadius, 0.1, 250, "blurRadius") };
             planned.Add(new PlannedStroke(stroke.Points.Select(p => new SKPoint((float)p[0], (float)p[1])).ToList(), brush, ParseColor(stroke.Color), ParseBrushMode(stroke.Mode)));
         }
         var active = s.ActiveLayer;
         if (layer != null) s.SelectLayer(Find(s, layer).Id);
         var target = s.ActiveLayer ?? throw new McpException("No layer is active.");
-        var (painted, problem) = s.PaintStrokes(planned);
-        if (active != null && active != target) s.SelectLayer(active.Id);
+        (int painted, string? problem) result;
+        try { result = s.PaintStrokes(planned); }
+        finally { if (active != null && active != target) s.SelectLayer(active.Id); }
+        var (painted, problem) = result;
         if (problem != null) throw new McpException($"{problem} {painted} of {planned.Count} strokes were painted before that.");
         return $"Painted {painted} strokes on \"{target.Name}\".";
     });
@@ -90,7 +98,8 @@ public sealed partial class ComposaTools
     {
         "paint" => BrushMode.Paint, "erase" => BrushMode.Erase, "blur" => BrushMode.Blur,
         "smudge" => BrushMode.Smudge, "dodge" => BrushMode.Dodge, "burn" => BrushMode.Burn,
-        _ => throw new McpException("mode is paint, erase, blur, smudge, dodge or burn.")
+        "liquify" => BrushMode.Liquify, "heal" => BrushMode.Heal,
+        _ => throw new McpException("mode is paint, erase, liquify, heal, blur, smudge, dodge or burn.")
     };
 
     [McpServerTool(Name = "add_shape")]
@@ -103,7 +112,8 @@ public sealed partial class ComposaTools
         double height,
         [Description("Fill color as #rrggbb or #aarrggbb")] string color = "#000000",
         [Description("Corner radius in pixels, for a rounded rectangle")] double cornerRadius = 24,
-        int? document = null) => OnUi(() =>
+        int? document = null,
+        [Description("Continuous smooth corners for rounded rectangles")] bool smoothCorners = false) => OnUi(() =>
     {
         var s = Editable(document);
         var shapeKind = kind.Trim().ToLowerInvariant() switch
@@ -113,7 +123,7 @@ public sealed partial class ComposaTools
             _ => throw new McpException("kind is rectangle, rounded or ellipse; a line is added with add_line.")
         };
         if (width < 1 || height < 1) throw new McpException("The width and height must be at least 1 px.");
-        var layer = s.AddShape(new ShapeStyle(shapeKind, (uint)ParseColor(color), Math.Max(0, cornerRadius)), SKRect.Create((float)x, (float)y, (float)width, (float)height))
+        var layer = s.AddShape(new ShapeStyle(shapeKind, (uint)ParseColor(color), Math.Max(0, cornerRadius)) { SmoothCorners = smoothCorners }, SKRect.Create((float)x, (float)y, (float)width, (float)height))
                     ?? throw new McpException($"That shape is too large: a shape covers at most {DocumentLimits.MaxSurfaceMegapixels} megapixels.");
         return $"Added {ShapeStyle.DisplayName(shapeKind).ToLowerInvariant()} \"{layer.Name}\" at {x:0},{y:0} size {width:0}×{height:0}, now active.";
     });
