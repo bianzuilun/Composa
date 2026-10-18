@@ -37,6 +37,14 @@ public sealed partial class EditorSession
         cloneOffset = null;
     }
 
+    /// <summary>One scripted clone stroke with its own source, leaving the interactive stamp's source/alignment intact.</summary>
+    public string? PaintCloneStroke(IReadOnlyList<SKPoint> points, BrushSettings brush, SKPoint source, bool sampleAllLayers)
+    {
+        var saved = (cloneSource, cloneOffset, SampleAllLayers, CloneAligned);
+        try { SetCloneSource(source); SampleAllLayers = sampleAllLayers; CloneAligned = false; return PaintStroke(points, brush, SKColors.Black, BrushMode.Clone); }
+        finally { (cloneSource, cloneOffset, SampleAllLayers, CloneAligned) = saved; }
+    }
+
     /// <summary>The brush mode the current tool paints with.</summary>
     public BrushMode CurrentBrushMode => Tool switch
     {

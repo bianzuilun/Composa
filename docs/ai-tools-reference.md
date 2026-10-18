@@ -1,6 +1,6 @@
 # AI tool reference
 
-Every tool an agent gets, with its parameters. Coordinates are canvas pixels with the origin at the top left. Colors are written as `#rrggbb` or `#aarrggbb`. Every tool that changes something is one undoable step.
+Every tool an agent gets, with its parameters. Coordinates are canvas pixels with the origin at the top left. Colors are written as `#rrggbb` or `#aarrggbb`. Pixel/layer edits use document history; view preferences and file writes do not. For exact input schemas use MCP `tools/list`, and for version-specific availability call `get_capabilities`.
 
 Most tools take a `document` parameter: the tab number as `list_documents` reports it. Leave it out for the active document. Tools that work on a layer take `layer`: the layer's name, or the eight-character id that `describe_document` shows in brackets when two layers share a name. Leave it out for the active layer.
 
@@ -10,13 +10,13 @@ Most tools take a `document` parameter: the tab number as `list_documents` repor
 
 **describe_document**: the canvas size and resolution, the selection's bounds, and the layer stack top layer first, with each layer's kind, id, position and size, visibility, opacity, blend mode, mask, clipping and effects. Parameters: `document`.
 
-**new_document**: creates a document in a new tab and makes it active. Parameters: `width` and `height` in pixels; `background` as a color, left out for a transparent canvas.
+**new_document**: creates a document in a new tab and makes it active. Parameters: `width`, `height`; `unit` (pixels, inches, centimeters, millimeters); `resolution` in pixels/inch; `background` as a color, left out for a transparent canvas.
 
-**open_document**: opens a project, an image file or a GIMP file that needs nothing converted in a new tab, or makes an already open file the active document. Photoshop and camera RAW files, and a GIMP file whose layers would be converted, are refused because they need a dialog; the refusal lists what the dialog would say. Parameter: `path`, absolute.
+**open_document**: opens a project/image/PSD/PSB/XCF/RAW in a new tab, or activates an already-open project. `path` is absolute. `allowConversions` accepts conversions listed by `inspect_import`; `rawSettings` contains exposure, temperature, tint, luminance/color noise reduction, highlight recovery and lens distortion; optional `cameraRaw` applies the complete Camera Raw grade after development. No modal dialog is opened.
 
 **save_document**: saves the project with all its layers, in the background as Ctrl+S does. Parameters: `path`, absolute and ending in `.cmps`, left out to save to the document's own file; `overwrite`, needed to replace an existing file at a new path.
 
-**export_image**: exports the document flattened to a PNG, JPEG or WebP, by the extension of `path`. Parameters: `path`; `quality` from 1 to 100 for JPEG and WebP, 90 by default; `overwrite`.
+**export_image**: exports a snapshot to PNG/JPEG/WebP/TIFF/PDF/EXR by `path` extension. `bitDepth=16` selects native PNG/TIFF; EXR retains floating HDR. `colorMode=cmyk` selects 8-bit JPEG/TIFF/PDF with the current or `profilePath` ICC profile. `width`/`height` resize the export only (one dimension keeps aspect ratio); `quality` 1..100; `overwrite` is required for an existing file.
 
 **export_look**: bakes the document's visible adjustment layers into a `.cube` lookup table at `path`, as File > Export Look does. Only what is a function of a pixel's color goes in; a masked, clipped or grouped layer and grain, noise and blurs are left out and named in the result. Parameters: `path` ending in `.cube`; `size` of 17, 33 or 65 points, 33 by default; `overwrite`.
 

@@ -84,6 +84,8 @@ public sealed partial class ComposaTools(MainWindow window)
             if (layer.Text != null) text.Append(" \"").Append(layer.Text.Text.Replace("\n", "\\n")).Append('"');
             if (layer.Pixels != null)
             {
+                var source = DeepPixels.Source(layer.Pixels);
+                text.Append(source == null ? ", 8-bit" : DeepPixels.IsHdr(source) ? ", HDR float" : ", 16-bit");
                 var b = layer.Bounds;
                 text.Append(" at ").Append(b.Left.ToString("0")).Append(',').Append(b.Top.ToString("0")).Append(" size ")
                     .Append(b.Width.ToString("0")).Append('×').Append(b.Height.ToString("0"));
@@ -146,32 +148,37 @@ public sealed partial class ComposaTools(MainWindow window)
     [McpServerTool(Name = "new_document")]
     [Description("Creates a new document in a new tab and makes it the active one.")]
     public Task<string> NewDocument(
-        [Description("Width in pixels")] int width,
-        [Description("Height in pixels")] int height,
-        [Description("Background color as #rrggbb; leave it out for a transparent canvas")] string? background = null) => OnUi(() =>
+        [Description("Width in the specified unit")] double width,
+        [Description("Height in the specified unit")] double height,
+        [Description("Background color as #rrggbb; leave it out for a transparent canvas")] string? background = null,
+        [Description("pixels, inches, centimeters or millimeters")] string unit = "pixels",
+        [Description("Pixels per inch, 1 to 9600; 72 for screen or 300 for print")] double resolution = 72) => OnUi(() =>
     {
         if (window.IsDragging) throw new McpException("The person is dragging on the canvas; try again in a moment.");
-        if (!DocumentLimits.FitsSurface(width, height))
+        var (w, h) = CanvasSize(width, height, unit, resolution);
+        if (!DocumentLimits.FitsSurface(w, h))
             throw new McpException($"A canvas is at most {DocumentLimits.MaxSide} px on a side and {DocumentLimits.MaxSurfaceMegapixels} megapixels; {width}×{height} px is not.");
-        var s = EditorSession.NewCanvas(width, height, background == null ? null : ParseColor(background));
+        var s = EditorSession.NewCanvas(w, h, background == null ? null : ParseColor(background));
+        s.Document.Resolution = resolution;
         window.AddSession(s);
-        return $"Created document {window.Sessions.Count}: \"{s.Title}\" {width}×{height} px, now active.";
+        return $"Created document {window.Sessions.Count}: \"{s.Title}\" {w}×{h} px, now active.";
     });
 
     [McpServerTool(Name = "place_image")]
-    [Description("Places an image file as a new layer above the active layer: PNG, JPEG, WebP, BMP, GIF, SVG, and HEIC, AVIF or TIFF when ImageMagick is available. Photoshop and camera RAW files need a dialog, so they are opened from the File menu instead.")]
+    [Description("Places an image as a layer, including 16-bit/HDR and developed RAW. Photoshop/GIMP layers arrive in a folder, preserving their structure; inspect_import lists required conversions. rawSettings and cameraRaw develop RAW without a dialog.")]
     public async Task<string> PlaceImage(
         [Description("Absolute path of the image file")] string path,
         [Description("Canvas x of the image's center; leave both out to center it on the canvas")] double? x = null,
         [Description("Canvas y of the image's center")] double? y = null,
         [Description("Scale the image down to fit the canvas (never up)")] bool fit = true,
         [Description("Multiplies the placed size: 0.5 places it at half the size it would otherwise get")] double scale = 1,
-        int? document = null)
+        int? document = null, bool allowConversions = false, RawDevelopSettings? rawSettings = null, Composa.Filters.CameraRawSettings? cameraRaw = null)
     {
-        if (!File.Exists(path)) throw new McpException($"There is no file at {path}.");
-        if (PsdImport.IsPsd(path) || RawImporter.IsRaw(path)) throw new McpException("Photoshop and camera RAW files need a dialog; open them from the File menu.");
+        path = Existing(path);
         if (scale is <= 0 or > 16 || double.IsNaN(scale)) throw new McpException("scale must be above 0 and at most 16.");
-        var (canvas, budget) = await OnUi(() => { var s = Editable(document); return (new SKSizeI(s.Document.Width, s.Document.Height), DocumentLimits.DocumentPixelBudget - s.Document.RasterPixels()); });
+        if (PsdImport.IsPsd(path) || Composa.IO.Xcf.XcfImport.IsXcf(path) || RawImporter.IsRaw(path)) return await PlaceSpecial(path,x,y,fit,scale,document,allowConversions,rawSettings,cameraRaw);
+        var target = await OnUi(() => Editable(document));
+        var (canvas, budget) = await OnUi(() => (new SKSizeI(target.Document.Width, target.Document.Height), DocumentLimits.DocumentPixelBudget - target.Document.RasterPixels()));
         // Decoding is the slow part and needs no document, so it runs off the UI thread, as the window's own import does.
         // An SVG is drawn at the size it will be placed at, so a scaled one is as sharp as a full-size one.
         var svgFit = new SKSizeI(Math.Max(1, (int)Math.Round(canvas.Width * Math.Min(scale, 1))), Math.Max(1, (int)Math.Round(canvas.Height * Math.Min(scale, 1))));
@@ -181,15 +188,17 @@ public sealed partial class ComposaTools(MainWindow window)
             pixels.Dispose();
             throw new McpException($"{Path.GetFileName(path)} is {pixels.Width}×{pixels.Height} px, more than the {budget / 1_000_000} megapixels the document can still hold.");
         }
-        return await OnUi(() =>
+        var used = false;
+        try { return await OnUi(() =>
         {
-            var s = Editable(document);
+            EnsureImportTarget(target,budget); var s = target;
             var center = x is { } cx && y is { } cy ? new SKPoint((float)cx, (float)cy) : (SKPoint?)null;
             // The SVG was already drawn at the scaled size; scaling it again would shrink it twice.
             var layer = s.AddImageLayer(Path.GetFileNameWithoutExtension(path), pixels, center, fit, SvgImporter.IsSvg(path) && scale <= 1 ? 1 : scale);
+            used = true;
             var b = layer.Bounds;
             return $"Placed \"{layer.Name}\" ({pixels.Width}×{pixels.Height} px) as a layer at {b.Left:0},{b.Top:0} size {b.Width:0}×{b.Height:0}, now active.";
-        });
+        }); } finally { if (!used) pixels.Dispose(); }
     }
 
     [McpServerTool(Name = "new_layer")]

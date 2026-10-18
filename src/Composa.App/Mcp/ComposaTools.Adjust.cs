@@ -12,8 +12,7 @@ namespace Composa.App.Mcp;
 /// <summary>
 /// The Image menu's adjustments and the Filter menu's filters. An adjustment is baked into the active layer's pixels,
 /// or added as an adjustment layer above it with <c>asLayer</c>, which affects everything below and stays editable.
-/// A filter always changes pixels. Both respect a selection. The Camera Raw Filter is left out: its grade has dozens
-/// of settings and a panel of its own.
+/// A filter always changes pixels. Both respect a selection. Camera Raw's complete grade is exposed separately.
 /// </summary>
 public sealed partial class ComposaTools
 {
@@ -134,8 +133,9 @@ public sealed partial class ComposaTools
 
     [McpServerTool(Name = "filter_blur")]
     [Description("Gaussian Blur by a radius in pixels.")]
-    public Task<string> FilterBlur([Description("0.1 to 250")] double radius = 8, [Description(TargetLayer)] string? layer = null, int? document = null) =>
-        Filter(document, layer, new FilterSettings { Kind = FilterKind.GaussianBlur, Radius = Math.Clamp(radius, 0.1, 250) });
+    public Task<string> FilterBlur([Description("0.1 to 250")] double radius = 8, [Description(TargetLayer)] string? layer = null, int? document = null,
+        [Description("Keep the layer's original transparency while blurring its colors")] bool preserveTransparency = false) =>
+        Filter(document, layer, new FilterSettings { Kind = FilterKind.GaussianBlur, Radius = Math.Clamp(radius, 0.1, 250), PreserveTransparency = preserveTransparency });
 
     [McpServerTool(Name = "filter_motion_blur")]
     [Description("Motion Blur over a distance in pixels at an angle in degrees.")]
@@ -275,12 +275,15 @@ public sealed partial class ComposaTools
         return $"Applied {adjustment.DisplayName} to \"{target.Name}\".";
     });
 
-    private Task<string> Filter(int? document, string? layer, FilterSettings settings) => OnUi(() =>
+    private Task<string> Filter(int? document, string? layer, FilterSettings settings) => OnUi(async () =>
     {
         var s = Editable(document);
         var target = Target(s, layer);
         if (!s.CanEditPixels) throw new McpException($"\"{target.Name}\" is a {Kind(target)} layer, so a filter cannot change its pixels. Rasterize it first.");
-        s.ApplyFilter(settings);
+        if (!s.BeginFilter(settings.Kind)) throw new McpException("The layer cannot be filtered.");
+        try { await s.PreviewFilterAsync(settings); s.CommitPreview(); }
+        catch { s.CancelPreview(); throw; }
+        window.RememberMcpFilter(settings);
         return $"Applied {FilterSettings.DisplayName(settings.Kind)} to \"{target.Name}\".";
     });
 
